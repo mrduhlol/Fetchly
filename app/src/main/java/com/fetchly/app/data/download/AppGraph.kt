@@ -26,6 +26,7 @@ import com.fetchly.app.domain.model.MediaType
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import java.util.UUID
@@ -168,8 +169,7 @@ object AppGraph {
 
     /** Live WorkManager progress keyed by work request UUID string. */
     fun observeProgress(): Flow<Map<String, DlProgress>> = callbackFlow {
-        val wm = WorkManager.getInstance(appContext)
-        val live = wm.getWorkInfosByTagLiveData(TAG_DOWNLOADS)
+        val wm = WorkManager.getInstance(appContext)        val live = wm.getWorkInfosByTagLiveData(TAG_DOWNLOADS)
         val obs = Observer<List<WorkInfo>> { infos: List<WorkInfo> ->
             val map = mutableMapOf<String, DlProgress>()
             for (wi in infos) {
@@ -187,7 +187,7 @@ object AppGraph {
         awaitClose {
             Handler(Looper.getMainLooper()).post { live.removeObserver(obs) }
         }
-    }
+    }.distinctUntilChanged()
 
     /** Delete stale temp files; never touches user-owned downloads. */
     fun cleanupTempFiles() {
