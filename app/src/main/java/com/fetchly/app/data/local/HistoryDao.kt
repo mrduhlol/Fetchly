@@ -23,6 +23,11 @@ data class HistoryEntity(
     val thumbnailUrl: String?,
     val status: String,
     val createdAt: Long,
+    // V1.2: stable identity for duplicate detection + retry, and the
+    // WorkManager request id for cancel.
+    val formatId: String = "",
+    val downloadUrl: String = "",
+    val workRequestId: String? = null,
 )
 
 @Dao
@@ -35,6 +40,15 @@ interface HistoryDao {
 
     @Query("UPDATE history SET status = :status, localUri = :localUri WHERE id = :id")
     suspend fun updateStatus(id: Long, status: String, localUri: String?)
+
+    @Query("UPDATE history SET workRequestId = :uuid WHERE id = :id")
+    suspend fun updateWorkRequestId(id: Long, uuid: String?)
+
+    @Query("SELECT * FROM history WHERE sourceUrl = :url AND formatId = :formatId AND status = 'COMPLETED' LIMIT 1")
+    suspend fun findCompleted(url: String, formatId: String): HistoryEntity?
+
+    @Query("SELECT * FROM history WHERE id = :id LIMIT 1")
+    suspend fun getById(id: Long): HistoryEntity?
 
     @Delete
     suspend fun delete(entity: HistoryEntity)
