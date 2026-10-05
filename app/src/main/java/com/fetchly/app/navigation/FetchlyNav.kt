@@ -15,26 +15,23 @@ import com.fetchly.app.presentation.settings.SettingsScreen
 @Composable
 fun FetchlyNav(sharedUrl: String?) {
     val nav = rememberNavController()
-    // Shared ViewModel scoped to the nav graph so Home <-> Result share analysis state.
+    // Hoisted here so Home <-> Result share the same analysis state.
+    val homeVm: HomeViewModel = viewModel()
     NavHost(navController = nav, startDestination = "home") {
-        composable("home") { backStack ->
-            val vm: HomeViewModel = viewModel(backStack)
-            // Actually scope to activity so result shares it:
-            val activityVm: HomeViewModel = viewModel()
+        composable("home") {
             HomeScreen(
                 sharedUrl = sharedUrl,
                 onResult = { nav.navigate("result") },
                 onDownloads = { nav.navigate("downloads") },
                 onSettings = { nav.navigate("settings") },
-                vm = activityVm,
+                vm = homeVm,
             )
         }
         composable("result") {
-            val activityVm: HomeViewModel = viewModel()
             ResultScreen(
                 onBack = { nav.popBackStack() },
                 onDownloadStarted = { nav.navigate("downloads") },
-                vm = activityVm,
+                vm = homeVm,
             )
         }
         composable("downloads") {
