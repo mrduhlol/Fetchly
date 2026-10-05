@@ -32,7 +32,7 @@ fun MediaDetailsSheet(
 ) {
     val context = LocalContext.current
     val (displayName, sizeBytes) = remember(entry.localUri) {
-        if (entry.localUri == null) {
+        val queried: Pair<String?, Long?> = if (entry.localUri == null) {
             null to null
         } else {
             runCatching {
@@ -48,6 +48,8 @@ fun MediaDetailsSheet(
                 }
             }.getOrNull() ?: (null to null)
         }
+        // Fall back to the size recorded at download time.
+        queried.first to (queried.second ?: entry.sizeBytes)
     }
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
