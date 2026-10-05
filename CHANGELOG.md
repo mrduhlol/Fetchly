@@ -1,5 +1,17 @@
 # Changelog
 
+## Fetchly 1.6
+
+### Improved
+
+- Smoother progress: identical download updates are deduplicated before
+  reaching the UI
+- Primary button now has a visible disabled state (state is never
+  color-only)
+- History group headers are screen-reader headings
+- Security audit: no new issues — validation, sanitization, scoped storage,
+  and rate limiting unchanged and documented
+
 ## Fetchly 1.5
 
 ### Improved
