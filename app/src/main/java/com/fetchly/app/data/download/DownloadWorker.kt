@@ -1,7 +1,5 @@
 package com.fetchly.app.data.download
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.ServiceInfo
 import android.os.Build
@@ -13,16 +11,19 @@ import androidx.work.WorkerParameters
 import com.fetchly.app.domain.model.DownloadStatus
 import com.fetchly.app.domain.model.MediaType
 import com.fetchly.app.domain.security.UrlSecurity
+import com.fetchly.app.domain.util.MimeTypes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.io.IOException
+import java.net.UnknownHostException
 import java.util.concurrent.TimeUnit
 
 /**
- * Persistent background download with progress + completion notifications.
- * Streams directly to a temp file, then publishes to MediaStore — never
- * holds media in memory. Survives app backgrounding via WorkManager.
+ * Persistent background download. Streams to a temp file, verifies it, then
+ * publishes to MediaStore — completion is only reported after verification.
+ * Progress (bytes + speed) is throttled to ~2 updates/sec.
  */
 class DownloadWorker(
     private val context: Context,
@@ -38,8 +39,14 @@ class DownloadWorker(
             .getOrDefault(MediaType.VIDEO)
         val historyId = inputData.getLong(KEY_HISTORY_ID, -1)
 
-        setForeground(makeForeground(title, 0))
-        notify(title, "Download started", 0, true)
+        if (historyId >= 0) {
+            AppGraph.history.updateWorkRequestId(historyId, id.toString())
+            AppGraph.history.updateStatus(historyId, DownloadStatus.DOWNLOADING, null)
+        }
+        setForeground(makeForeground(title, historyId, 0))
+        if (historyId >= 0) {
+            DownloadNotifications.showProgress(context, historyId, title, 0, "Starting…")
+        }
 
         val fileName = MediaStoreSaver.buildFileName(title, quality, container)
         val tmp = MediaStoreSaver.tempFile(context, fileName)
@@ -48,21 +55,22 @@ class DownloadWorker(
             .readTimeout(60, TimeUnit.SECONDS)
             .build()
         return try {
-            val req = Request.Builder().url(url).header("User-Agent", "Fetchly/1.0").build()
+            val req = Request.Builder().url(url).header("User-Agent", "Fetchly/1.2").build()
             client.newCall(req).execute().use { res ->
                 if (!res.isSuccessful || res.body == null) {
-                    notify(title, "Download failed", 0, false)
-                    failHistory(historyId)
-                    return Result.retry()
+                    fail(historyId, title, "The server refused the download.")
+                    return if (runAttemptCount < 2) Result.retry() else Result.failure()
                 }
                 val total = res.body!!.contentLength()
                 if (total > UrlSecurity.MAX_DOWNLOAD_BYTES) {
-                    notify(title, "File too large", 0, false)
-                    failHistory(historyId)
+                    fail(historyId, title, "This file is too large.")
                     return Result.failure()
                 }
                 var done = 0L
                 var lastTick = 0L
+                var lastDone = 0L
+                var lastTimeNs = System.nanoTime()
+                var speedBps = 0.0
                 withContext(Dispatchers.IO) {
                     tmp.outputStream().use { out ->
                         res.body!!.byteStream().use { input ->
@@ -78,17 +86,29 @@ class DownloadWorker(
                                 done += n
                                 val now = System.currentTimeMillis()
                                 if (now - lastTick > 500) {
+                                    val nowNs = System.nanoTime()
+                                    val dt = (nowNs - lastTimeNs) / 1e9
+                                    if (dt > 0) speedBps = (done - lastDone) / dt
+                                    lastDone = done
+                                    lastTimeNs = nowNs
                                     lastTick = now
                                     val pct = if (total > 0) (done * 100 / total).toInt() else -1
-                                    setForeground(makeForeground(title, pct))
-                                    notify(
-                                        title,
-                                        if (pct >= 0) "$pct% • ${formatMB(done)}" else formatMB(done),
-                                        pct, true,
-                                    )
-                                    setProgress(
-                                        Data.Builder().putLong("done", done).putLong("total", total).build()
-                                    )
+                                    setForeground(makeForeground(title, historyId, pct))
+                                    if (historyId >= 0) {
+                                        DownloadNotifications.showProgress(
+                                            context, historyId, title, pct,
+                                            if (pct >= 0) "${MimeTypes.displaySize(done)} of ${MimeTypes.displaySize(total)}"
+                                            else MimeTypes.displaySize(done),
+                                        )
+                                        setProgress(
+                                            Data.Builder()
+                                                .putLong(KEY_HID, historyId)
+                                                .putLong(KEY_DONE, done)
+                                                .putLong(KEY_TOTAL, total)
+                                                .putDouble(KEY_SPEED, speedBps)
+                                                .build()
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -96,40 +116,90 @@ class DownloadWorker(
                 }
                 if (isStopped) {
                     tmp.delete()
+                    if (historyId >= 0) {
+                        AppGraph.history.updateStatus(historyId, DownloadStatus.CANCELLED, null)
+                        DownloadNotifications.dismiss(context, historyId)
+                    }
                     return Result.failure()
                 }
-                // Publish to MediaStore
+                // Verify before claiming completion.
+                if (!tmp.exists() || tmp.length() <= 0 ||
+                    (total > 0 && tmp.length() < total)
+                ) {
+                    tmp.delete()
+                    fail(historyId, title, "The download was interrupted.")
+                    return if (runAttemptCount < 2) Result.retry() else Result.failure()
+                }
                 val entry = MediaStoreSaver.createEntry(context, mediaType, container, fileName)
-                    ?: return Result.failure()
+                    ?: run {
+                        tmp.delete()
+                        fail(historyId, title, "Couldn't save to your device.")
+                        return Result.failure()
+                    }
                 context.contentResolver.openOutputStream(entry)?.use { out ->
                     tmp.inputStream().use { it.copyTo(out) }
                 }
                 tmp.delete()
                 MediaStoreSaver.markComplete(context, entry)
-                completeHistory(historyId, entry.toString())
-                notify(title, "Download complete", 100, false)
+                if (historyId >= 0) {
+                    AppGraph.history.updateStatus(historyId, DownloadStatus.COMPLETED, entry.toString())
+                    DownloadNotifications.showComplete(
+                        context, historyId, title, fileName, entry.toString(), container
+                    )
+                }
                 Result.success(Data.Builder().putString("uri", entry.toString()).build())
+            }
+        } catch (e: UnknownHostException) {
+            tmp.delete()
+            if (historyId >= 0) {
+                DownloadNotifications.showProgress(
+                    context, historyId, title, -1, "Connection lost — will retry when possible."
+                )
+            }
+            failHistory(historyId)
+            if (runAttemptCount < 2) Result.retry() else {
+                fail(historyId, title, "Check your internet connection and try again.")
+                Result.failure()
+            }
+        } catch (e: IOException) {
+            tmp.delete()
+            val noSpace = e.message?.contains("ENOSPC", ignoreCase = true) == true ||
+                e.message?.contains("No space", ignoreCase = true) == true
+            failHistory(historyId)
+            if (noSpace) {
+                fail(historyId, title, "Not enough storage on this device.")
+                Result.failure()
+            } else if (runAttemptCount < 2) {
+                Result.retry()
+            } else {
+                fail(historyId, title, "The connection dropped.")
+                Result.failure()
             }
         } catch (e: Exception) {
             tmp.delete()
-            notify(title, "Download failed", 0, false)
             failHistory(historyId)
-            if (runAttemptCount < 2) Result.retry() else Result.failure()
+            fail(historyId, title, "Something went wrong.")
+            Result.failure()
         }
     }
 
-    private fun channel(): String {
-        val mgr = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            mgr.createNotificationChannel(
-                NotificationChannel("fetchly_downloads", "Downloads", NotificationManager.IMPORTANCE_LOW)
-            )
-        }
-        return "fetchly_downloads"
+    private suspend fun fail(historyId: Long, title: String, reason: String) {
+        failHistory(historyId)
+        if (historyId >= 0) DownloadNotifications.showFailed(context, historyId, title, reason)
     }
 
-    private fun makeForeground(title: String, pct: Int): ForegroundInfo {
-        val n = NotificationCompat.Builder(context, channel())
+    private suspend fun failHistory(id: Long) {
+        if (id >= 0) {
+            runCatching {
+                val current = AppGraph.history.getById(id)
+                AppGraph.history.updateStatus(id, DownloadStatus.FAILED, current?.localUri)
+            }
+        }
+    }
+
+    private fun makeForeground(title: String, historyId: Long, pct: Int): ForegroundInfo {
+        DownloadNotifications.ensureChannel(context)
+        val n = NotificationCompat.Builder(context, DownloadNotifications.CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_sys_download)
             .setContentTitle(title)
             .setContentText(if (pct >= 0) "$pct% downloading" else "Downloading…")
@@ -137,59 +207,25 @@ class DownloadWorker(
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .build()
+        val nid = if (historyId >= 0) DownloadNotifications.idFor(historyId) else NOTIF_FALLBACK
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            ForegroundInfo(NOTIF_ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+            ForegroundInfo(nid, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
         } else {
-            ForegroundInfo(NOTIF_ID, n)
+            ForegroundInfo(nid, n)
         }
     }
 
-    private fun notify(title: String, text: String, pct: Int, ongoing: Boolean) {
-        val mgr = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val n = NotificationCompat.Builder(context, channel())
-            .setSmallIcon(
-                if (ongoing) android.R.drawable.stat_sys_download
-                else android.R.drawable.stat_sys_download_done
-            )
-            .setContentTitle("Fetchly • $title")
-            .setContentText(text)
-            .setOngoing(ongoing)
-            .setOnlyAlertOnce(ongoing)
-            .apply { if (ongoing && pct >= 0) setProgress(100, pct, false) }
-            .build()
-        mgr.notify(NOTIF_ID, n)
-    }
-
-    private fun failHistory(id: Long) {
-        if (id >= 0) AppGraph.history.updateStatusSync(id, DownloadStatus.FAILED, null)
-    }
-
-    private fun completeHistory(id: Long, uri: String) {
-        if (id >= 0) AppGraph.history.updateStatusSync(id, DownloadStatus.COMPLETED, uri)
-    }
-
-    private fun formatMB(bytes: Long): String = "%.1f MB".format(bytes / 1024.0 / 1024.0)
-
     companion object {
-        const val NOTIF_ID = 2001
+        const val NOTIF_FALLBACK = 2001
         const val KEY_URL = "url"
         const val KEY_TITLE = "title"
         const val KEY_QUALITY = "quality"
         const val KEY_CONTAINER = "container"
         const val KEY_TYPE = "type"
         const val KEY_HISTORY_ID = "history_id"
-    }
-}
-
-// Tiny bridge so the Worker can update Room without Hilt.
-fun com.fetchly.app.domain.repository.HistoryRepository.updateStatusSync(
-    id: Long,
-    status: DownloadStatus,
-    uri: String?,
-) {
-    kotlinx.coroutines.runBlocking {
-        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-            updateStatus(id, status, uri)
-        }
+        const val KEY_HID = "hid"
+        const val KEY_DONE = "done"
+        const val KEY_TOTAL = "total"
+        const val KEY_SPEED = "speed"
     }
 }
