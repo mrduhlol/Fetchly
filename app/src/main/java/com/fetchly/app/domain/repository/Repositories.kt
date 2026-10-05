@@ -18,6 +18,9 @@ interface HistoryRepository {
     fun observe(): Flow<List<HistoryEntry>>
     suspend fun add(entry: HistoryEntry): Long
     suspend fun updateStatus(id: Long, status: DownloadStatus, localUri: String?)
+    suspend fun updateWorkRequestId(id: Long, uuid: String?)
+    suspend fun findCompleted(sourceUrl: String, formatId: String): HistoryEntry?
+    suspend fun getById(id: Long): HistoryEntry?
     suspend fun delete(entry: HistoryEntry)
     suspend fun clear()
 }
