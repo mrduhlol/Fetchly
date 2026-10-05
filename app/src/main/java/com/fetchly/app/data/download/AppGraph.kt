@@ -6,7 +6,10 @@ import android.os.Handler
 import android.os.Looper
 import androidx.lifecycle.Observer
 import androidx.room.Room
+import androidx.work.BackoffPolicy
+import androidx.work.Constraints
 import androidx.work.Data
+import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
@@ -190,6 +193,14 @@ object AppGraph {
     ) {
         val req = OneTimeWorkRequestBuilder<DownloadWorker>()
             .addTag(TAG_DOWNLOADS)
+            // Wait for connectivity instead of burning retries offline,
+            // and back off exponentially between attempts.
+            .setConstraints(
+                Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .build()
+            )
+            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, java.util.concurrent.TimeUnit.SECONDS)
             .setInputData(
                 Data.Builder()
                     .putString(DownloadWorker.KEY_URL, downloadUrl)
