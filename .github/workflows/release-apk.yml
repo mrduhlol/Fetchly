@@ -32,9 +32,9 @@ jobs:
         run: gradle :app:assembleDebug
 
       - name: Rename APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk "fetchly v1.0.0.apk"
+        run: cp app/build/outputs/apk/debug/app-debug.apk "fetchly v.1.apk"
 
       - name: Attach to release
         uses: softprops/action-gh-release@v2
         with:
-          files: fetchly v1.0.0.apk
+          files: fetchly v.1.apk
