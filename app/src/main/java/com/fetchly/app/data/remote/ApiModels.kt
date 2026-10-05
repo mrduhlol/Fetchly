@@ -27,4 +27,9 @@ data class FormatDto(
     val size: Long? = null,
     @SerialName("downloadUrl") val downloadUrl: String = "",
     @SerialName("isAudioOnly") val isAudioOnly: Boolean = false,
+    // Optional metadata — only present when the source genuinely provides it.
+    @SerialName("bitrateKbps") val bitrateKbps: Int? = null,
+    val width: Int? = null,
+    val height: Int? = null,
+    @SerialName("hasAudio") val hasAudio: Boolean? = null,
 )
