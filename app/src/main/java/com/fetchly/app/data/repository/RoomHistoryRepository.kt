@@ -46,6 +46,7 @@ class RoomHistoryRepository(private val dao: HistoryDao) : HistoryRepository {
         status = runCatching { DownloadStatus.valueOf(status) }.getOrDefault(DownloadStatus.FAILED),
         createdAt = createdAt,
         formatId = formatId, downloadUrl = downloadUrl, workRequestId = workRequestId,
+        sizeBytes = sizeBytes,
     )
 
     private fun HistoryEntry.toEntity() = HistoryEntity(
@@ -55,5 +56,6 @@ class RoomHistoryRepository(private val dao: HistoryDao) : HistoryRepository {
         localUri = localUri, thumbnailUrl = thumbnailUrl,
         status = status.name, createdAt = createdAt,
         formatId = formatId, downloadUrl = downloadUrl, workRequestId = workRequestId,
+        sizeBytes = sizeBytes,
     )
 }
