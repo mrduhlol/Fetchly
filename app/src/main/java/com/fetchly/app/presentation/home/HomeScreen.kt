@@ -3,7 +3,6 @@ package com.fetchly.app.presentation.home
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -12,7 +11,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -133,6 +131,4 @@ fun HomeScreen(
     }
 }
 
-// Keep an icon import used.
-private val UnusedHistoryIcon = Icons.Default.History
-private val UnusedShareIntent = Intent.ACTION_SEND
+// Share-intent delivery: MainActivity extracts ACTION_SEND text into `sharedUrl`.
