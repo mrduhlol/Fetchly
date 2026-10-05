@@ -1,48 +1,41 @@
-# Fetchly — Paste. Choose. Fetch.
+<div align="center">
 
-Native Android app (Kotlin + Jetpack Compose + Material 3) for inspecting publicly
-accessible media URLs, choosing an available quality/format, and saving media to
-the device where downloading is permitted.
+<img src="app/src/main/res/drawable-nodpi/fetchly_logo.png" width="120" alt="Fetchly logo" />
 
-## Scope
+# Fetchly
 
-- Only supports content that is publicly accessible and permitted to be downloaded.
-- No private-account downloading, no login/session scraping, no DRM bypass,
-  no paywall bypass, no circumvention of platform protections.
-- If a source cannot be supported through a permitted mechanism, the app reports:
-  "This source isn't currently supported."
+**Paste. Choose. Fetch.**
 
-## Project layout
+Paste a public media link, pick a quality, save it to your device.
 
-Standard single-module native Android app (`app/`) using clean architecture:
+[![Download APK](https://img.shields.io/badge/Download-APK-3B82F6?style=for-the-badge&logo=android)](https://github.com/mrduhlol/Fetchly/releases/latest/download/fetchly%20v1.0.0.apk)
 
-- `presentation/` (Compose UI + ViewModels)
-- `domain/` (models, repositories, use cases)
-- `data/` (remote API, local Room, repositories, download)
+</div>
 
-## Backend
+## What it does
 
-The app talks to a Fetchly API for platform analysis:
+1. Paste a media URL
+2. Fetchly detects the platform and shows available qualities
+3. Download straight to `Movies/Fetchly/`, `Music/Fetchly/` or `Pictures/Fetchly/`
 
-- `POST /api/analyze` with `{ "url": "..." }`
-- Configure the base URL via `BuildConfig.FETCHLY_API_BASE_URL`
-  or the in-app Settings screen (debug override).
+Only publicly accessible media where downloading is permitted. Anything else gets: *"This source isn't currently supported."*
 
-See `docs/API.md` and `backend/` for the API contract and a reference adapter server.
+## Build it yourself
 
-## Build
-
-Requirements: JDK 17, Android SDK (API 29+ target, compileSdk 34).
+Needs JDK 17 + Android SDK (compileSdk 34).
 
 ```bash
-./gradlew assembleDebug
-./gradlew assembleRelease
-./gradlew bundleRelease
+./gradlew assembleDebug      # APK
+./gradlew bundleRelease      # Play Store AAB
+./gradlew testDebugUnitTest  # tests
 ```
 
-Downloads are stored via MediaStore (`Movies/Fetchly/`, `Music/Fetchly/`,
-`Pictures/Fetchly/`) on Android 10+.
+Set the API URL via `FETCHLY_API_BASE_URL` env var, `local.defaults.properties` (see `.example` file), or in-app Settings.
 
-## Status
+## Docs
 
-V1 in progress. See `docs/` for permissions, storage, security, and release notes.
+- [`docs/API.md`](docs/API.md) — backend contract + reference server
+- [`docs/PERMISSIONS.md`](docs/PERMISSIONS.md) — permissions used and why
+- [`docs/STORAGE.md`](docs/STORAGE.md) — where downloads are saved
+- [`docs/SECURITY.md`](docs/SECURITY.md) — security model
+- [`docs/RELEASE.md`](docs/RELEASE.md) — releases, env vars, limitations
