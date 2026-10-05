@@ -169,7 +169,8 @@ object AppGraph {
 
     /** Live WorkManager progress keyed by work request UUID string. */
     fun observeProgress(): Flow<Map<String, DlProgress>> = callbackFlow {
-        val wm = WorkManager.getInstance(appContext)        val live = wm.getWorkInfosByTagLiveData(TAG_DOWNLOADS)
+        val wm = WorkManager.getInstance(appContext)
+        val live = wm.getWorkInfosByTagLiveData(TAG_DOWNLOADS)
         val obs = Observer<List<WorkInfo>> { infos: List<WorkInfo> ->
             val map = mutableMapOf<String, DlProgress>()
             for (wi in infos) {
