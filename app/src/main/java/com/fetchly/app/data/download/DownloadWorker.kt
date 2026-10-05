@@ -11,6 +11,7 @@ import androidx.work.WorkerParameters
 import com.fetchly.app.domain.model.DownloadStatus
 import com.fetchly.app.domain.model.MediaType
 import com.fetchly.app.domain.security.UrlSecurity
+import com.fetchly.app.domain.util.MediaSniffer
 import com.fetchly.app.domain.util.MimeTypes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -122,12 +123,20 @@ class DownloadWorker(
                     }
                     return Result.failure()
                 }
-                // Verify before claiming completion.
+                // Verify before claiming completion: real size AND real media bytes.
+                // HTML/JSON error pages must never be saved as media.
+                val header = ByteArray(16)
+                val headerLen = withContext(Dispatchers.IO) {
+                    runCatching {
+                        tmp.inputStream().use { it.read(header) }
+                    }.getOrDefault(-1)
+                }
                 if (!tmp.exists() || tmp.length() <= 0 ||
-                    (total > 0 && tmp.length() < total)
+                    (total > 0 && tmp.length() < total) ||
+                    headerLen < 4 || !MediaSniffer.looksLikeMedia(header.copyOf(maxOf(headerLen, 4)))
                 ) {
                     tmp.delete()
-                    fail(historyId, title, "The download was interrupted.")
+                    fail(historyId, title, "The server returned an error instead of media.")
                     return if (runAttemptCount < 2) Result.retry() else Result.failure()
                 }
                 val entry = MediaStoreSaver.createEntry(context, mediaType, container, fileName)
