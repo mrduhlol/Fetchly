@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.fetchly.app.presentation.about.AboutScreen
+import com.fetchly.app.presentation.debug.DebugScreen
 import com.fetchly.app.presentation.downloads.DownloadsScreen
 import com.fetchly.app.presentation.home.HomeScreen
 import com.fetchly.app.presentation.home.HomeViewModel
@@ -35,7 +36,10 @@ fun FetchlyNav(sharedUrl: String?) {
             )
         }
         composable("downloads") {
-            DownloadsScreen(onBack = { nav.popBackStack() })
+            DownloadsScreen(
+                onBack = { nav.popBackStack() },
+                onHome = { nav.navigate("home") { popUpTo("home") { inclusive = false } } },
+            )
         }
         composable("settings") {
             SettingsScreen(
@@ -44,7 +48,13 @@ fun FetchlyNav(sharedUrl: String?) {
             )
         }
         composable("about") {
-            AboutScreen(onBack = { nav.popBackStack() })
+            AboutScreen(
+                onBack = { nav.popBackStack() },
+                onDebug = { nav.navigate("debug") },
+            )
+        }
+        composable("debug") {
+            DebugScreen(onBack = { nav.popBackStack() }, vm = homeVm)
         }
     }
 }
