@@ -1,7 +1,5 @@
 package com.fetchly.app.domain.security
 
-import android.util.Patterns
-
 /** Treat every pasted URL as untrusted. Validation + sanitization live here. */
 object UrlSecurity {
 
@@ -12,10 +10,14 @@ object UrlSecurity {
         val url = raw.trim()
         if (url.isEmpty()) return Result.failure(UrlError.Empty)
         if (url.length > MAX_URL_LENGTH) return Result.failure(UrlError.TooLong)
+        if (url.contains(' ')) return Result.failure(UrlError.Invalid)
         val withScheme = if (url.contains("://")) url else "https://$url"
-        if (!Patterns.WEB_URL.matcher(withScheme).matches()) return Result.failure(UrlError.Invalid)
-        val scheme = withScheme.substringBefore("://").lowercase()
+        val uri = runCatching { java.net.URI(withScheme) }.getOrNull()
+            ?: return Result.failure(UrlError.Invalid)
+        val scheme = uri.scheme?.lowercase() ?: return Result.failure(UrlError.Invalid)
         if (scheme != "http" && scheme != "https") return Result.failure(UrlError.BadScheme)
+        val host = uri.host ?: return Result.failure(UrlError.Invalid)
+        if (!host.contains('.')) return Result.failure(UrlError.Invalid)
         return Result.success(withScheme)
     }
 
