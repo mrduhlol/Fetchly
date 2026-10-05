@@ -39,6 +39,13 @@ sealed interface EnqueueOutcome {
     data class NoStorage(val needBytes: Long, val freeBytes: Long) : EnqueueOutcome
 }
 
+/** Outcome of retrying a failed download. */
+sealed interface RetryOutcome {
+    data object Started : RetryOutcome
+    data class NoStorage(val needBytes: Long, val freeBytes: Long) : RetryOutcome
+    data object Unusable : RetryOutcome
+}
+
 /** Manual DI graph + download queue control — no Hilt, keeps V1 lean. */
 object AppGraph {
 
@@ -102,6 +109,7 @@ object AppGraph {
                 status = DownloadStatus.QUEUED,
                 formatId = format.id,
                 downloadUrl = format.downloadUrl,
+                sizeBytes = format.sizeBytes,
             )
         )
         enqueueWork(
@@ -115,10 +123,18 @@ object AppGraph {
         return EnqueueOutcome.Started(entryId)
     }
 
-    /** Retry a failed entry: reuses the stored request, no duplicate entry. */
-    suspend fun retry(entryId: Long): Boolean {
-        val entry = history.getById(entryId) ?: return false
-        if (entry.downloadUrl.isBlank()) return false
+    /**
+     * Retry a failed entry: reuses the stored request, no duplicate entry.
+     * Re-checks storage first so a retry can't start a doomed download.
+     */
+    suspend fun retry(entryId: Long): RetryOutcome {
+        val entry = history.getById(entryId) ?: return RetryOutcome.Unusable
+        if (entry.downloadUrl.isBlank()) return RetryOutcome.Unusable
+        val need = entry.sizeBytes
+        if (need != null && need > 0) {
+            val free = freeStorageBytes()
+            if (free >= 0 && free < need) return RetryOutcome.NoStorage(need, free)
+        }
         history.updateStatus(entryId, DownloadStatus.QUEUED, entry.localUri)
         enqueueWork(
             entryId = entryId,
@@ -128,7 +144,7 @@ object AppGraph {
             mediaType = entry.mediaType.name,
             downloadUrl = entry.downloadUrl,
         )
-        return true
+        return RetryOutcome.Started
     }
 
     fun cancel(entryId: Long) {

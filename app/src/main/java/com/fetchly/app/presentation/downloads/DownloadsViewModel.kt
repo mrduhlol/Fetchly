@@ -4,10 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fetchly.app.data.download.AppGraph
 import com.fetchly.app.data.download.DlProgress
+import com.fetchly.app.data.download.RetryOutcome
 import com.fetchly.app.domain.model.DownloadStatus
 import com.fetchly.app.domain.model.HistoryEntry
+import com.fetchly.app.domain.util.MimeTypes
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -32,7 +36,21 @@ class DownloadsViewModel : ViewModel() {
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     fun retry(entry: HistoryEntry) = viewModelScope.launch {
-        AppGraph.retry(entry.id)
+        when (val out = AppGraph.retry(entry.id)) {
+            is RetryOutcome.Started -> Unit
+            is RetryOutcome.NoStorage -> _notice.value =
+                "Not enough storage: need ${MimeTypes.displaySize(out.needBytes)}, " +
+                    "have ${MimeTypes.displaySize(out.freeBytes)}."
+            is RetryOutcome.Unusable -> _notice.value =
+                "This download can't be retried. Paste the link again."
+        }
+    }
+
+    private val _notice = MutableStateFlow<String?>(null)
+    val notice: StateFlow<String?> = _notice.asStateFlow()
+
+    fun consumeNotice() {
+        _notice.value = null
     }
 
     fun cancel(entry: HistoryEntry) {

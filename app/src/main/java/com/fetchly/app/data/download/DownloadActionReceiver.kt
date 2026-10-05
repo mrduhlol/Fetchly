@@ -21,7 +21,23 @@ class DownloadActionReceiver : BroadcastReceiver() {
             try {
                 when (intent.action) {
                     ACTION_CANCEL -> AppGraph.cancel(historyId)
-                    ACTION_RETRY -> AppGraph.retry(historyId)
+                    ACTION_RETRY -> when (val out = AppGraph.retry(historyId)) {
+                        is RetryOutcome.Started -> Unit
+                        is RetryOutcome.NoStorage -> {
+                            val title = AppGraph.history.getById(historyId)?.title ?: "Download"
+                            DownloadNotifications.showFailed(
+                                context, historyId, title,
+                                "Not enough storage to retry.",
+                            )
+                        }
+                        is RetryOutcome.Unusable -> {
+                            val title = AppGraph.history.getById(historyId)?.title ?: "Download"
+                            DownloadNotifications.showFailed(
+                                context, historyId, title,
+                                "Can't be retried. Paste the link again.",
+                            )
+                        }
+                    }
                 }
             } finally {
                 pending.finish()
