@@ -54,4 +54,7 @@ data class HistoryEntry(
     val thumbnailUrl: String?,
     val status: DownloadStatus,
     val createdAt: Long = System.currentTimeMillis(),
+    val formatId: String = "",
+    val downloadUrl: String = "",
+    val workRequestId: String? = null,
 )
