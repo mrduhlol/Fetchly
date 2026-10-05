@@ -54,6 +54,10 @@ class ApiMediaRepository(
                                 sizeBytes = it.size,
                                 downloadUrl = it.downloadUrl,
                                 isAudioOnly = it.isAudioOnly,
+                                bitrateKbps = it.bitrateKbps,
+                                width = it.width,
+                                height = it.height,
+                                hasAudio = it.hasAudio,
                             )
                         },
                     )
