@@ -1,6 +1,18 @@
 # Changelog
 
-## Fetchly 1.2
+## Fetchly 1.3
+
+### Improved
+
+- Richer media preview: duration badge, type-specific facts (dimensions,
+  bitrate, audio presence) shown only when the source provides them
+- Format rows surface bitrate and dimensions when known
+- Staged analyzing messages without fake progress percentages
+- Normalized file extensions (e.g. `jpeg` saved as `.jpg`)
+
+### Fixed
+
+- Extension handling for containers whose suffix differs from the format name
 
 ### Improved
 
