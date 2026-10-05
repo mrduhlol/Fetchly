@@ -31,6 +31,9 @@ jobs:
       - name: Build debug APK
         run: gradle :app:assembleDebug
 
+      - name: Run unit tests
+        run: gradle :app:testDebugUnitTest
+
       - name: Rename APK
         run: |
           VER="${GITHUB_REF_NAME#v}"
