@@ -149,6 +149,13 @@ class HomeViewModel : ViewModel() {
         _ui.value = _ui.value.copy(storageError = null)
     }
 
+    /** Consume the one-shot download-started event after navigating. */
+    fun consumeCompleted() {
+        if (_ui.value.state == FetchState.COMPLETED) {
+            _ui.value = _ui.value.copy(state = FetchState.READY)
+        }
+    }
+
     fun resetToIdle() {
         _ui.value = _ui.value.copy(state = FetchState.IDLE, error = null)
     }

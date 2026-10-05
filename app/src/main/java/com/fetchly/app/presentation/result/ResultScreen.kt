@@ -1,5 +1,8 @@
 package com.fetchly.app.presentation.result
 
+import android.content.Intent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -12,11 +15,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -25,9 +30,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.fetchly.app.domain.util.MimeTypes
 import com.fetchly.app.presentation.components.FetchButton
 import com.fetchly.app.presentation.components.FormatSelector
 import com.fetchly.app.presentation.home.HomeViewModel
@@ -41,6 +49,7 @@ fun ResultScreen(
 ) {
     val ui by vm.ui.collectAsState()
     val info = ui.info
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -69,17 +78,23 @@ fun ResultScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp),
         ) {
-            AsyncImage(
-                model = info.thumbnailUrl,
-                contentDescription = "Thumbnail for ${info.title}",
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(16f / 9f)
-                    .clip(RoundedCornerShape(16.dp)),
-                contentScale = ContentScale.Crop,
-            )
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+            ) {
+                AsyncImage(
+                    model = info.thumbnailUrl,
+                    contentDescription = "Thumbnail for ${info.title}",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                )
+            }
             Spacer(Modifier.height(12.dp))
-            Text(info.platform.label, style = MaterialTheme.typography.labelLarge)
+            SuggestionChip(onClick = {}, label = { Text(info.platform.label) })
+            Spacer(Modifier.height(4.dp))
             Text(info.title, style = MaterialTheme.typography.titleLarge)
             info.author?.let { Text("@$it", color = MaterialTheme.colorScheme.onSurfaceVariant) }
             Spacer(Modifier.height(4.dp))
@@ -87,6 +102,9 @@ fun ResultScreen(
                 buildString {
                     append(info.mediaType.name)
                     info.durationSecs?.let { append(" • ${it / 60}:${"%02d".format(it % 60)}") }
+                    vm.selectedFormat()?.sizeBytes?.let {
+                        append(" • about ${MimeTypes.displaySize(it)}")
+                    }
                 },
                 style = MaterialTheme.typography.bodySmall,
             )
@@ -111,9 +129,58 @@ fun ResultScreen(
             Spacer(Modifier.height(20.dp))
             FetchButton(
                 label = "DOWNLOAD",
-                onClick = { vm.downloadSelected(); onDownloadStarted() },
+                onClick = vm::downloadSelected,
                 enabled = vm.selectedFormat() != null,
             )
         }
+    }
+
+    androidx.compose.runtime.LaunchedEffect(ui.state) {
+        if (ui.state == com.fetchly.app.domain.model.FetchState.COMPLETED) {
+            vm.consumeCompleted()
+            onDownloadStarted()
+        }
+    }
+
+    ui.duplicateOf?.let { existing ->
+        AlertDialog(
+            onDismissRequest = vm::dismissDuplicate,
+            title = { Text("Already downloaded") },
+            text = {
+                Text("This media in ${existing.quality} ${existing.container.uppercase()} is already on your device.")
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    existing.localUri?.let { uri ->
+                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(
+                                uri.toUri(),
+                                MimeTypes.resolve(context, uri, existing.container),
+                            )
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+                        runCatching { context.startActivity(Intent.createChooser(intent, "Open with")) }
+                    }
+                    vm.dismissDuplicate()
+                }) { Text("Open existing") }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    vm.confirmDuplicateDownload()
+                    onDownloadStarted()
+                }) { Text("Download again") }
+            },
+        )
+    }
+
+    ui.storageError?.let { msg ->
+        AlertDialog(
+            onDismissRequest = vm::dismissStorageError,
+            title = { Text("Not enough storage") },
+            text = { Text(msg) },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = vm::dismissStorageError) { Text("OK") }
+            },
+        )
     }
 }
