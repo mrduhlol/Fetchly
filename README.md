@@ -6,11 +6,11 @@
 
 **Paste. Choose. Fetch.**
 
-![version](https://img.shields.io/github/v/release/mrduhlol/Fetchly) — Latest: **v.1**
+![version](https://img.shields.io/github/v/release/mrduhlol/Fetchly) — Latest: **v.2**
 
 Paste a public media link, pick a quality, save it to your device.
 
-[![Download APK](https://img.shields.io/badge/Download-APK-3B82F6?style=for-the-badge&logo=android)](https://github.com/mrduhlol/Fetchly/releases/latest/download/fetchly_v.1.apk)
+[![Download APK](https://img.shields.io/badge/Download-APK-3B82F6?style=for-the-badge&logo=android)](https://github.com/mrduhlol/Fetchly/releases/latest/download/fetchly_v.2.apk)
 
 </div>
 
