@@ -25,7 +25,18 @@ data class MediaFormat(
     val sizeBytes: Long?,
     val downloadUrl: String,
     val isAudioOnly: Boolean = false,
-)
+    // Optional — only set when the backend genuinely provides the value.
+    val bitrateKbps: Int? = null,
+    val width: Int? = null,
+    val height: Int? = null,
+    val hasAudio: Boolean? = null,
+) {
+    /** Human bitrate like "192 kbps", or null when unknown (never invented). */
+    val bitrateLabel: String? get() = bitrateKbps?.let { "$it kbps" }
+    /** Human dimensions like "2048 × 1365", or null when unknown. */
+    val dimensionsLabel: String? get() =
+        if (width != null && height != null && width > 0 && height > 0) "$width × $height" else null
+}
 
 data class MediaInfo(
     val sourceUrl: String,
