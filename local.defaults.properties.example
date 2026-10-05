@@ -1,0 +1,2 @@
+# Copy to local.defaults.properties and fill in. Never commit the real file.
+FETCHLY_API_BASE_URL=https://api.fetchly.app/
