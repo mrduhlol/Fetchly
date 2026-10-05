@@ -34,7 +34,7 @@ jobs:
       - name: Rename APK
         run: |
           VER="${GITHUB_REF_NAME#v}"
-          cp app/build/outputs/apk/debug/app-debug.apk "fetchly v${VER}.apk"
+          cp app/build/outputs/apk/debug/app-debug.apk "fetchly_v${VER}.apk"
 
       - name: Publish to release
         env:
@@ -44,4 +44,4 @@ jobs:
           if ! gh release view "${GITHUB_REF_NAME}" > /dev/null 2>&1; then
             gh release create "${GITHUB_REF_NAME}" --title "${GITHUB_REF_NAME}" --notes "Fetchly ${GITHUB_REF_NAME}" --latest
           fi
-          gh release upload "${GITHUB_REF_NAME}" "fetchly v${VER}.apk" --clobber
+          gh release upload "${GITHUB_REF_NAME}" "fetchly_v${VER}.apk" --clobber
