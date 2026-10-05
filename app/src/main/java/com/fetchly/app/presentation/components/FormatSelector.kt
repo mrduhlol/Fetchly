@@ -25,7 +25,10 @@ fun FormatSelector(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier) {
+        // Backend order is best-first; only ever show what was returned.
+        val bestId = formats.firstOrNull()?.id
         formats.forEach { f ->
+            val isBest = f.id == bestId && formats.size > 1
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -40,9 +43,16 @@ fun FormatSelector(
                 RadioButton(selected = f.id == selectedId, onClick = { onSelect(f.id) })
                 Spacer(Modifier.width(8.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(f.quality, style = MaterialTheme.typography.bodyLarge)
                     Text(
-                        "${f.container.uppercase()}${f.sizeBytes?.let { " • ${it / 1024 / 1024} MB" } ?: ""}",
+                        f.quality + if (isBest) " • Best available" else "",
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                    Text(
+                        buildString {
+                            append(f.container.uppercase())
+                            f.sizeBytes?.let { append(" • ${it / 1024 / 1024} MB") }
+                            if (f.isAudioOnly) append(" • Audio")
+                        },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
