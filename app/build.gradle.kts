@@ -24,8 +24,8 @@ android {
         applicationId = "com.fetchly.app"
         minSdk = 29
         targetSdk = 34
-        versionCode = 3
-        versionName = "1.3"
+        versionCode = 4
+        versionName = "1.4"
 
         val apiBase = envOrLocal("FETCHLY_API_BASE_URL")
         buildConfigField("String", "FETCHLY_API_BASE_URL", "\"$apiBase\"")
