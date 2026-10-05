@@ -1,5 +1,16 @@
 # Changelog
 
+## Fetchly 1.7
+
+Stabilization release for the V1 line. No new product features.
+
+### Improved
+
+- Removed dead code (unused progress key, unused ViewModel reset)
+- HTTP request logging is now debug-build only
+- Manifest, permission, and lifecycle audit: no issues found
+- Hidden diagnostics screen kept (5-tap unlock, no secrets shown)
+
 ## Fetchly 1.6
 
 ### Improved
