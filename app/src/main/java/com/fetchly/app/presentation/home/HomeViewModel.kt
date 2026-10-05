@@ -155,8 +155,4 @@ class HomeViewModel : ViewModel() {
             _ui.value = _ui.value.copy(state = FetchState.READY)
         }
     }
-
-    fun resetToIdle() {
-        _ui.value = _ui.value.copy(state = FetchState.IDLE, error = null)
-    }
 }

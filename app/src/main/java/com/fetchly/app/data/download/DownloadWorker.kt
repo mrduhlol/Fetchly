@@ -103,7 +103,6 @@ class DownloadWorker(
                                         )
                                         setProgress(
                                             Data.Builder()
-                                                .putLong(KEY_HID, historyId)
                                                 .putLong(KEY_DONE, done)
                                                 .putLong(KEY_TOTAL, total)
                                                 .putDouble(KEY_SPEED, speedBps)
@@ -232,7 +231,6 @@ class DownloadWorker(
         const val KEY_CONTAINER = "container"
         const val KEY_TYPE = "type"
         const val KEY_HISTORY_ID = "history_id"
-        const val KEY_HID = "hid"
         const val KEY_DONE = "done"
         const val KEY_TOTAL = "total"
         const val KEY_SPEED = "speed"
