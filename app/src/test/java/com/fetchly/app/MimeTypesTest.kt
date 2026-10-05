@@ -27,6 +27,14 @@ class MimeTypesTest {
         assertEquals("application/octet-stream", MimeTypes.fromContainer("xyz"))
     }
 
+    @Test fun normalizesExtensions() {
+        assertEquals("jpg", MimeTypes.extensionFor("jpeg"))
+        assertEquals("jpg", MimeTypes.extensionFor("JPG"))
+        assertEquals("mp4", MimeTypes.extensionFor("m4v"))
+        assertEquals("mp4", MimeTypes.extensionFor("mp4"))
+        assertEquals("mp3", MimeTypes.extensionFor("mp3"))
+    }
+
     @Test fun formatsSizes() {
         assertEquals("Unknown size", MimeTypes.displaySize(null))
         assertEquals("512 B", MimeTypes.displaySize(512))
