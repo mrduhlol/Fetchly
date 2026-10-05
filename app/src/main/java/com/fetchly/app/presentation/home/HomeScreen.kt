@@ -36,6 +36,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -182,6 +183,8 @@ fun HomeScreen(
             Spacer(Modifier.height(16.dp))
             if (ui.state == FetchState.ANALYZING) {
                 CircularProgressIndicator()
+                Spacer(Modifier.height(12.dp))
+                AnalyzingMessage()
             } else {
                 FetchButton(label = "FETCH", onClick = vm::fetch, enabled = ui.url.isNotBlank())
             }
@@ -191,6 +194,26 @@ fun HomeScreen(
             }
         }
     }
+}
+
+/**
+ * Staged indeterminate status while analyzing. No percentages — the app
+ * must never show fake progress.
+ */
+@Composable
+private fun AnalyzingMessage() {
+    var stage by remember { mutableIntStateOf(0) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(2500)
+            stage = (stage + 1) % 2
+        }
+    }
+    Text(
+        if (stage == 0) "Analyzing link…" else "Fetching media information…",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 private fun pasteFromClipboard(context: Context, onUrl: (String) -> Unit) {
