@@ -21,6 +21,16 @@ class RoomHistoryRepository(private val dao: HistoryDao) : HistoryRepository {
         dao.updateStatus(id, status.name, localUri)
     }
 
+    override suspend fun updateWorkRequestId(id: Long, uuid: String?) {
+        dao.updateWorkRequestId(id, uuid)
+    }
+
+    override suspend fun findCompleted(sourceUrl: String, formatId: String): HistoryEntry? =
+        dao.findCompleted(sourceUrl, formatId)?.toDomain()
+
+    override suspend fun getById(id: Long): HistoryEntry? =
+        dao.getById(id)?.toDomain()
+
     override suspend fun delete(entry: HistoryEntry) {
         dao.delete(entry.toEntity())
     }
@@ -35,6 +45,7 @@ class RoomHistoryRepository(private val dao: HistoryDao) : HistoryRepository {
         localUri = localUri, thumbnailUrl = thumbnailUrl,
         status = runCatching { DownloadStatus.valueOf(status) }.getOrDefault(DownloadStatus.FAILED),
         createdAt = createdAt,
+        formatId = formatId, downloadUrl = downloadUrl, workRequestId = workRequestId,
     )
 
     private fun HistoryEntry.toEntity() = HistoryEntity(
@@ -43,5 +54,6 @@ class RoomHistoryRepository(private val dao: HistoryDao) : HistoryRepository {
         quality = quality, container = container, fileName = fileName,
         localUri = localUri, thumbnailUrl = thumbnailUrl,
         status = status.name, createdAt = createdAt,
+        formatId = formatId, downloadUrl = downloadUrl, workRequestId = workRequestId,
     )
 }
