@@ -32,6 +32,14 @@ object MimeTypes {
         return fromContainer(container)
     }
 
+    /** File extension matching the actual container (never trust raw suffixes). */
+    fun extensionFor(container: String): String = when (container.lowercase()) {
+        "jpeg" -> "jpg"
+        "m4v" -> "mp4"
+        "oga" -> "ogg"
+        else -> container.lowercase().take(5).ifBlank { "mp4" }
+    }
+
     fun displaySize(bytes: Long?): String {
         if (bytes == null || bytes < 0) return "Unknown size"
         if (bytes < 1024) return "$bytes B"

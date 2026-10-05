@@ -7,13 +7,14 @@ import android.os.Environment
 import android.provider.MediaStore
 import com.fetchly.app.domain.model.MediaType
 import com.fetchly.app.domain.security.UrlSecurity
+import com.fetchly.app.domain.util.MimeTypes
 import java.io.File
 
 /** MediaStore-first storage on Android 10+. No broad storage permissions needed. */
 object MediaStoreSaver {
 
     fun buildFileName(title: String, quality: String, container: String): String {
-        val ext = container.lowercase().take(5).ifBlank { "mp4" }
+        val ext = MimeTypes.extensionFor(container)
         val base = UrlSecurity.sanitizeFileName("${title}_${quality}")
         return "$base.$ext"
     }
