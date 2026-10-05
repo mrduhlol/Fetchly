@@ -24,10 +24,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -59,8 +62,17 @@ fun DownloadsScreen(
     vm: DownloadsViewModel = viewModel(),
 ) {
     val rows by vm.rows.collectAsState()
+    val notice by vm.notice.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val snacks = remember { SnackbarHostState() }
+
+    LaunchedEffect(notice) {
+        notice?.let {
+            snacks.showSnackbar(it)
+            vm.consumeNotice()
+        }
+    }
 
     var selected by remember { mutableStateOf<DownloadRowState?>(null) }
     var pendingDelete by remember { mutableStateOf<HistoryEntry?>(null) }
@@ -94,6 +106,7 @@ fun DownloadsScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snacks) },
         topBar = {
             TopAppBar(
                 title = { Text("Downloads") },
