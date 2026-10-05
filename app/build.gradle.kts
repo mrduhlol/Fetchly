@@ -25,7 +25,7 @@ android {
         minSdk = 29
         targetSdk = 34
         versionCode = 2
-        versionName = "1.2.0"
+        versionName = "1.2"
 
         val apiBase = envOrLocal("FETCHLY_API_BASE_URL")
         buildConfigField("String", "FETCHLY_API_BASE_URL", "\"$apiBase\"")
