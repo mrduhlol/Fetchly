@@ -1,6 +1,7 @@
 package com.fetchly.app.presentation.about
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,6 +19,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,7 +33,8 @@ import com.fetchly.app.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AboutScreen(onBack: () -> Unit) {
+fun AboutScreen(onBack: () -> Unit, onDebug: () -> Unit) {
+    var taps by remember { mutableIntStateOf(0) }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -56,7 +62,16 @@ fun AboutScreen(onBack: () -> Unit) {
             Text("Fetchly", style = MaterialTheme.typography.displaySmall)
             Text("Paste. Choose. Fetch.", style = MaterialTheme.typography.bodyLarge)
             Spacer(Modifier.height(16.dp))
-            Text("Version ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
+            Text(
+                "Version ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                modifier = Modifier.clickable {
+                    taps++
+                    if (taps >= 5) {
+                        taps = 0
+                        onDebug()
+                    }
+                },
+            )
             Spacer(Modifier.height(8.dp))
             Text(
                 "Fetchly only supports publicly accessible media where downloading is " +
