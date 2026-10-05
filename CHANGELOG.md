@@ -1,5 +1,13 @@
 # Changelog
 
+## Fetchly 1.4
+
+### Improved
+
+- Downloads wait for connectivity and back off exponentially between retries
+- Retry re-checks storage first and reports honest outcomes
+- Retry problems surface in the UI and in notifications
+
 ## Fetchly 1.3
 
 ### Improved
