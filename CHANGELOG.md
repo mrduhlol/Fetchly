@@ -1,5 +1,15 @@
 # Changelog
 
+## Fetchly 1.5
+
+### Improved
+
+- Downloads are verified as real media via magic bytes — HTML/JSON error
+  pages are rejected instead of saved
+- Details screen falls back to the recorded size when MediaStore is silent
+- Deep Android integration pass: share re-delivery, content URIs with real
+  MIME types, MediaStore locations, no broad storage permissions
+
 ## Fetchly 1.4
 
 ### Improved
