@@ -26,7 +26,9 @@ class DownloadsViewModel : ViewModel() {
 
     val rows: StateFlow<List<DownloadRowState>> =
         combine(AppGraph.history.observe(), AppGraph.observeProgress()) { history, progress ->
-            history.map { DownloadRowState(it, progress[it.id]) }
+            history.map { entry ->
+                DownloadRowState(entry, entry.workRequestId?.let { progress[it] })
+            }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     fun retry(entry: HistoryEntry) = viewModelScope.launch {
