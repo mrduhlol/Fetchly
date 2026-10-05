@@ -46,5 +46,14 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <receiver
+            android:name=".data.download.DownloadActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.fetchly.app.action.CANCEL_DOWNLOAD" />
+                <action android:name="com.fetchly.app.action.RETRY_DOWNLOAD" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>
