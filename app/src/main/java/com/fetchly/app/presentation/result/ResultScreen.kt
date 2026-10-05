@@ -27,6 +27,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
@@ -91,6 +92,19 @@ fun ResultScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
                 )
+                info.durationSecs?.let { secs ->
+                    Text(
+                        "%d:%02d".format(secs / 60, secs % 60),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(8.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(MaterialTheme.colorScheme.primary)
+                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                    )
+                }
             }
             Spacer(Modifier.height(12.dp))
             SuggestionChip(onClick = {}, label = { Text(info.platform.label) })
@@ -108,6 +122,21 @@ fun ResultScreen(
                 },
                 style = MaterialTheme.typography.bodySmall,
             )
+            // Type-specific facts, only when the backend provided them.
+            val selected = vm.selectedFormat()
+            val extras = buildList {
+                selected?.dimensionsLabel?.let { add(it) }
+                selected?.bitrateLabel?.let { add(it) }
+                selected?.hasAudio?.let { add(if (it) "Includes audio" else "No audio track") }
+            }
+            if (extras.isNotEmpty()) {
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    extras.joinToString(" • "),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             if (info.videoFormats.isNotEmpty()) {
                 Spacer(Modifier.height(16.dp))
                 Text("VIDEO", style = MaterialTheme.typography.labelMedium)
