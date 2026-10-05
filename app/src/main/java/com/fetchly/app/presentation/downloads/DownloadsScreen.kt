@@ -42,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
@@ -149,7 +150,8 @@ fun DownloadsScreen(
                         Text(
                             label,
                             style = MaterialTheme.typography.labelLarge,
-                            modifier = Modifier.padding(start = 4.dp, top = 12.dp, bottom = 4.dp),
+                            modifier = Modifier.padding(start = 4.dp, top = 12.dp, bottom = 4.dp)
+                                .semantics { heading() },
                         )
                     }
                     items(bucketRows, key = { it.entry.id }) { row ->
