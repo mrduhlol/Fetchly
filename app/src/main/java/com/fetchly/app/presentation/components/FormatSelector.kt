@@ -51,6 +51,8 @@ fun FormatSelector(
                         buildString {
                             append(f.container.uppercase())
                             f.sizeBytes?.let { append(" • ${it / 1024 / 1024} MB") }
+                            f.bitrateLabel?.let { append(" • $it") }
+                            f.dimensionsLabel?.let { append(" • $it") }
                             if (f.isAudioOnly) append(" • Audio")
                         },
                         style = MaterialTheme.typography.bodySmall,
