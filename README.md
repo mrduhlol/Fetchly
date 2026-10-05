@@ -10,7 +10,7 @@
 
 Paste a public media link, pick a quality, save it to your device.
 
-[![Download APK](https://img.shields.io/badge/Download-APK-3B82F6?style=for-the-badge&logo=android)](https://github.com/mrduhlol/Fetchly/releases/latest/download/fetchly%20v.1.apk)
+[![Download APK](https://img.shields.io/badge/Download-APK-3B82F6?style=for-the-badge&logo=android)](https://github.com/mrduhlol/Fetchly/releases/latest/download/fetchly_v.1.apk)
 
 </div>
 
