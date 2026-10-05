@@ -151,19 +151,20 @@ object AppGraph {
     fun observeProgress(): Flow<Map<Long, DlProgress>> = callbackFlow {
         val wm = WorkManager.getInstance(appContext)
         val live = wm.getWorkInfosByTagLiveData(TAG_DOWNLOADS)
-        val obs = Observer<List<WorkInfo>> { infos ->
-            val map = infos
-                .filter { it.state == WorkInfo.State.RUNNING || it.state == WorkInfo.State.ENQUEUED }
-                .mapNotNull { wi ->
-                    val hid = wi.progress.getLong(DownloadWorker.KEY_HID, -1L).takeIf { it >= 0 }
-                        ?: wi.inputData.getLong(DownloadWorker.KEY_HISTORY_ID, -1L).takeIf { it >= 0 }
-                        ?: return@mapNotNull null
-                    hid to DlProgress(
-                        done = wi.progress.getLong(DownloadWorker.KEY_DONE, 0L),
-                        total = wi.progress.getLong(DownloadWorker.KEY_TOTAL, -1L),
-                        speedBps = wi.progress.getDouble(DownloadWorker.KEY_SPEED, 0.0),
-                    )
-                }.toMap()
+        val obs = Observer<List<WorkInfo>> { infos: List<WorkInfo> ->
+            val map = mutableMapOf<Long, DlProgress>()
+            for (wi in infos) {
+                if (wi.state != WorkInfo.State.RUNNING && wi.state != WorkInfo.State.ENQUEUED) continue
+                var hid: Long = wi.progress.getLong(DownloadWorker.KEY_HID, -1L)
+                if (hid < 0) hid = wi.inputData.getLong(DownloadWorker.KEY_HISTORY_ID, -1L)
+                if (hid < 0) continue
+                val p: Data = wi.progress
+                map[hid] = DlProgress(
+                    done = p.getLong(DownloadWorker.KEY_DONE, 0L),
+                    total = p.getLong(DownloadWorker.KEY_TOTAL, -1L),
+                    speedBps = p.getDouble(DownloadWorker.KEY_SPEED, 0.0),
+                )
+            }
             trySend(map)
         }
         Handler(Looper.getMainLooper()).post { live.observeForever(obs) }
