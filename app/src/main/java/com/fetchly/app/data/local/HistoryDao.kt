@@ -28,6 +28,7 @@ data class HistoryEntity(
     val formatId: String = "",
     val downloadUrl: String = "",
     val workRequestId: String? = null,
+    val sizeBytes: Long? = null,
 )
 
 @Dao
