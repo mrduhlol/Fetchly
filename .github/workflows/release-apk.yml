@@ -32,9 +32,16 @@ jobs:
         run: gradle :app:assembleDebug
 
       - name: Rename APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk "fetchly v.1.apk"
+        run: |
+          VER="${GITHUB_REF_NAME#v}"
+          cp app/build/outputs/apk/debug/app-debug.apk "fetchly v${VER}.apk"
 
-      - name: Attach to release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: fetchly v.1.apk
+      - name: Publish to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VER="${GITHUB_REF_NAME#v}"
+          if ! gh release view "${GITHUB_REF_NAME}" > /dev/null 2>&1; then
+            gh release create "${GITHUB_REF_NAME}" --title "${GITHUB_REF_NAME}" --notes "Fetchly ${GITHUB_REF_NAME}" --latest
+          fi
+          gh release upload "${GITHUB_REF_NAME}" "fetchly v${VER}.apk" --clobber
