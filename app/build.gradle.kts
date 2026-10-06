@@ -1,20 +1,9 @@
-import java.util.Properties
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
 }
-
-val localDefaults = Properties().apply {
-    val f = rootProject.file("local.defaults.properties")
-    if (f.exists()) f.inputStream().use { load(it) }
-}
-
-fun envOrLocal(name: String): String =
-    System.getenv(name) ?: localDefaults.getProperty(name, "")
 
 android {
     namespace = "com.fetchly.app"
@@ -26,9 +15,6 @@ android {
         targetSdk = 34
         versionCode = 7
         versionName = "1.7"
-
-        val apiBase = envOrLocal("FETCHLY_API_BASE_URL")
-        buildConfigField("String", "FETCHLY_API_BASE_URL", "\"$apiBase\"")
 
         vectorDrawables { useSupportLibrary = true }
     }
@@ -87,9 +73,6 @@ dependencies {
 
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
-    implementation(libs.retrofit)
-    implementation(libs.retrofit.kotlinx)
-    implementation(libs.serialization.json)
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)
     implementation(libs.coil.compose)
