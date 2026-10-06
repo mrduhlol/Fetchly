@@ -18,9 +18,16 @@ class CapabilitiesTest {
         assertTrue(cap.supportsImage)
     }
 
+    @Test fun youTubeIsSupportedThroughEngine() {
+        val cap = SourceCapabilities.forPlatform(Platform.YOUTUBE)
+        assertTrue(cap.supported)
+        assertTrue(cap.supportsQualitySelection)
+        assertTrue(cap.supportsThumbnail)
+    }
+
     @Test fun socialPlatformsAreHonestlyUnsupported() {
         for (p in listOf(
-            Platform.YOUTUBE, Platform.INSTAGRAM, Platform.TIKTOK,
+            Platform.INSTAGRAM, Platform.TIKTOK,
             Platform.TWITTER, Platform.REDDIT, Platform.FACEBOOK, Platform.PINTEREST,
         )) {
             val cap = SourceCapabilities.forPlatform(p)
