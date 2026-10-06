@@ -4,11 +4,7 @@
 
 - JDK 17, Android SDK with compileSdk 34, minSdk 29 (Android 10+).
 
-## Environment variables
-
-| Variable | Purpose |
-|---|---|
-| `FETCHLY_API_BASE_URL` | Base URL of the Fetchly API (e.g. `https://api.example.com/`). Baked into `BuildConfig` at build time. Can also be set via `local.defaults.properties` or the in-app Settings override. |
+No environment variables, no backend, no configuration needed.
 
 ## Build
 
@@ -19,11 +15,11 @@
 ./gradlew testDebugUnitTest    # unit tests
 ```
 
-## Known limitations (V1.2)
+## Known limitations
 
-1. Platform adapters in `backend/` are honest stubs: without a permitted
-   extraction mechanism configured, analysis returns
-   "This source isn't currently supported." No formats are ever faked.
+1. Only direct media links are supported. Social platforms are honestly
+   reported as unsupported until a legitimate local or authorized mechanism
+   exists for them. No formats are ever faked.
 2. No pause/resume: WorkManager one-shot downloads genuinely don't support
    it, so no pause UI is shown rather than a fake one. Cancel + retry are
    fully supported.
