@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased — local-first
+
+- Removed the backend dependency entirely: analysis runs on-device,
+  no server to deploy or configure, no API URL anywhere
+- Direct media links (video, audio, images) resolve locally with real
+  content type, size, and filename
+- Social platforms honestly report "This source isn't supported yet."
+- Capability matrix gates every claim of support
+- Error messages classify the actual problem (unsupported, invalid,
+  unreachable, unavailable)
+
 ## Fetchly 1.7
 
 Stabilization release for the V1 line. No new product features.
