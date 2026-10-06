@@ -36,7 +36,7 @@ Needs JDK 17 + Android SDK (compileSdk 34).
 
 ## Docs
 
-- [`docs/API.md`](docs/API.md) — local-first media resolution
+- [`docs/RESOLUTION.md`](docs/RESOLUTION.md) — local-first media resolution
 - [`docs/PERMISSIONS.md`](docs/PERMISSIONS.md) — permissions used and why
 - [`docs/STORAGE.md`](docs/STORAGE.md) — where downloads are saved
 - [`docs/SECURITY.md`](docs/SECURITY.md) — security model
