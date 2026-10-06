@@ -1,67 +1,29 @@
-# Fetchly API
+# Media resolution (local-first)
 
-Reference server in `backend/` (dependency-free Node).
+Fetchly has no backend server. Analysis runs entirely on-device:
 
-## Endpoints
+1. The URL is validated (`UrlSecurity`) and the platform detected
+   (`PlatformDetector`, with a direct-file hint).
+2. `SourceCapabilities` decides honestly: only `DIRECT` links are supported.
+   Social platforms return "This source isn't supported yet." — no server
+   is consulted, no scraping happens.
+3. `DirectMediaResolver` probes the file with HEAD (GET-header fallback):
+   real content type, real size, real filename. The UI is built only from
+   what the probe returns — qualities and metadata are never invented.
 
-- `GET /healthz` → `{ "ok": true }`
-- `POST /api/analyze`
+## Direct format model
 
-Request:
+Every resolved file exposes exactly one honest format:
 
-```json
-{ "url": "https://example.com/media" }
-```
+- quality: `Original`
+- container: derived from the `Content-Type` header (URL path as fallback)
+- size: `Content-Length` when the server sends it, otherwise unknown
+- optional: `bitrateKbps`, `width`/`height`, `hasAudio` — only when known
 
-Success response:
+## If a platform needs a server one day
 
-```json
-{
-  "success": true,
-  "platform": "instagram",
-  "title": "Example",
-  "author": "creator",
-  "thumbnail": "https://...",
-  "mediaType": "video",
-  "duration": 42,
-  "formats": [
-    {
-      "id": "format-1",
-      "quality": "1080p",
-      "container": "mp4",
-      "size": 82345678,
-      "downloadUrl": "https://...",
-      "isAudioOnly": false,
-      "bitrateKbps": 8000,
-      "width": 1920,
-      "height": 1080,
-      "hasAudio": true
-    }
-  ]
-}
-```
-
-Failure response (never fakes formats):
-
-```json
-{ "success": false, "platform": "youtube", "error": "This source isn't currently supported." }
-```
-
-Optional format fields (`bitrateKbps`, `width`, `height`, `hasAudio`) are
-only present when the source genuinely provides them. The Android client
-never invents metadata — missing values stay hidden in the UI.
-
-## Configuring the app
-
-Set the base URL one of:
-
-1. Environment variable at build time: `FETCHLY_API_BASE_URL=https://api.example.com/`
-2. `local.defaults.properties`: `FETCHLY_API_BASE_URL=https://...`
-3. In-app Settings → API base URL override (debug/testing)
-
-Run the server:
-
-```bash
-cd backend
-PORT=8080 node server.js
-```
+A platform adapter would be genuinely required only when media for that
+source cannot be resolved with a local or official on-device mechanism
+(signed URLs, authenticated APIs, stream manifests). Until then the source
+stays marked unsupported — Fetchly will not gain backend infrastructure
+speculatively.
