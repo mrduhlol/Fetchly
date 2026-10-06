@@ -5,13 +5,13 @@ import com.fetchly.app.domain.model.HistoryEntry
 import com.fetchly.app.domain.model.MediaInfo
 import kotlinx.coroutines.flow.Flow
 
-sealed interface AnalyzeResult {
-    data class Success(val info: MediaInfo) : AnalyzeResult
-    data class Failure(val message: String) : AnalyzeResult
+sealed interface ResolveResult {
+    data class Success(val info: MediaInfo) : ResolveResult
+    data class Failure(val message: String) : ResolveResult
 }
 
 interface MediaRepository {
-    suspend fun analyze(url: String): AnalyzeResult
+    suspend fun analyze(url: String): ResolveResult
 }
 
 interface HistoryRepository {

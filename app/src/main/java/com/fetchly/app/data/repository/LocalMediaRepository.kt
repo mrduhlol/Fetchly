@@ -6,7 +6,7 @@ import com.fetchly.app.data.resolve.ResolveOutcome
 import com.fetchly.app.domain.model.Platform
 import com.fetchly.app.domain.platform.PlatformDetector
 import com.fetchly.app.domain.platform.SourceCapabilities
-import com.fetchly.app.domain.repository.AnalyzeResult
+import com.fetchly.app.domain.repository.ResolveResult
 import com.fetchly.app.domain.repository.MediaRepository
 import com.fetchly.app.domain.security.UrlSecurity
 
@@ -23,9 +23,9 @@ class LocalMediaRepository(
 
     private val youtube by lazy { YtDlpMediaRepository(context) }
 
-    override suspend fun analyze(rawUrl: String): AnalyzeResult {
+    override suspend fun analyze(rawUrl: String): ResolveResult {
         val valid = UrlSecurity.validate(rawUrl).getOrElse {
-            return AnalyzeResult.Failure(it.message ?: "Enter a valid media link.")
+            return ResolveResult.Failure(it.message ?: "Enter a valid media link.")
         }
         val platform = PlatformDetector.detectWithDirect(valid)
         val capability = SourceCapabilities.forPlatform(platform)
@@ -35,13 +35,13 @@ class LocalMediaRepository(
             return youtube.analyze(valid)
         }
         if (platform != Platform.DIRECT && platform != Platform.UNKNOWN) {
-            return AnalyzeResult.Failure(
+            return ResolveResult.Failure(
                 capability.unsupportedReason ?: "This source isn't supported yet."
             )
         }
         return when (val out = direct.resolve(valid)) {
-            is ResolveOutcome.Resolved -> AnalyzeResult.Success(out.info)
-            is ResolveOutcome.Failed -> AnalyzeResult.Failure(out.message)
+            is ResolveOutcome.Resolved -> ResolveResult.Success(out.info)
+            is ResolveOutcome.Failed -> ResolveResult.Failure(out.message)
         }
     }
 }

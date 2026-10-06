@@ -8,8 +8,8 @@ import com.fetchly.app.domain.model.FetchState
 import com.fetchly.app.domain.model.HistoryEntry
 import com.fetchly.app.domain.model.MediaFormat
 import com.fetchly.app.domain.model.MediaInfo
-import com.fetchly.app.domain.repository.AnalyzeResult
-import com.fetchly.app.domain.usecase.AnalyzeUrlUseCase
+import com.fetchly.app.domain.repository.ResolveResult
+import com.fetchly.app.domain.usecase.ResolveUrlUseCase
 import com.fetchly.app.domain.util.MimeTypes
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,7 +33,7 @@ data class HomeUiState(
 
 class HomeViewModel : ViewModel() {
 
-    private val analyze = AnalyzeUrlUseCase(AppGraph.mediaRepository())
+    private val analyze = ResolveUrlUseCase(AppGraph.mediaRepository())
 
     private val _ui = MutableStateFlow(HomeUiState())
     val ui: StateFlow<HomeUiState> = _ui.asStateFlow()
@@ -58,7 +58,7 @@ class HomeViewModel : ViewModel() {
             )
             val started = System.currentTimeMillis()
             when (val r = analyze(target)) {
-                is AnalyzeResult.Success -> {
+                is ResolveResult.Success -> {
                     val best = r.info.videoFormats.firstOrNull() ?: r.info.formats.firstOrNull()
                     _ui.value = _ui.value.copy(
                         state = FetchState.READY,
@@ -68,7 +68,7 @@ class HomeViewModel : ViewModel() {
                         lastResolveStatus = "OK • ${r.info.formats.size} formats",
                     )
                 }
-                is AnalyzeResult.Failure -> {
+                is ResolveResult.Failure -> {
                     _ui.value = _ui.value.copy(
                         state = FetchState.ERROR,
                         error = r.message,

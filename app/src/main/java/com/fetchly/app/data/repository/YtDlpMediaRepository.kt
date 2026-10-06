@@ -4,7 +4,7 @@ import android.content.Context
 import com.fetchly.app.data.engine.YtDlpEngine
 import com.fetchly.app.data.engine.YtDlpMapper
 import com.fetchly.app.domain.model.Platform
-import com.fetchly.app.domain.repository.AnalyzeResult
+import com.fetchly.app.domain.repository.ResolveResult
 import com.fetchly.app.domain.repository.MediaRepository
 import com.fetchly.app.domain.security.UrlSecurity
 import kotlinx.coroutines.CancellationException
@@ -19,27 +19,27 @@ class YtDlpMediaRepository(
     private val context: Context,
 ) : MediaRepository {
 
-    override suspend fun analyze(rawUrl: String): AnalyzeResult {
+    override suspend fun analyze(rawUrl: String): ResolveResult {
         val valid = UrlSecurity.validate(rawUrl).getOrElse {
-            return AnalyzeResult.Failure(it.message ?: "Enter a valid media link.")
+            return ResolveResult.Failure(it.message ?: "Enter a valid media link.")
         }
         return try {
             val json = YtDlpEngine.extractJson(context, valid)
             val mapped = YtDlpMapper.fromJson(valid, Platform.YOUTUBE, json)
             val info = mapped.info
             if (info != null) {
-                AnalyzeResult.Success(info)
+                ResolveResult.Success(info)
             } else {
-                AnalyzeResult.Failure(classify(mapped.error.orEmpty()))
+                ResolveResult.Failure(classify(mapped.error.orEmpty()))
             }
         } catch (e: CancellationException) {
             throw e
         } catch (e: UnknownHostException) {
-            AnalyzeResult.Failure("Couldn't connect to the source. Check your connection and try again.")
+            ResolveResult.Failure("Couldn't connect to the source. Check your connection and try again.")
         } catch (e: SocketTimeoutException) {
-            AnalyzeResult.Failure("The source took too long to respond. Try again.")
+            ResolveResult.Failure("The source took too long to respond. Try again.")
         } catch (e: Exception) {
-            AnalyzeResult.Failure("Fetchly couldn't retrieve media information from this link.")
+            ResolveResult.Failure("Fetchly couldn't retrieve media information from this link.")
         }
     }
 
