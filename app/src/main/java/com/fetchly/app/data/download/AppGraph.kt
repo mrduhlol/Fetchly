@@ -15,8 +15,7 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.fetchly.app.data.local.FetchlyDatabase
 import com.fetchly.app.data.prefs.SettingsStore
-import com.fetchly.app.data.remote.ApiClient
-import com.fetchly.app.data.repository.ApiMediaRepository
+import com.fetchly.app.data.repository.LocalMediaRepository
 import com.fetchly.app.data.repository.RoomHistoryRepository
 import com.fetchly.app.domain.model.DownloadStatus
 import com.fetchly.app.domain.model.HistoryEntry
@@ -27,7 +26,6 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import java.util.UUID
 
@@ -67,11 +65,8 @@ object AppGraph {
         appContext = context.applicationContext
     }
 
-    fun mediaRepository(): ApiMediaRepository {
-        val override = runBlocking { settings.apiBaseUrl.first() }
-        val base = override.ifBlank { ApiClient.baseUrl() }
-        return ApiMediaRepository(ApiClient.create(base))
-    }
+    /** Local-first: analysis never leaves the device. */
+    fun mediaRepository(): LocalMediaRepository = LocalMediaRepository()
 
     /** Stable identity: normalized source URL + backend format id. */
     suspend fun findDuplicate(sourceUrl: String, formatId: String): HistoryEntry? =
