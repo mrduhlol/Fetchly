@@ -86,12 +86,25 @@ fun ResultScreen(
                     .clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant),
             ) {
+            if (info.thumbnailUrl != null) {
                 AsyncImage(
                     model = info.thumbnailUrl,
                     contentDescription = "Thumbnail for ${info.title}",
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
                 )
+            } else {
+                // Honest placeholder: no fake preview when the source has none.
+                androidx.compose.foundation.Image(
+                    painter = androidx.compose.ui.res.painterResource(
+                        id = com.fetchly.app.R.drawable.fetchly_logo
+                    ),
+                    contentDescription = "No preview available",
+                    modifier = Modifier
+                        .fillMaxSize(0.4f)
+                        .align(Alignment.Center),
+                )
+            }
                 info.durationSecs?.let { secs ->
                     Text(
                         "%d:%02d".format(secs / 60, secs % 60),
