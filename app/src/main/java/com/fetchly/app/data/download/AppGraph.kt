@@ -66,7 +66,7 @@ object AppGraph {
     }
 
     /** Local-first: analysis never leaves the device. */
-    fun mediaRepository(): LocalMediaRepository = LocalMediaRepository()
+    fun mediaRepository(): LocalMediaRepository = LocalMediaRepository(appContext)
 
     /** Stable identity: normalized source URL + backend format id. */
     suspend fun findDuplicate(sourceUrl: String, formatId: String): HistoryEntry? =

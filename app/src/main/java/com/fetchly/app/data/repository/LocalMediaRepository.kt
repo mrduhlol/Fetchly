@@ -1,5 +1,6 @@
 package com.fetchly.app.data.repository
 
+import android.content.Context
 import com.fetchly.app.data.resolve.DirectMediaResolver
 import com.fetchly.app.data.resolve.ResolveOutcome
 import com.fetchly.app.domain.model.Platform
@@ -16,8 +17,11 @@ import com.fetchly.app.domain.security.UrlSecurity
  * - Direct media files: probed locally (content type, size, name).
  */
 class LocalMediaRepository(
+    private val context: Context,
     private val direct: DirectMediaResolver = DirectMediaResolver(),
 ) : MediaRepository {
+
+    private val youtube by lazy { YtDlpMediaRepository(context) }
 
     override suspend fun analyze(rawUrl: String): AnalyzeResult {
         val valid = UrlSecurity.validate(rawUrl).getOrElse {
@@ -26,6 +30,10 @@ class LocalMediaRepository(
         val platform = PlatformDetector.detectWithDirect(valid)
         val capability = SourceCapabilities.forPlatform(platform)
 
+        // Engine-backed platforms resolve fully on-device.
+        if (platform == Platform.YOUTUBE && capability.supported) {
+            return youtube.analyze(valid)
+        }
         if (platform != Platform.DIRECT && platform != Platform.UNKNOWN) {
             return AnalyzeResult.Failure(
                 capability.unsupportedReason ?: "This source isn't supported yet."
