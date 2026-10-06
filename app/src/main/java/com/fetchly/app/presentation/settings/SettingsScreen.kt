@@ -43,7 +43,6 @@ fun SettingsScreen(
 ) {
     val theme by vm.theme.collectAsState()
     val quality by vm.defaultQuality.collectAsState()
-    val apiBase by vm.apiBaseUrl.collectAsState()
     var showClear by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -79,15 +78,6 @@ fun SettingsScreen(
                 selected = quality.name,
                 onPick = { vm.setQuality(DefaultQuality.valueOf(it)) },
             )
-            Spacer(Modifier.height(8.dp))
-            var draft by remember(apiBase) { mutableStateOf(apiBase) }
-            OutlinedTextField(
-                value = draft,
-                onValueChange = { draft = it },
-                label = { Text("API base URL (optional override)") },
-                singleLine = true,
-            )
-            TextButton(onClick = { vm.setApiBase(draft) }) { Text("Save API URL") }
             Spacer(Modifier.height(16.dp))
             Text("History", style = MaterialTheme.typography.labelLarge)
             TextButton(onClick = { showClear = true }) { Text("Clear history") }
