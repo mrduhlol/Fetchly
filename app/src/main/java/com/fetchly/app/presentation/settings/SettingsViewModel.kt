@@ -15,8 +15,6 @@ class SettingsViewModel : ViewModel() {
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ThemeMode.SYSTEM)
     val defaultQuality = AppGraph.settings.defaultQuality
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DefaultQuality.ASK)
-    val apiBaseUrl = AppGraph.settings.apiBaseUrl
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
 
     fun setTheme(mode: ThemeMode) = viewModelScope.launch {
         AppGraph.settings.setTheme(mode)
@@ -24,10 +22,6 @@ class SettingsViewModel : ViewModel() {
 
     fun setQuality(q: DefaultQuality) = viewModelScope.launch {
         AppGraph.settings.setDefaultQuality(q)
-    }
-
-    fun setApiBase(url: String) = viewModelScope.launch {
-        AppGraph.settings.setApiBaseUrl(url)
     }
 
     fun clearHistory() = viewModelScope.launch {
