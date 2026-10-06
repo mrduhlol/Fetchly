@@ -23,11 +23,11 @@ No environment variables, no backend, no configuration needed.
 2. No pause/resume: WorkManager one-shot downloads genuinely don't support
    it, so no pause UI is shown rather than a fake one. Cancel + retry are
    fully supported.
-3. Retry reuses the stored download URL. If the backend issues short-lived
+3. Retry reuses the stored download URL. If the source issues short-lived
    URLs that expire, a failed retry needs a fresh analyze (paste the link
    again) — the app says so instead of looping forever.
 4. Share-intent re-delivery while already open updates Home immediately.
-5. Duplicate detection keys on normalized source URL + backend format id.
+5. Duplicate detection keys on normalized source URL + resolver format id.
 6. Room schema v2 uses destructive migration on upgrade (no shipped user
    base with data to preserve yet).
 7. No account system, no cloud sync — by design.
