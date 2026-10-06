@@ -171,7 +171,7 @@ fun HomeScreen(
                 }
             }
             Spacer(Modifier.height(8.dp))
-            val detected = remember(ui.url) { PlatformDetector.detect(ui.url) }
+            val detected = remember(ui.url) { PlatformDetector.detectWithDirect(ui.url) }
             Text(
                 if (ui.url.isBlank()) "Supports supported public media sources"
                 else if (detected.name == "UNKNOWN") "This source isn't currently supported."
