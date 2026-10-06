@@ -28,7 +28,7 @@ data class HomeUiState(
     val storageError: String? = null,
     // Debug info (dev diagnostics only).
     val lastAnalysisMs: Long? = null,
-    val lastApiStatus: String? = null,
+    val lastResolveStatus: String? = null,
 )
 
 class HomeViewModel : ViewModel() {
@@ -65,7 +65,7 @@ class HomeViewModel : ViewModel() {
                         info = r.info,
                         selectedFormatId = best?.id,
                         lastAnalysisMs = System.currentTimeMillis() - started,
-                        lastApiStatus = "OK • ${r.info.formats.size} formats",
+                        lastResolveStatus = "OK • ${r.info.formats.size} formats",
                     )
                 }
                 is AnalyzeResult.Failure -> {
@@ -73,7 +73,7 @@ class HomeViewModel : ViewModel() {
                         state = FetchState.ERROR,
                         error = r.message,
                         lastAnalysisMs = System.currentTimeMillis() - started,
-                        lastApiStatus = "Failed",
+                        lastResolveStatus = "Failed",
                     )
                 }
             }
