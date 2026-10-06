@@ -4,12 +4,14 @@ Fetchly has no backend server. Analysis runs entirely on-device:
 
 1. The URL is validated (`UrlSecurity`) and the platform detected
    (`PlatformDetector`, with a direct-file hint).
-2. `SourceCapabilities` decides honestly: only `DIRECT` links are supported.
-   Social platforms return "This source isn't supported yet." — no server
-   is consulted, no scraping happens.
-3. `DirectMediaResolver` probes the file with HEAD (GET-header fallback):
-   real content type, real size, real filename. The UI is built only from
-   what the probe returns — qualities and metadata are never invented.
+2. `SourceCapabilities` decides honestly: `DIRECT` links and `YOUTUBE`
+   (via the embedded on-device yt-dlp engine) are supported. Other social
+   platforms return "This source isn't supported yet." — no server is
+   consulted, no scraping happens.
+3. `DirectMediaResolver` probes direct files with HEAD (GET-header
+   fallback): real content type, size, and filename. YouTube links go
+   through `YtDlpEngine` → `YtDlpMapper`, which keeps only genuinely
+   downloadable streams (URL-less and storyboard formats are dropped).
 
 ## Direct format model
 
