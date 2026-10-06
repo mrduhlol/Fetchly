@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased — YouTube via on-device engine
+
+- Embedded yt-dlp (Chaquopy Python runtime) — analysis runs on-device,
+  still no backend
+- YouTube links show thumbnail, title, duration, uploader, and real
+  quality/format options from the extractor
+- Only genuinely downloadable streams are offered (storyboards and
+  URL-less formats filtered out)
+- Engine errors classified honestly (private, unavailable, unsupported)
+
 ## Unreleased — local-first
 
 - Removed the backend dependency entirely: analysis runs on-device,
