@@ -1,5 +1,12 @@
 # Changelog
 
+## Fetchly 1.8
+
+- YouTube via embedded on-device yt-dlp: paste a link, get thumbnail,
+  title, duration, and real quality options
+- Removed every backend/API remnant: no server, no API URL, no backend
+  docs, no backend wording anywhere in code or UI
+
 ## Unreleased — YouTube via on-device engine
 
 - Embedded yt-dlp (Chaquopy Python runtime) — analysis runs on-device,
