@@ -9,7 +9,9 @@ plugins {
 chaquopy {
     defaultConfig {
         // Python runtime bundled in the app; yt-dlp runs fully on-device.
-        version = "3.12"
+        // 3.10 is the newest runtime covering all three ABIs (3.12 drops
+        // 32-bit ARM). The .pyc precompile warning is cosmetic.
+        version = "3.10"
         pip {
             install("yt-dlp==2024.08.06")
         }
