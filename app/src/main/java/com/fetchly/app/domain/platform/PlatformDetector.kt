@@ -28,4 +28,24 @@ object PlatformDetector {
     }
 
     fun isSupported(rawUrl: String): Boolean = detect(rawUrl) != Platform.UNKNOWN
+
+    private val DIRECT_EXTENSIONS = setOf(
+        "mp4", "m4v", "webm", "mkv",
+        "mp3", "m4a", "ogg", "oga", "wav", "flac",
+        "jpg", "jpeg", "png", "webp", "gif",
+    )
+
+    /**
+     * Extension hint for direct media files. The resolver still verifies the
+     * real content type over the network — this only guides the UI message.
+     */
+    fun detectWithDirect(rawUrl: String): Platform {
+        val path = runCatching {
+            val normalized = if (rawUrl.contains("://")) rawUrl.trim() else "https://${rawUrl.trim()}"
+            java.net.URI(normalized).path?.lowercase().orEmpty()
+        }.getOrElse { return detect(rawUrl) }
+        val ext = path.substringAfterLast('.', "").substringBefore('?')
+        if (ext in DIRECT_EXTENSIONS) return Platform.DIRECT
+        return detect(rawUrl)
+    }
 }
