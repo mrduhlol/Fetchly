@@ -2,7 +2,18 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.chaquopy)
     alias(libs.plugins.ksp)
+}
+
+chaquopy {
+    defaultConfig {
+        // Python runtime bundled in the app; yt-dlp runs fully on-device.
+        version = "3.10"
+        pip {
+            install("yt-dlp==2024.08.06")
+        }
+    }
 }
 
 android {
