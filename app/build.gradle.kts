@@ -27,6 +27,11 @@ android {
         versionCode = 7
         versionName = "1.7"
 
+        // Chaquopy Python runtime requires explicit ABIs.
+        ndk {
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
+        }
+
         vectorDrawables { useSupportLibrary = true }
     }
 
