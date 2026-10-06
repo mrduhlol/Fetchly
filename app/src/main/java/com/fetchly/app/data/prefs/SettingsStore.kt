@@ -16,7 +16,6 @@ class SettingsStore(private val context: Context) {
 
     private val themeKey = stringPreferencesKey("theme")
     private val qualityKey = stringPreferencesKey("default_quality")
-    private val apiBaseKey = stringPreferencesKey("api_base_url")
 
     val theme: Flow<ThemeMode> = context.dataStore.data.map {
         runCatching { ThemeMode.valueOf(it[themeKey] ?: "SYSTEM") }.getOrDefault(ThemeMode.SYSTEM)
@@ -24,7 +23,6 @@ class SettingsStore(private val context: Context) {
     val defaultQuality: Flow<DefaultQuality> = context.dataStore.data.map {
         runCatching { DefaultQuality.valueOf(it[qualityKey] ?: "ASK") }.getOrDefault(DefaultQuality.ASK)
     }
-    val apiBaseUrl: Flow<String> = context.dataStore.data.map { it[apiBaseKey].orEmpty() }
 
     suspend fun setTheme(mode: ThemeMode) {
         context.dataStore.edit { it[themeKey] = mode.name }
@@ -32,9 +30,5 @@ class SettingsStore(private val context: Context) {
 
     suspend fun setDefaultQuality(q: DefaultQuality) {
         context.dataStore.edit { it[qualityKey] = q.name }
-    }
-
-    suspend fun setApiBaseUrl(url: String) {
-        context.dataStore.edit { it[apiBaseKey] = url.trim() }
     }
 }
