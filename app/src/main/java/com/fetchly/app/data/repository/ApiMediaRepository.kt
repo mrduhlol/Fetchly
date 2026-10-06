@@ -66,7 +66,10 @@ class ApiMediaRepository(
         } catch (e: CancellationException) {
             throw e
         } catch (e: UnknownHostException) {
-            AnalyzeResult.Failure("Check your internet connection and try again.")
+            AnalyzeResult.Failure(
+                "Can't reach the Fetchly server. Check your connection, " +
+                    "or set the API URL in Settings."
+            )
         } catch (e: SocketTimeoutException) {
             AnalyzeResult.Failure("The request timed out. Try again on a better connection.")
         } catch (e: Exception) {
