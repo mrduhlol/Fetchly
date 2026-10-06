@@ -16,11 +16,13 @@ Paste a public media link, pick a quality, save it to your device.
 
 ## What it does
 
-1. Paste a media URL
-2. Fetchly detects the platform and shows available qualities
+1. Paste a direct media link (mp4, mp3, jpg, …)
+2. Fetchly verifies it on-device and shows what's actually there
 3. Download straight to `Movies/Fetchly/`, `Music/Fetchly/` or `Pictures/Fetchly/`
 
-Only publicly accessible media where downloading is permitted. Anything else gets: *"This source isn't currently supported."*
+Only publicly accessible media where downloading is permitted. Anything else gets: *"This source isn't supported yet."*
+
+No backend, no accounts, no configuration — everything runs on your device.
 
 ## Build it yourself
 
@@ -32,12 +34,10 @@ Needs JDK 17 + Android SDK (compileSdk 34).
 ./gradlew testDebugUnitTest  # tests
 ```
 
-Set the API URL via `FETCHLY_API_BASE_URL` env var, `local.defaults.properties` (see `.example` file), or in-app Settings.
-
 ## Docs
 
-- [`docs/API.md`](docs/API.md) — backend contract + reference server
+- [`docs/API.md`](docs/API.md) — local-first media resolution
 - [`docs/PERMISSIONS.md`](docs/PERMISSIONS.md) — permissions used and why
 - [`docs/STORAGE.md`](docs/STORAGE.md) — where downloads are saved
 - [`docs/SECURITY.md`](docs/SECURITY.md) — security model
-- [`docs/RELEASE.md`](docs/RELEASE.md) — releases, env vars, limitations
+- [`docs/RELEASE.md`](docs/RELEASE.md) — releases and limitations
