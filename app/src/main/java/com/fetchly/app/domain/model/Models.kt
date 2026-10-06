@@ -9,6 +9,8 @@ enum class Platform(val label: String) {
     REDDIT("Reddit"),
     FACEBOOK("Facebook"),
     PINTEREST("Pinterest"),
+    /** A directly accessible media file (mp4, mp3, jpg, …). Resolved locally. */
+    DIRECT("Direct link"),
     UNKNOWN("Unknown"),
 }
 
