@@ -135,7 +135,7 @@ fun ResultScreen(
                 },
                 style = MaterialTheme.typography.bodySmall,
             )
-            // Type-specific facts, only when the backend provided them.
+            // Type-specific facts, only when the resolver provided them.
             val selected = vm.selectedFormat()
             val extras = buildList {
                 selected?.dimensionsLabel?.let { add(it) }
