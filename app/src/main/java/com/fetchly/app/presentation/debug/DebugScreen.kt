@@ -57,7 +57,7 @@ fun DebugScreen(
             DebugRow("Platform", info?.platform?.name ?: "—")
             DebugRow("Media type", info?.mediaType?.name ?: "—")
             DebugRow("Analysis duration", ui.lastAnalysisMs?.let { "$it ms" } ?: "—")
-            DebugRow("API status", ui.lastApiStatus ?: "—")
+            DebugRow("Resolver status", ui.lastApiStatus ?: "—")
             DebugRow("Formats returned", info?.formats?.size?.toString() ?: "—")
             DebugRow("Selected format", ui.selectedFormatId ?: "—")
             DebugRow(
