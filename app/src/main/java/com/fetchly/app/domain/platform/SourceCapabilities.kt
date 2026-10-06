@@ -35,7 +35,17 @@ object SourceCapabilities {
             supportsThumbnail = true,
             supportsMetadata = true,
         ),
-        SourceCapability(Platform.YOUTUBE, false, unsupportedReason = NEEDS_MECHANISM),
+        // Resolved on-device with the embedded yt-dlp engine.
+        SourceCapability(
+            platform = Platform.YOUTUBE,
+            supported = true,
+            supportsVideo = true,
+            supportsAudio = true,
+            supportsImage = false,
+            supportsQualitySelection = true,
+            supportsThumbnail = true,
+            supportsMetadata = true,
+        ),
         SourceCapability(Platform.INSTAGRAM, false, unsupportedReason = NEEDS_MECHANISM),
         SourceCapability(Platform.TIKTOK, false, unsupportedReason = NEEDS_MECHANISM),
         SourceCapability(Platform.TWITTER, false, unsupportedReason = NEEDS_MECHANISM),
