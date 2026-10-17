@@ -58,22 +58,35 @@ not assumed:
    test video: 48 formats, *zero* of them muxed; all either video-only or
    audio-only. Anything above ~240–360p requires downloading a video
    stream and an audio stream and merging them.
-3. **Merging works with a `-c copy` mux.** Verified end-to-end: format 137
-   (1080p H.264, 81 MB) + format 140 (AAC m4a, 3.4 MB) downloaded with a
-   plain HTTP GET (custom User-Agent, no cookies) and merged with
+3. **Merging works with a `-c copy` mux.** Verified end-to-end: the
+   1080p video stream (H.264, 81 MB) and the audio stream (AAC m4a,
+   3.4 MB) of a test video, merged with
    `ffmpeg -i video -i audio -c copy -movflags +faststart out.mp4` →
    valid 1080p H.264 + AAC MP4, correct duration. No re-encode.
-4. **The stream URLs download with a plain HTTP client.** No special
-   headers, no cookies; 200/206 responses with the app's User-Agent.
-   They are signed and expire (hours, not days) — retry flows must account
-   for that.
-5. **An ffmpeg for Android exists and is maintained.** `FFmpegKit` was
+4. **A plain HTTP client cannot download these stream URLs.** Raw curls
+   of freshly extracted URLs were throttled to ~12 KB/s or cut off
+   mid-range (a 206 response truncated at ~47 KB). The *same* formats
+   downloaded through yt-dlp's own downloader sustained ~4.5 MB/s
+   (81 MB in 20 s), including YouTube's periodic crawl-burst throttling —
+   yt-dlp rides through the slow phases with range-chunk retries.
+   **Decision: yt-dlp does the downloading on the device; never scrape
+   extracted URLs into OkHttp.**
+5. **No JavaScript runtime is needed on the device (for now).** yt-dlp
+   2026 defaults `js_runtimes` to `deno`, but with JS runtimes fully
+   disabled (the phone condition — no deno/node/quickjs) extraction
+   returned the identical 48 formats, and the fast downloads from fact 4
+   were reproduced with `--no-js-runtimes`. yt-dlp does print a
+   "YouTube extraction without a JS runtime has been deprecated" warning:
+   accepted risk for v2.0, with a documented revisit path (bundle
+   QuickJS + EJS challenge-solver scripts) if formats or speeds degrade.
+6. **An ffmpeg for Android exists and is maintained.** `FFmpegKit` was
    retired in 2025, but `dev.ffmpegkit-maintained:ffmpeg-kit-*` on Maven
    Central is the actively maintained drop-in continuation (LGPL-3.0,
    SDK 35, 16 KB page support, arm64-v8a + x86_64). Because it is a
-   *library*, not a binary, yt-dlp cannot shell out to it: the app stays
-   "yt-dlp for metadata, Kotlin for downloads, FFmpegKit for merging".
-6. **Direct media files** (plain mp4/mp3/jpg URLs) still resolve with a
+   *library*, not an executable, yt-dlp cannot shell out to it: the
+   orchestration is "yt-dlp downloads the streams to local files →
+   FFmpegKit merges the local files".
+7. **Direct media files** (plain mp4/mp3/jpg URLs) still resolve with a
    fast HEAD/GET probe and download as a single stream — no yt-dlp, no
    merge.
 
@@ -106,7 +119,8 @@ app/src/main/
     data/db/                 FetchlyDatabase, HistoryDao, HistoryRepository (Room)
     data/prefs/              SettingsStore (DataStore)
     data/AppGraph.kt         manual DI (no Hilt — keep it lean)
-  python/fetchly_yt.py       yt-dlp extract(): JSON out, app fields only
+  python/fetchly_yt.py       yt-dlp bridge: extract() metadata JSON;
+                             download() streams with progress + cancel
 ```
 
 ### Data shapes (the important ones)
@@ -153,16 +167,24 @@ thread) → `YtDlpMapper` builds `MediaInfo` + `QualityOption`s:
   `FILE` option and skips the merge machinery.
 
 **Download (tap Download):** enqueue a `DownloadWorker` (foreground,
-`NetworkType.CONNECTED`, backoff, tag `fetchly_downloads`):
+`NetworkType.CONNECTED`, backoff, tag `fetchly_downloads`). The worker
+drives **yt-dlp in the Python engine for every extracted stream** — never
+a naive GET of an extracted URL (facts 4 and 5):
 
-1. Stage `downloading video` → GET stream 1 into `cacheDir` temp file
-   (OkHttp, `User-Agent: Fetchly/2.0`, progress bytes/total + speed;
-   indeterminate when size unknown).
-2. Stage `downloading audio` → same for stream 2, when present.
+1. Stage `downloading video` → `fetchly_yt.download(url, format_id,
+   dest_dir, hook)` lets yt-dlp transfer the stream into a `cacheDir`
+   temp file. The progress hook (a Kotlin object called from Python via
+   Chaquopy) reports downloaded bytes, total (or estimate), and speed
+   into WorkManager progress and the notification; indeterminate when the
+   total is unknown. Raising from the hook aborts the transfer — that is
+   the cancel path.
+2. Stage `downloading audio` → same for the audio stream when the option
+   has one. Single-stream options (audio-only, direct-file, a progressive
+   format if a site only offers those) skip straight to stage 3.
 3. Stage `merging` → FFmpegKit `execute("-i v -i a -c copy -movflags
-   +faststart out.mp4")` (or `.mkv`, no faststart). Indeterminate
-   progress — no fake percentages. A single stream is still remuxed
-   (`-c copy`) into a proper container extension (`.m4s` → `.mp4`/`.m4a`).
+   +faststart out.mp4")` (`.mkv`, no faststart). Indeterminate progress —
+   no fake percentages. A single stream is still remuxed (`-c copy`)
+   into a proper container extension (`.m4s` → `.mp4`/`.m4a`).
 4. Verify before claiming completion: file exists, nonzero, magic bytes
    match the container (`MediaSniffer`), reported length matches when
    known. Temp files deleted on failure/cancel.
@@ -171,6 +193,37 @@ thread) → `YtDlpMapper` builds `MediaInfo` + `QualityOption`s:
 
 Cancel stops the worker and cleans temps. No pause/resume (unchanged
 limitation, stated in About/release notes).
+
+### Design-review outcomes (2026-10-17)
+
+A fresh reviewer read this document before the owner did. Its open
+questions and the answers now baked in:
+
+- **JS runtime for YouTube (the reviewer's biggest question):** not
+  bundled in v2.0. Fact 5 shows extraction *and* full-speed downloads
+  with JS runtimes disabled. If YouTube later degrades, the revisit is a
+  defined workstream: ship QuickJS (small native binary in `jniLibs`)
+  plus EJS challenge-solver scripts, and enable `js_runtimes` /
+  `remote_components` in the extractor params. Out of scope until
+  evidence demands it.
+- **HLS / m3u8-only sources:** supported by the same pipeline — yt-dlp's
+  own downloader handles HLS natively, no custom segment logic. The
+  mapper is protocol-agnostic: whatever streams yt-dlp returns become
+  options.
+- **Per-video walls (PO tokens, SABR):** accepted risk. The worker
+  auto-re-resolves once on 403/410-style failures, then surfaces an
+  honest error naming the cause. No yt-dlp-metadata + custom-download
+  hybrid. During implementation, spot-check several varied videos
+  (music video, Shorts, long video) to gauge the failure rate; if a
+  meaningful share of real links fails, the JS-runtime workstream
+  becomes the contingency plan.
+- **"Social" scope:** the success contract is YouTube (watch links,
+  youtu.be, Shorts, music) plus direct media files. Instagram/TikTok/etc.
+  are best-effort through yt-dlp's extractors; when one needs cookies or
+  login, the app says exactly that — honest, not broken. README and
+  release notes state this plainly.
+- **Progressive/muxed formats**, when a site still returns them: become
+  normal single-stream options (`needsMerge = false`), no special casing.
 
 ### Screens (wireframes — the real GUI is Compose/Material 3)
 
@@ -245,8 +298,11 @@ SETTINGS
   (JDK 17 + Android SDK installed for this work).
 - CI: tag build green, APK attached to the GitHub release.
 - Owner (device): paste a YouTube link → fetch → 1080p download → play
-  with sound; audio-only download; a direct mp4 link; a failing link
-  (private video → honest error); cancel + retry.
+  with sound; a Shorts link and a second, different video (varied
+  formats); audio-only download; a direct mp4 link; a failing link
+  (private video → honest error); cancel + retry; an Instagram
+  public post (best-effort — an honest, clearly-worded failure is
+  acceptable).
 
 ## Non-goals
 
@@ -278,11 +334,14 @@ SETTINGS
 ## Left to the builder (me, in the plan)
 
 - Exact Compose/M3 implementation and insets handling per screen.
+- The Python engine's exact API (extract / download entry points, error
+  JSON shape) and the progress-hook → Kotlin bridge details (Chaquopy
+  callback object, event throttling, cancel semantics).
 - Merge failure policy in detail (retain partials? always delete?).
 - Room schema/migration (fresh DB; history fields as above).
 - Notification channel details; details-sheet actions; share intent
   filters (http/https only).
 - CI workflow edits; README/CHANGELOG/docs rewrite for v2.0; release
-  notes; version bump; the stray git tag `main` is ignored (push uses
-  explicit refspecs).
+  notes; version bump. The stray git tag named `main` is ignored (pushes
+  use explicit refspecs).
 - Order of work and per-step verification.
