@@ -2,14 +2,18 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Network + foreground download progress -->
+    <!-- Network: the only traffic is fetching media the user asked for. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Foreground download progress -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
-    <!-- Notifications (runtime permission on Android 13+) -->
+    <!-- Download notifications (runtime-requested on Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- No backend, no accounts, no API keys: resolution, download and merge
+         all happen on this device. Cleartext traffic is allowed because some
+         direct media links are still plain http. -->
     <application
         android:name=".FetchlyApp"
         android:allowBackup="true"
@@ -17,6 +21,7 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.Fetchly"
+        android:usesCleartextTraffic="true"
         tools:targetApi="34">
 
         <activity
@@ -29,31 +34,23 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- Share sheet: receive text/URLs from other apps -->
+
+            <!-- Share a link into Fetchly from any app -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="text/plain" />
             </intent-filter>
-        </activity>
 
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.fileprovider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths" />
-        </provider>
-
-        <receiver
-            android:name=".data.download.DownloadActionReceiver"
-            android:exported="false">
+            <!-- Open an http(s) link with Fetchly -->
             <intent-filter>
-                <action android:name="com.fetchly.app.action.CANCEL_DOWNLOAD" />
-                <action android:name="com.fetchly.app.action.RETRY_DOWNLOAD" />
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="http" />
+                <data android:scheme="https" />
             </intent-filter>
-        </receiver>
+        </activity>
     </application>
+
 </manifest>
