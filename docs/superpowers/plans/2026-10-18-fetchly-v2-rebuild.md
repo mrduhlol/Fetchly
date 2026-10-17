@@ -199,7 +199,7 @@ Tests: ResolveErrorsTest (one case per row + ordering: DRM before sign-in, age b
 
 **Files:** `data/db/{FetchlyDatabase,HistoryDao,HistoryRepository}.kt`, `data/prefs/SettingsStore.kt`, tests for JSON codec + matcher-adjacent logic.
 
-- Room `@Database(entities=[DownloadEntity::class], version=1, exportSchema=false)`; `DownloadEntity` mirrors `HistoryEntry` with `signatureJson`/`streamUrlsJson` (org.json, private helpers `Signatures.encode/decode`), `workName: String`.
+- Room `@Database(entities=[DownloadEntity::class], version=1, exportSchema=false)`; `DownloadEntity` mirrors `HistoryEntry` (incl. `kind`) with `signatureJson`/`streamUrlsJson` (org.json, `internal object Signatures` — `encodeSignature`/`encodeUrls`/`decode`), `workName: String`.
 - `HistoryDao`: `observeAll(): Flow<List<DownloadEntity>>` (createdAt DESC), `getById`, `upsert`, `setStatus(id,status,message,raw,updatedAt)`, `setCompleted(id,uri,name,path,size,updatedAt)`, `delete(id)`, `clear()`.
 - `HistoryRepository`: domain-facing mapping + `encode`/`decode` round-trip test (`SignaturesTest`).
 - `SettingsStore` (DataStore, file "fetchly_settings"): `theme: Flow<ThemeChoice>` (SYSTEM/LIGHT/DARK), `defaultQuality: Flow<DefaultQuality>` (ASK/BEST), setters.
