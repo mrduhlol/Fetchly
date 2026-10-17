@@ -9,29 +9,30 @@ plugins {
 chaquopy {
     defaultConfig {
         // Python runtime bundled in the app; yt-dlp runs fully on-device.
-        // 3.10 is the newest runtime covering all three ABIs (3.12 drops
-        // 32-bit ARM). The .pyc precompile warning is cosmetic.
+        // Pinned to the version verified against YouTube on the build machine
+        // (extraction + full-speed downloads with no JS runtime present).
         version = "3.10"
         pip {
-            install("yt-dlp==2024.08.06")
+            install("yt-dlp==2026.08.19")
         }
     }
 }
 
 android {
     namespace = "com.fetchly.app"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.fetchly.app"
         minSdk = 29
         targetSdk = 34
-        versionCode = 8
-        versionName = "1.8"
+        versionCode = 20
+        versionName = "2.0"
 
-        // Chaquopy Python runtime requires explicit ABIs.
+        // 64-bit only: ffmpeg-kit publishes no 32-bit builds, and without the
+        // merge engine a 32-bit device could not download any video at all.
         ndk {
-            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
+            abiFilters += listOf("arm64-v8a", "x86_64")
         }
 
         vectorDrawables { useSupportLibrary = true }
@@ -68,6 +69,7 @@ dependencies {
     implementation(libs.core.ktx)
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.lifecycle.viewmodel.compose)
+    implementation(libs.lifecycle.runtime.compose)
     implementation(libs.activity.compose)
     implementation(libs.splash)
 
@@ -79,7 +81,6 @@ dependencies {
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
     implementation(libs.compose.material.icons)
-    implementation(libs.compose.material.icons.extended)
     implementation(libs.navigation.compose)
 
     implementation(libs.room.runtime)
@@ -95,6 +96,11 @@ dependencies {
     implementation(libs.coroutines.android)
     implementation(libs.coil.compose)
 
+    // On-device merge engine (LGPL-3.0): yt-dlp downloads streams, this muxes them.
+    implementation(libs.ffmpeg.kit.full)
+
     testImplementation(libs.junit)
     testImplementation(libs.json.test)
+    testImplementation(libs.okhttp.mockwebserver)
+    testImplementation(libs.coroutines.test)
 }
