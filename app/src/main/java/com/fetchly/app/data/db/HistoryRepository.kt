@@ -4,162 +4,156 @@ import com.fetchly.app.domain.model.DownloadStatus
 import com.fetchly.app.domain.model.HistoryEntry
 import com.fetchly.app.domain.model.MediaType
 import com.fetchly.app.domain.model.Platform
+import com.fetchly.app.domain.model.QualityKind
 import com.fetchly.app.domain.model.StreamRef
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** Domain-facing history: rows map to HistoryEntry; signatures round-trip via JSON. */
+/**
+ * Domain-facing history: database rows in, [HistoryEntry] out.
+ *
+ * The signature and its last-known stream URLs are stored separately because
+ * they age at different rates — a retry keeps the signature for matching and
+ * can refresh the URLs after re-resolving.
+ */
 class HistoryRepository(private val dao: HistoryDao) {
 
     fun observeAll(): Flow<List<HistoryEntry>> =
-        dao.observeAll().map { rows -> rows.map(HistoryMapper::toEntry) }
+        dao.observeAll().map { rows -> rows.map { it.toDomain() } }
 
-    suspend fun get(id: String): HistoryEntry? = dao.getById(id)?.let(HistoryMapper::toEntry)
+    suspend fun getById(id: String): HistoryEntry? = dao.getById(id)?.toDomain()
 
-    suspend fun insert(entry: HistoryEntry) = dao.upsert(HistoryMapper.toEntity(entry))
+    suspend fun upsert(entry: HistoryEntry) = dao.upsert(entry.toEntity())
 
-    suspend fun setStatus(
-        id: String,
-        status: DownloadStatus,
-        message: String?,
-        raw: String?,
-        updatedAt: Long,
-    ) = dao.setStatus(id, status.name, message, raw, updatedAt)
+    suspend fun setStatus(id: String, status: DownloadStatus, message: String?, raw: String?, at: Long) =
+        dao.setStatus(id, status.name, message, raw, at)
 
-    suspend fun setCompleted(
-        id: String,
-        uri: String?,
-        name: String?,
-        path: String?,
-        size: Long?,
-        updatedAt: Long,
-    ) = dao.setCompleted(id, uri, name, path, size, updatedAt)
+    suspend fun setCompleted(id: String, uri: String, name: String, path: String, size: Long?, at: Long) =
+        dao.setCompleted(id, uri, name, path, size, at)
 
     suspend fun delete(id: String) = dao.delete(id)
 
     suspend fun clear() = dao.clear()
+
+    companion object {
+        fun workNameOf(id: String) = "fetchly_$id"
+    }
 }
 
-/** DownloadEntity ↔ HistoryEntry mapping, kept pure so it is unit-testable. */
-internal object HistoryMapper {
+internal fun DownloadEntity.toDomain(): HistoryEntry = HistoryEntry(
+    id = id,
+    title = title,
+    uploader = uploader,
+    sourceUrl = sourceUrl,
+    platform = runCatching { Platform.valueOf(platform) }.getOrDefault(Platform.OTHER),
+    mediaType = runCatching { MediaType.valueOf(mediaType) }.getOrDefault(MediaType.VIDEO),
+    thumbnailUrl = thumbnailUrl,
+    durationSeconds = durationSeconds,
+    optionLabel = optionLabel,
+    kind = runCatching { QualityKind.valueOf(kind) }.getOrDefault(QualityKind.VIDEO),
+    container = container,
+    sizeBytes = sizeBytes,
+    signature = Signatures.decode(signatureJson, streamUrlsJson),
+    status = runCatching { DownloadStatus.valueOf(status) }.getOrDefault(DownloadStatus.FAILED),
+    errorMessage = errorMessage,
+    errorRaw = errorRaw,
+    outputUri = outputUri,
+    outputName = outputName,
+    outputPath = outputPath,
+    createdAt = createdAt,
+    updatedAt = updatedAt,
+)
 
-    fun toEntity(entry: HistoryEntry): DownloadEntity = DownloadEntity(
-        id = entry.id,
-        title = entry.title,
-        uploader = entry.uploader,
-        sourceUrl = entry.sourceUrl,
-        platform = entry.platform.name,
-        mediaType = entry.mediaType.name,
-        thumbnailUrl = entry.thumbnailUrl,
-        durationSeconds = entry.durationSeconds,
-        optionLabel = entry.optionLabel,
-        container = entry.container,
-        sizeBytes = entry.sizeBytes,
-        signatureJson = Signatures.encodeSignature(entry.signature),
-        streamUrlsJson = Signatures.encodeUrls(entry.signature),
-        workName = "fetchly_${entry.id}",
-        status = entry.status.name,
-        errorMessage = entry.errorMessage,
-        errorRaw = entry.errorRaw,
-        outputUri = entry.outputUri,
-        outputName = entry.outputName,
-        outputPath = entry.outputPath,
-        createdAt = entry.createdAt,
-        updatedAt = entry.updatedAt,
-    )
-
-    fun toEntry(entity: DownloadEntity): HistoryEntry = HistoryEntry(
-        id = entity.id,
-        title = entity.title,
-        uploader = entity.uploader,
-        sourceUrl = entity.sourceUrl,
-        platform = entity.platform.asEnum(Platform.OTHER),
-        mediaType = entity.mediaType.asEnum(MediaType.VIDEO),
-        thumbnailUrl = entity.thumbnailUrl,
-        durationSeconds = entity.durationSeconds,
-        optionLabel = entity.optionLabel,
-        container = entity.container,
-        sizeBytes = entity.sizeBytes,
-        signature = Signatures.decode(entity.signatureJson, entity.streamUrlsJson),
-        status = entity.status.asEnum(DownloadStatus.FAILED),
-        errorMessage = entity.errorMessage,
-        errorRaw = entity.errorRaw,
-        outputUri = entity.outputUri,
-        outputName = entity.outputName,
-        outputPath = entity.outputPath,
-        createdAt = entity.createdAt,
-        updatedAt = entity.updatedAt,
-    )
-
-    /** Unknown names (a future enum rename over an old DB) map to a safe default. */
-    private inline fun <reified T : Enum<T>> String.asEnum(fallback: T): T =
-        enumValues<T>().firstOrNull { it.name == this } ?: fallback
-}
+internal fun HistoryEntry.toEntity(): DownloadEntity = DownloadEntity(
+    id = id,
+    title = title,
+    uploader = uploader,
+    sourceUrl = sourceUrl,
+    platform = platform.name,
+    mediaType = mediaType.name,
+    thumbnailUrl = thumbnailUrl,
+    durationSeconds = durationSeconds,
+    optionLabel = optionLabel,
+    kind = kind.name,
+    container = container,
+    sizeBytes = sizeBytes,
+    signatureJson = Signatures.encodeSignature(signature),
+    streamUrlsJson = Signatures.encodeUrls(signature),
+    workName = HistoryRepository.workNameOf(id),
+    status = status.name,
+    errorMessage = errorMessage,
+    errorRaw = errorRaw,
+    outputUri = outputUri,
+    outputName = outputName,
+    outputPath = outputPath,
+    createdAt = createdAt,
+    updatedAt = updatedAt,
+)
 
 /**
- * JSON codec for stream signatures. Two columns on purpose: the signature is
- * what OptionMatcher compares (formatId, ext, codecs, height, abr, sizes — no
- * URLs); the URLs live in their own column because retry may replace them
- * after a fresh resolve.
+ * org.json codec for the stored stream signature and its last-known URLs.
+ *
+ * JSON nulls are handled explicitly: `optString` can return the literal
+ * "null" for them, and that must never leak into a [StreamRef].
  */
 internal object Signatures {
 
+    /** Structural part used for matching — everything but the URL. */
     fun encodeSignature(streams: List<StreamRef>): String {
         val array = JSONArray()
-        for (s in streams) {
+        streams.forEach { stream ->
             array.put(
-                JSONObject()
-                    .put("formatId", s.formatId)
-                    .put("ext", s.ext)
-                    .put("vcodec", s.vcodec)
-                    .put("acodec", s.acodec)
-                    .putOpt("height", s.height)
-                    .putOpt("abr", s.abr)
-                    .putOpt("sizeBytes", s.sizeBytes)
-                    .putOpt("protocol", s.protocol),
+                JSONObject().apply {
+                    put("formatId", stream.formatId)
+                    put("ext", stream.ext)
+                    put("vcodec", stream.vcodec)
+                    put("acodec", stream.acodec)
+                    putOpt("height", stream.height)
+                    putOpt("abr", stream.abr)
+                    putOpt("sizeBytes", stream.sizeBytes)
+                    putOpt("protocol", stream.protocol)
+                }
             )
         }
         return array.toString()
     }
 
+    /** Last-known URLs by format id — a cache that a retry may refresh. */
     fun encodeUrls(streams: List<StreamRef>): String {
-        val obj = JSONObject()
-        for (s in streams) obj.putOpt(s.formatId, s.url)
-        return obj.toString()
+        val urls = JSONObject()
+        streams.forEach { urls.put(it.formatId, it.url) }
+        return urls.toString()
     }
 
     fun decode(signatureJson: String?, urlsJson: String?): List<StreamRef> {
-        val array = runCatching { JSONArray(signatureJson ?: "") }.getOrNull() ?: return emptyList()
-        val urls = runCatching { JSONObject(urlsJson ?: "") }.getOrNull() ?: JSONObject()
-        return buildList {
-            for (i in 0 until array.length()) {
-                val o = array.optJSONObject(i) ?: continue
-                val formatId = o.optString("formatId", "")
-                add(
-                    StreamRef(
-                        formatId = formatId,
-                        url = urls.optString(formatId, ""),
-                        ext = o.optString("ext", ""),
-                        vcodec = o.optString("vcodec", ""),
-                        acodec = o.optString("acodec", ""),
-                        height = o.intOrNull("height"),
-                        abr = o.intOrNull("abr"),
-                        sizeBytes = o.longOrNull("sizeBytes"),
-                        protocol = o.stringOrNull("protocol"),
-                    ),
+        val raw = signatureJson?.takeIf { it.isNotBlank() } ?: return emptyList()
+        val urls = urlsJson?.takeIf { it.isNotBlank() }
+            ?.let { runCatching { JSONObject(it) }.getOrNull() }
+        return runCatching {
+            val array = JSONArray(raw)
+            (0 until array.length()).mapNotNull { index ->
+                val entry = array.optJSONObject(index) ?: return@mapNotNull null
+                val formatId = entry.optString("formatId", "")
+                StreamRef(
+                    formatId = formatId,
+                    url = (urls?.opt(formatId) as? String).orEmpty(),
+                    ext = entry.optString("ext", ""),
+                    vcodec = entry.optString("vcodec", "none"),
+                    acodec = entry.optString("acodec", "none"),
+                    height = entry.intOrNull("height"),
+                    abr = entry.intOrNull("abr"),
+                    sizeBytes = entry.longOrNull("sizeBytes"),
+                    protocol = entry.stringOrNull("protocol"),
                 )
             }
-        }
+        }.getOrDefault(emptyList())
     }
 
-    private fun JSONObject.intOrNull(key: String): Int? =
-        if (isNull(key)) null else optInt(key)
+    private fun JSONObject.intOrNull(key: String): Int? = if (isNull(key)) null else optInt(key)
 
-    private fun JSONObject.longOrNull(key: String): Long? =
-        if (isNull(key)) null else optLong(key)
+    private fun JSONObject.longOrNull(key: String): Long? = if (isNull(key)) null else optLong(key)
 
-    private fun JSONObject.stringOrNull(key: String): String? =
-        if (isNull(key)) null else optString(key)
+    private fun JSONObject.stringOrNull(key: String): String? = if (isNull(key)) null else optString(key)
 }
