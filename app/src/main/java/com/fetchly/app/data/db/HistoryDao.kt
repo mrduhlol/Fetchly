@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface HistoryDao {
 
-    /** Newest first — the order the Downloads screen shows. */
     @Query("SELECT * FROM downloads ORDER BY createdAt DESC")
     fun observeAll(): Flow<List<DownloadEntity>>
 
@@ -20,30 +19,16 @@ interface HistoryDao {
 
     @Query(
         "UPDATE downloads SET status = :status, errorMessage = :message, errorRaw = :raw, " +
-            "updatedAt = :updatedAt WHERE id = :id",
+            "updatedAt = :updatedAt WHERE id = :id"
     )
-    suspend fun setStatus(
-        id: String,
-        status: String,
-        message: String?,
-        raw: String?,
-        updatedAt: Long,
-    )
+    suspend fun setStatus(id: String, status: String, message: String?, raw: String?, updatedAt: Long)
 
-    /** Completing clears any previous failure text; [size] never overwrites with null. */
     @Query(
         "UPDATE downloads SET status = 'COMPLETED', outputUri = :uri, outputName = :name, " +
-            "outputPath = :path, sizeBytes = COALESCE(:size, sizeBytes), updatedAt = :updatedAt, " +
-            "errorMessage = NULL, errorRaw = NULL WHERE id = :id",
+            "outputPath = :path, sizeBytes = COALESCE(:size, sizeBytes), errorMessage = NULL, " +
+            "errorRaw = NULL, updatedAt = :updatedAt WHERE id = :id"
     )
-    suspend fun setCompleted(
-        id: String,
-        uri: String?,
-        name: String?,
-        path: String?,
-        size: Long?,
-        updatedAt: Long,
-    )
+    suspend fun setCompleted(id: String, uri: String, name: String, path: String, size: Long?, updatedAt: Long)
 
     @Query("DELETE FROM downloads WHERE id = :id")
     suspend fun delete(id: String)
