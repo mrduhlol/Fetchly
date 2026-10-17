@@ -37,13 +37,16 @@ class UrlSecurityTest {
 
     @Test
     fun `non http schemes are rejected`() {
-        assertEquals("Only http(s) links are supported.", invalidReason("ftp://example.com/a.mp4"))
-        assertEquals("Only http(s) links are supported.", invalidReason("javascript:alert(1)"))
+        assertEquals("Only http and https links are supported.", invalidReason("ftp://example.com/a.mp4"))
+        assertEquals("Only http and https links are supported.", invalidReason("javascript:alert(1)"))
     }
 
     @Test
     fun `schemeless text gets a prefix hint`() {
-        assertEquals("Links need an http:// or https:// prefix.", invalidReason("youtu.be/dQw4w9WgXcQ"))
+        assertEquals(
+            "That doesn't look like a link — links need to start with http:// or https://.",
+            invalidReason("youtu.be/dQw4w9WgXcQ"),
+        )
     }
 
     @Test
