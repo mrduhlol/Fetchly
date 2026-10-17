@@ -53,10 +53,15 @@
 - Stash the 11 modified working-tree files first: `git stash push -m "superseded: partial v1.8→engine migration (rollback if ever needed)"` — they are the old partial migration, kept out of the way but recoverable.
 
 **Steps:**
-- [ ] `git stash push` the working tree; `git status` clean.
-- [ ] Write the build files + placeholder source, delete old sources (`git rm -r`), commit + push after each file.
-- [ ] Verify: `ANDROID_HOME` set (toolchain task), `./gradlew :app:assembleDebug :app:testDebugUnitTest` → BUILD SUCCESSFUL; record baseline debug APK size.
-- [ ] Contingency (only if build fails on it): Chaquopy-vs-AGP complaint → keep AGP as-is; compileSdk-35 rejection → already suppressed; if Chaquopy *hard-fails* on Gradle 8.7/AGP 8.5.2 (it should not — v1.8 builds on this exact combo), bump AGP to 8.6.1 + Gradle wrapper 8.9 as one atomic change and re-verify.
+- [x] `git stash push` the working tree; `git status` clean.
+- [x] Write the build files + placeholder source, delete old sources (`git rm -r`), commit + push after each file.
+- [x] Verify: `ANDROID_HOME` set (toolchain task), `gradle :app:assembleDebug :app:testDebugUnitTest` → BUILD SUCCESSFUL; baseline debug APK size **124 MB** (both ABIs).
+- [x] Contingency (only if build fails on it): Chaquopy-vs-AGP complaint → keep AGP as-is; compileSdk-35 rejection → already suppressed; if Chaquopy *hard-fails* on Gradle 8.7/AGP 8.5.2 (it should not — v1.8 builds on this exact combo), bump AGP to 8.6.1 + Gradle wrapper 8.9 as one atomic change and re-verify.
+
+**Execution notes (2026-10-18, verified):**
+- `buildToolsVersion = "35.0.0"` pinned — AGP 8.5.2's default (34.0.0) is not installed and its auto-install failed on this machine.
+- Chaquopy 15.0.1's build venv runs its bundled 2023-era pip, which does `import cgi` — so the build machine needs a host **Python ≤ 3.12** on PATH (system Python 3.14 breaks it; Python 3.13 removed `cgi`). Local builds: prepend `mise` Python 3.12 to PATH. CI: add `actions/setup-python@v5` (3.12) to be safe, since ubuntu-latest's system Python drifts.
+- APK contents verified: `lib/{arm64-v8a,x86_64}/libavcodec.so`, `libffmpegkit.so`, `assets/chaquopy/…` all present; yt-dlp 2026.08.19 packaged.
 
 ## Task 2 — Domain models & formatting utilities
 
