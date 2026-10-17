@@ -2,48 +2,42 @@ package com.fetchly.app.data.prefs
 
 import android.content.Context
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.fetchly.app.domain.model.DefaultQuality
+import com.fetchly.app.domain.model.ThemeChoice
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 
-/** Appearance setting; SYSTEM follows the phone. */
-enum class ThemeChoice { SYSTEM, LIGHT, DARK }
+// Top-level so every SettingsStore instance shares one DataStore.
+private val Context.settingsData by preferencesDataStore(name = "fetchly_settings")
 
-/** What a fresh quality list preselects: nothing (ASK) or the top option (BEST). */
-enum class DefaultQuality { ASK, BEST }
-
-private val Context.settingsDataStore by preferencesDataStore(name = "fetchly_settings")
-
-/**
- * The whole settings surface: theme and default quality. Deliberately no
- * API/endpoint/URL setting — Fetchly has no backend and nothing to point at.
- */
+/** User preferences: appearance and default quality. Nothing else. */
 class SettingsStore(context: Context) {
 
-    private val store = context.applicationContext.settingsDataStore
+    // Hold the application context: the store outlives any screen that made it.
+    private val context = context.applicationContext
 
-    val theme: Flow<ThemeChoice> = store.data.map { prefs ->
-        prefs[THEME]?.asEnum(ThemeChoice.SYSTEM) ?: ThemeChoice.SYSTEM
-    }
+    val theme: Flow<ThemeChoice> = context.settingsData.data
+        .catch { emit(emptyPreferences()) }
+        .map { preferences -> ThemeChoice.fromName(preferences[KEY_THEME]) }
 
-    val defaultQuality: Flow<DefaultQuality> = store.data.map { prefs ->
-        prefs[DEFAULT_QUALITY]?.asEnum(DefaultQuality.ASK) ?: DefaultQuality.ASK
-    }
+    val defaultQuality: Flow<DefaultQuality> = context.settingsData.data
+        .catch { emit(emptyPreferences()) }
+        .map { preferences -> DefaultQuality.fromName(preferences[KEY_DEFAULT_QUALITY]) }
 
     suspend fun setTheme(choice: ThemeChoice) {
-        store.edit { it[THEME] = choice.name }
+        context.settingsData.edit { preferences -> preferences[KEY_THEME] = choice.name }
     }
 
     suspend fun setDefaultQuality(choice: DefaultQuality) {
-        store.edit { it[DEFAULT_QUALITY] = choice.name }
+        context.settingsData.edit { preferences -> preferences[KEY_DEFAULT_QUALITY] = choice.name }
     }
 
     private companion object {
-        val THEME = stringPreferencesKey("theme")
-        val DEFAULT_QUALITY = stringPreferencesKey("default_quality")
+        val KEY_THEME = stringPreferencesKey("theme")
+        val KEY_DEFAULT_QUALITY = stringPreferencesKey("default_quality")
     }
 }
-
-private inline fun <reified T : Enum<T>> String.asEnum(fallback: T): T =
-    enumValues<T>().firstOrNull { it.name == this } ?: fallback
