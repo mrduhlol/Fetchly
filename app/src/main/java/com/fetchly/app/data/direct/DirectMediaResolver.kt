@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.Response
 import java.net.URI
 import java.net.URLDecoder
 import java.util.concurrent.TimeUnit
@@ -21,16 +22,18 @@ sealed interface DirectResult {
     data object NotDirect : DirectResult
 }
 
-/** "Is this URL a media file?" — faked in repository tests. */
 interface DirectProbe {
     suspend fun resolve(url: String): DirectResult
 }
 
 /**
- * Asks a URL (HEAD first, ranged GET as fallback) whether it serves a media
- * file directly. HTML/JSON/unknown types — and any network failure — come
- * back as [DirectResult.NotDirect] so the caller can hand the link to yt-dlp
- * instead of pretending it failed.
+ * One cheap question: is this URL a plain media file that can be saved as-is,
+ * or does it deserve the full yt-dlp treatment?
+ *
+ * HEAD first (no bytes downloaded); when the server refuses HEAD or answers
+ * without a content type, a single ranged GET asks for the first byte and
+ * reads the total size from Content-Range. Anything that is not a media mime
+ * (web pages, JSON APIs, …) is NotDirect, which sends the link to the engine.
  */
 class DirectMediaResolver(
     http: OkHttpClient,
@@ -40,90 +43,68 @@ class DirectMediaResolver(
     private val client = http.newBuilder()
         .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
         .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-        .callTimeout(TIMEOUT_SECONDS + 5, TimeUnit.SECONDS)
+        .callTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
         .build()
 
     override suspend fun resolve(url: String): DirectResult = withContext(io) {
-        val head = fetch(Request.Builder().url(url).head().build())
-            ?: return@withContext DirectResult.NotDirect
-        if (head.answers()) return@withContext classify(url, head)
+        val head = runCatching {
+            client.newCall(Request.Builder().url(url).head().build()).execute()
+        }.getOrNull()
+        val headVerdict = head?.use { classify(url, it) }
+        if (headVerdict != null) return@withContext headVerdict
 
-        val ranged = fetch(
-            Request.Builder()
-                .url(url)
-                .header("Range", "bytes=0-0")
-                .get()
-                .build()
-        )
-        if (ranged != null && ranged.answers()) classify(url, ranged) else DirectResult.NotDirect
+        val ranged = runCatching {
+            client.newCall(
+                Request.Builder().url(url).header("Range", "bytes=0-0").get().build()
+            ).execute()
+        }.getOrNull()
+        ranged?.use { classify(url, it) } ?: DirectResult.NotDirect
     }
 
-    private fun classify(url: String, response: ProbeResponse): DirectResult {
-        val mime = response.contentType
-            ?.substringBefore(';')
-            ?.trim()
-            ?.lowercase()
-            .orEmpty()
+    /** null = HEAD was unusable, so a ranged GET is worth trying. */
+    private fun classify(url: String, response: Response): DirectResult? {
+        if (response.code !in 200..299) return null
+        val rawType = response.header("Content-Type")?.trim() ?: return null
+        val mime = rawType.substringBefore(';').trim().lowercase()
+        if (mime.isEmpty()) return null
         if (!MimeTypes.isMediaMime(mime)) return DirectResult.NotDirect
         return DirectResult.File(
             url = url,
             mime = mime,
             sizeBytes = totalSize(response),
-            filename = filename(url, response.disposition),
+            filename = dispositionFilename(response) ?: pathFilename(url),
         )
     }
 
-    private fun totalSize(response: ProbeResponse): Long? {
-        response.contentRange?.let { range ->
-            val total = range.substringAfterLast('/', "").trim()
+    private fun totalSize(response: Response): Long? {
+        val contentRange = response.header("Content-Range")
+        if (contentRange != null) {
+            val total = contentRange.substringAfterLast('/', "").trim()
             if (total.isNotEmpty() && total != "*") return total.toLongOrNull()
         }
-        return response.contentLength?.takeIf { it > 0 }
+        return response.header("Content-Length")?.toLongOrNull()?.takeIf { it > 0 }
     }
 
-    private fun filename(url: String, disposition: String?): String? {
-        disposition?.let { header ->
-            FILENAME_STAR.find(header)?.groupValues?.get(1)
-                ?.takeIf { it.isNotBlank() }
-                ?.let { return decode(it.trim().trim('"')) }
-            FILENAME_PLAIN.find(header)?.groupValues?.get(1)
-                ?.takeIf { it.isNotBlank() }
-                ?.let { return it.trim().trim('"') }
+    private fun dispositionFilename(response: Response): String? {
+        val value = response.header("Content-Disposition") ?: return null
+        val encoded = FILENAME_STAR.find(value)?.groupValues?.get(1)?.trim()?.trim('"')
+        if (!encoded.isNullOrBlank()) {
+            val name = encoded.substringAfter("''", encoded)
+            return runCatching { URLDecoder.decode(name, "UTF-8") }
+                .getOrNull()?.takeIf { it.isNotBlank() }
         }
-        return runCatching { URI(url).path }.getOrNull()
+        val plain = FILENAME.find(value)?.groupValues?.get(1)?.trim()?.trim('"')
+        return plain?.takeIf { it.isNotBlank() }
+    }
+
+    private fun pathFilename(url: String): String? =
+        runCatching { URI(url).path }.getOrNull()
             ?.substringAfterLast('/')
             ?.takeIf { it.isNotBlank() }
-    }
 
-    private fun decode(value: String): String =
-        runCatching { URLDecoder.decode(value, "UTF-8") }.getOrDefault(value)
-
-    private fun fetch(request: Request): ProbeResponse? = runCatching {
-        client.newCall(request).execute().use { response ->
-            ProbeResponse(
-                code = response.code,
-                contentType = response.header("Content-Type"),
-                contentLength = response.header("Content-Length")?.toLongOrNull(),
-                contentRange = response.header("Content-Range"),
-                disposition = response.header("Content-Disposition"),
-            )
-        }
-    }.getOrNull()
-
-    private data class ProbeResponse(
-        val code: Int,
-        val contentType: String?,
-        val contentLength: Long?,
-        val contentRange: String?,
-        val disposition: String?,
-    ) {
-        /** True when this response alone can be classified (no retry needed). */
-        fun answers(): Boolean = code in 200..299 && !contentType.isNullOrBlank()
-    }
-
-    private companion object {
+    companion object {
         const val TIMEOUT_SECONDS = 15L
-        val FILENAME_STAR = Regex("""filename\*\s*=\s*[^']*'[^']*'([^;]+)""", RegexOption.IGNORE_CASE)
-        val FILENAME_PLAIN = Regex("""filename\s*=\s*"?([^";]+)"?""", RegexOption.IGNORE_CASE)
+        private val FILENAME_STAR = Regex("""filename\*\s*=\s*([^;]+)""", RegexOption.IGNORE_CASE)
+        private val FILENAME = Regex("""filename(?!\*)\s*=\s*([^;]+)""", RegexOption.IGNORE_CASE)
     }
 }
