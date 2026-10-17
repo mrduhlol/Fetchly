@@ -186,9 +186,9 @@ Routing: YOUTUBE/known social → engine; DIRECT + OTHER → probe first, on Not
 | `drm` | This media is DRM-protected, so it can't be downloaded. |
 | `age` + (`confirm`/`restricted`) | This video is age-restricted. Fetchly can't sign in, so it can't download it. |
 | `private video`/`login required`/`sign in`/`log in`/`cookies`/`members-only`/`requires authentication` | This media isn't publicly available. It needs a sign-in, or it's private. |
-| `not available in your country`/`geo`/`region` | The source says this media isn't available in your region. |
+| `available in your country`/`geo`/`region` | The source says this media isn't available in your region. |
 | `unsupported url`/`no suitable extractor` | This source isn't supported yet. |
-| `video unavailable`/`removed`/`does not exist`/`404 `/`410 ` | The source says this media doesn't exist or has been removed. |
+| `video unavailable`/`removed`/`does not exist`/`404`/`410` | The source says this media doesn't exist or has been removed. |
 | `unable to extract`/`player response`/`nsig`/`signature`/`precondition`/`failed to parse` | The source changed how it serves this media and Fetchly's engine couldn't read it. Updating Fetchly usually fixes this. |
 | `timed out`/`timeout`/`getaddrinfo`/`connection`/`network`/`temporary failure`/`proxy` | Couldn't reach the source. Check your connection and try again. |
 | anything else | Fetchly couldn't read this link. The engine said: "«raw trimmed to 160 chars»" |
