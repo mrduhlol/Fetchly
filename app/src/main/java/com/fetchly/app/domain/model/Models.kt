@@ -49,9 +49,9 @@ data class MediaInfo(
 enum class DownloadStatus { QUEUED, RUNNING, COMPLETED, FAILED, CANCELLED }
 
 /**
- * One row of download history. Keeps what a retry needs: the source URL and
- * the chosen option's stream signature; stored stream URLs are a cache only
- * (they expire — retry re-resolves when they stop working).
+ * One row of download history. Keeps what a retry needs: the source URL, the
+ * chosen option's kind and stream signature; stored stream URLs are a cache
+ * only (they expire — retry re-resolves when they stop working).
  */
 data class HistoryEntry(
     val id: String,
@@ -63,6 +63,7 @@ data class HistoryEntry(
     val thumbnailUrl: String?,
     val durationSeconds: Int?,
     val optionLabel: String,
+    val kind: QualityKind,
     val container: String,
     val sizeBytes: Long?,
     val signature: List<StreamRef>,
