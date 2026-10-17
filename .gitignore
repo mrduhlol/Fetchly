@@ -15,3 +15,7 @@ local.properties
 # External SDK / secrets
 google-services.json
 local.defaults.properties
+
+# Python
+__pycache__/
+*.pyc
