@@ -21,6 +21,8 @@ chaquopy {
 android {
     namespace = "com.fetchly.app"
     compileSdk = 35
+    // Pin the installed Build-Tools (AGP 8.5.2 would otherwise want 34.0.0).
+    buildToolsVersion = "35.0.0"
 
     defaultConfig {
         applicationId = "com.fetchly.app"
