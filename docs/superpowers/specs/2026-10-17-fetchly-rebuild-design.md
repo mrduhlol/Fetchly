@@ -295,7 +295,9 @@ SETTINGS
   degraded single-stream/file cases), platform detection, URL security,
   media sniffer, mime/size formatting, retry signature matching.
 - Local: `./gradlew testDebugUnitTest assembleDebug` on the build machine
-  (JDK 17 + Android SDK installed for this work).
+  (JDK 17 + Android SDK 35 + a host Python ≤ 3.12 for Chaquopy's build pip —
+  verified 2026-10-18; Python 3.13+ removed `cgi`, which Chaquopy 15's
+  bundled pip imports).
 - CI: tag build green, APK attached to the GitHub release.
 - Owner (device): paste a YouTube link → fetch → 1080p download → play
   with sound; a Shorts link and a second, different video (varied
