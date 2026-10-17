@@ -1,7 +1,7 @@
 # Fetchly rebuild — design
 
 - Date: 2026-10-17
-- Status: draft — awaiting owner approval
+- Status: building — the owner directed the from-scratch rebuild; implementation proceeds per the plan under the owner's per-file commit+push workflow
 - Supersedes: the entire current application (v1.8 and earlier, plus the uncommitted partial migration sitting in the working tree)
 
 ## Intent and why
