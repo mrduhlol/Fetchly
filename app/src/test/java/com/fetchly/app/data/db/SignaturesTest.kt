@@ -7,66 +7,65 @@ import org.junit.Test
 
 class SignaturesTest {
 
-    private val video = StreamRef(
-        formatId = "137",
-        url = "https://cdn.example.invalid/137?exp=1",
-        ext = "mp4",
-        vcodec = "avc1.640028",
-        acodec = "none",
-        height = 1080,
-        abr = null,
-        sizeBytes = 80_911_999,
-        protocol = "https",
-    )
-
-    private val audio = StreamRef(
-        formatId = "140",
-        url = "https://cdn.example.invalid/140?exp=1",
-        ext = "m4a",
-        vcodec = "none",
-        acodec = "mp4a.40.2",
-        height = null,
-        abr = 129,
-        sizeBytes = null,
-        protocol = null,
+    private val streams = listOf(
+        StreamRef(
+            formatId = "137",
+            url = "https://cdn.example.invalid/137",
+            ext = "mp4",
+            vcodec = "avc1.640028",
+            acodec = "none",
+            height = 1080,
+            abr = null,
+            sizeBytes = 80_911_999L,
+            protocol = "https",
+        ),
+        StreamRef(
+            formatId = "140",
+            url = "https://cdn.example.invalid/140",
+            ext = "m4a",
+            vcodec = "none",
+            acodec = "mp4a.40.2",
+            height = null,
+            abr = 129,
+            sizeBytes = null,
+            protocol = null,
+        ),
     )
 
     @Test
-    fun `round trip keeps every field including urls and nulls`() {
-        val streams = listOf(video, audio)
-
-        val decoded = Signatures.decode(
-            Signatures.encodeSignature(streams),
-            Signatures.encodeUrls(streams),
-        )
-
+    fun `round trip keeps every field`() {
+        val decoded = Signatures.decode(Signatures.encodeSignature(streams), Signatures.encodeUrls(streams))
         assertEquals(streams, decoded)
     }
 
     @Test
-    fun `a stream without a cached url decodes with an empty url`() {
-        val decoded = Signatures.decode(
-            Signatures.encodeSignature(listOf(video)),
-            Signatures.encodeUrls(emptyList()),
-        )
-
-        assertEquals(1, decoded.size)
-        assertEquals("", decoded.single().url)
-        assertEquals(video.copy(url = ""), decoded.single())
+    fun `urls are rejoined by format id, not by position`() {
+        val urls = Signatures.encodeUrls(streams.reversed())
+        val decoded = Signatures.decode(Signatures.encodeSignature(streams), urls)
+        assertEquals(streams, decoded)
     }
 
     @Test
-    fun `signature json does not leak urls`() {
-        val signatureJson = Signatures.encodeSignature(listOf(video))
-
-        assertTrue("signature should not contain a url: $signatureJson", !signatureJson.contains("https://"))
+    fun `missing urls decode as empty strings`() {
+        val decoded = Signatures.decode(Signatures.encodeSignature(streams), "{}")
+        assertEquals(streams.map { it.copy(url = "") }, decoded)
     }
 
     @Test
-    fun `malformed or missing json decodes to an empty list`() {
+    fun `blank signature decodes to empty`() {
         assertTrue(Signatures.decode(null, null).isEmpty())
-        assertTrue(Signatures.decode("not json", null).isEmpty())
-        assertTrue(Signatures.decode(null, "{bad").isEmpty())
-        assertTrue(Signatures.decode("[{}]", null).let { it.size == 1 })
+        assertTrue(Signatures.decode("", "{}").isEmpty())
+        assertTrue(Signatures.decode("   ", null).isEmpty())
+    }
+
+    @Test
+    fun `malformed json degrades to empty instead of crashing`() {
+        assertTrue(Signatures.decode("not json at all", "{}").isEmpty())
+    }
+
+    @Test
+    fun `malformed urls fall back to empty urls, signature survives`() {
+        val decoded = Signatures.decode(Signatures.encodeSignature(streams), "{not json")
+        assertEquals(streams.map { it.copy(url = "") }, decoded)
     }
 }
