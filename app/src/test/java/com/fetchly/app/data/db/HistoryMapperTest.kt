@@ -48,6 +48,7 @@ class HistoryMapperTest {
         thumbnailUrl = "https://i.example.invalid/t.jpg",
         durationSeconds = 213,
         optionLabel = "1080p",
+        kind = QualityKind.VIDEO,
         container = "mp4",
         sizeBytes = 84_361_446,
         signature = listOf(video, audio),
@@ -63,40 +64,42 @@ class HistoryMapperTest {
 
     @Test
     fun `entry to entity and back is lossless`() {
-        assertEquals(entry, HistoryMapper.toEntry(HistoryMapper.toEntity(entry)))
+        assertEquals(entry, entry.toEntity().toDomain())
     }
 
     @Test
     fun `entity carries the work name the queue uses`() {
-        assertEquals("fetchly_abc-123", HistoryMapper.toEntity(entry).workName)
+        assertEquals("fetchly_abc-123", entry.toEntity().workName)
     }
 
     @Test
     fun `unknown enum names fall back instead of crashing`() {
-        val entity = HistoryMapper.toEntity(entry).copy(
+        val entity = entry.toEntity().copy(
             platform = "MYSPACE",
             mediaType = "HOLOGRAM",
+            kind = "MIRAGE",
             status = "EXPLODED",
         )
 
-        val decoded = HistoryMapper.toEntry(entity)
+        val decoded = entity.toDomain()
 
         assertEquals(Platform.OTHER, decoded.platform)
         assertEquals(MediaType.VIDEO, decoded.mediaType)
+        assertEquals(QualityKind.VIDEO, decoded.kind)
         assertEquals(DownloadStatus.FAILED, decoded.status)
     }
 
     @Test
     fun `corrupt stream json yields an empty signature, not a crash`() {
-        val entity = HistoryMapper.toEntity(entry)
+        val entity = entry.toEntity()
             .copy(signatureJson = "{broken", streamUrlsJson = "[broken")
 
-        assertTrue(HistoryMapper.toEntry(entity).signature.isEmpty())
+        assertTrue(entity.toDomain().signature.isEmpty())
     }
 
     @Test
     fun `stored signature still matches a freshly resolved option`() {
-        val stored = HistoryMapper.toEntry(HistoryMapper.toEntity(entry)).signature
+        val stored = entry.toEntity().toDomain().signature
 
         val freshOption = QualityOption(
             id = "v1080",
