@@ -27,13 +27,13 @@ object ResolveErrors {
             ) ->
                 "This media isn't publicly available. It needs a sign-in, or it's private."
 
-            hasAny(text, "not available in your country", "geo", "region") ->
+            hasAny(text, "available in your country", "geo", "region") ->
                 "The source says this media isn't available in your region."
 
             hasAny(text, "unsupported url", "no suitable extractor") ->
                 "This source isn't supported yet."
 
-            hasAny(text, "video unavailable", "removed", "does not exist", "404 ", "410 ") ->
+            hasAny(text, "video unavailable", "removed", "does not exist", "404", "410") ->
                 "The source says this media doesn't exist or has been removed."
 
             hasAny(
