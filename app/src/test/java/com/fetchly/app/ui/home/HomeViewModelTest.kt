@@ -207,4 +207,17 @@ class HomeViewModelTest {
 
             assertEquals("Local network links aren't supported.", viewModel.state.value.error)
         }
+
+    @Test
+    fun `a share with a refused link and a valid one prefills the valid link`() =
+        runTest(mainDispatcher.dispatcher) {
+            val incoming = IncomingLinks()
+            val (viewModel, _) = viewModel(FakeRepository(ResolveOutcome.Success(info)), incoming)
+
+            incoming.share("bad http://127.0.0.1/x good https://youtu.be/ok123")
+            advanceUntilIdle()
+
+            assertEquals("https://youtu.be/ok123", viewModel.state.value.input)
+            assertNull(viewModel.state.value.error)
+        }
 }
