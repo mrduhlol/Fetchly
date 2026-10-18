@@ -2,12 +2,15 @@ package com.fetchly.app.data
 
 import android.content.Context
 import androidx.room.Room
+import androidx.work.WorkManager
 import com.fetchly.app.data.db.FetchlyDatabase
 import com.fetchly.app.data.db.HistoryRepository
 import com.fetchly.app.data.direct.DirectMediaResolver
 import com.fetchly.app.data.download.DownloadNotifications
 import com.fetchly.app.data.download.DownloadQueue
+import com.fetchly.app.data.download.DownloadWorks
 import com.fetchly.app.data.download.TempFiles
+import com.fetchly.app.data.download.WorkManagerDownloadWorks
 import com.fetchly.app.data.engine.YtDlpEngine
 import com.fetchly.app.data.prefs.SettingsStore
 import com.fetchly.app.data.repository.MediaRepository
@@ -57,6 +60,11 @@ class AppGraph(context: Context) {
     val history = HistoryRepository(database.historyDao())
 
     val queue by lazy { DownloadQueue(appContext, history) }
+
+    /** Live work progress for the Downloads screen; the UI never sees WorkManager. */
+    val downloadWorks: DownloadWorks by lazy {
+        WorkManagerDownloadWorks(WorkManager.getInstance(appContext))
+    }
 
     val settings = SettingsStore(appContext)
     val session = ResolveSession()
