@@ -1,7 +1,7 @@
 # Fetchly rebuild — design
 
 - Date: 2026-10-17
-- Status: built — v2.0 release verification in progress; the tag follows a clean CI run
+- Status: built and released — v2.0 tagged after a clean CI run (139 tests, 0 failures); the release carries `fetchly_v2.0.apk` (123.7 MB)
 - Supersedes: the entire current application (v1.8 and earlier, plus the uncommitted partial migration sitting in the working tree)
 
 ## Intent and why
