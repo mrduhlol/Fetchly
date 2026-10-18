@@ -9,6 +9,7 @@ import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.arthenica.ffmpegkit.FFmpegKit
+import com.arthenica.ffmpegkit.FFmpegSession
 import com.arthenica.ffmpegkit.ReturnCode
 import com.fetchly.app.FetchlyApp
 import com.fetchly.app.data.engine.DownloadHook
@@ -70,9 +71,6 @@ class DownloadWorker(
     @Volatile private var activeHook: DownloadHook? = null
     @Volatile private var activeCall: Call? = null
 
-    /** ffmpeg session id while a merge runs; 0 when no merge is active. */
-    @Volatile private var activeMergeSessionId: Long = 0L
-
     override suspend fun doWork(): Result {
         // CoroutineWorker cancels this coroutine when the work is stopped
         // (onStopped is final), so react to the job's own cancellation:
@@ -94,6 +92,13 @@ class DownloadWorker(
         // CANCELLED is left alone.
         if (!history.claim(id, System.currentTimeMillis())) return Result.success()
         val entry = loaded
+
+        // A previous attempt's "retrying…" notice is stale the moment the new
+        // run announces itself with a progress notification.
+        runCatching {
+            NotificationManagerCompat.from(applicationContext)
+                .cancel(DownloadNotifications.terminalIdFor(id))
+        }
 
         val scratch = TempFiles.dir(applicationContext)
         scratch.mkdirs()
@@ -163,7 +168,10 @@ class DownloadWorker(
                         }
 
                     Refresh.NoMatch -> return PipelineOutcome.Failed(
-                        DownloadErrors.textFor(attempt.raw), attempt.raw, network = false,
+                        "The download link expired and the fresh link doesn't offer " +
+                            "this download any more.",
+                        attempt.raw,
+                        network = false,
                     )
 
                     is Refresh.ResolveFailed -> return PipelineOutcome.Failed(
@@ -403,33 +411,40 @@ class DownloadWorker(
         args += output.absolutePath
 
         // Async so this session's id is known while ffmpeg runs: cancelling
-        // can then cancel exactly this merge. The no-argument FFmpegKit.cancel()
-        // would kill every concurrent download's merge in the process.
+        // can then cancel exactly this merge. The no-argument
+        // FFmpegKit.cancel() would kill every concurrent download's merge.
         val finished = CompletableDeferred<Unit>()
-        val session = withContext(Dispatchers.IO) {
-            FFmpegKit.executeWithArgumentsAsync(args.toTypedArray()) { finished.complete(Unit) }
-        }
-        activeMergeSessionId = session.sessionId
+        var started: FFmpegSession? = null
         try {
-            finished.await()
-        } catch (exc: CancellationException) {
-            FFmpegKit.cancel(session.sessionId)
-            throw exc
-        } finally {
-            activeMergeSessionId = 0L
-        }
-        val code = session.returnCode
-        return when {
-            ReturnCode.isSuccess(code) -> AssembleOutcome.Ok(output)
-            ReturnCode.isCancel(code) -> AssembleOutcome.Cancelled
-            else -> {
-                val codeText = code?.value?.toString() ?: "unknown"
-                val tail = session.output?.trim()?.takeLast(FFMPEG_TAIL_CHARS).orEmpty()
-                AssembleOutcome.Failed(
-                    "The media was downloaded but couldn't be assembled (merge failed).",
-                    "ffmpeg exited with code $codeText. $tail",
-                )
+            withContext(Dispatchers.IO) {
+                started = FFmpegKit.executeWithArgumentsAsync(args.toTypedArray()) {
+                    finished.complete(Unit)
+                }
             }
+            val session = started ?: return AssembleOutcome.Failed(
+                "The media was downloaded but couldn't be assembled (merge failed).",
+                "ffmpeg couldn't be started.",
+            )
+            finished.await()
+            val code = session.returnCode
+            return when {
+                ReturnCode.isSuccess(code) -> AssembleOutcome.Ok(output)
+                ReturnCode.isCancel(code) -> AssembleOutcome.Cancelled
+                else -> {
+                    val codeText = code?.value?.toString() ?: "unknown"
+                    val tail = session.output?.trim()?.takeLast(FFMPEG_TAIL_CHARS).orEmpty()
+                    AssembleOutcome.Failed(
+                        "The media was downloaded but couldn't be assembled (merge failed).",
+                        "ffmpeg exited with code $codeText. $tail",
+                    )
+                }
+            }
+        } catch (exc: CancellationException) {
+            // Cancellation can land while the session is starting (its value
+            // is discarded by withContext) or while we await it — either way,
+            // cancel exactly this session if one exists.
+            started?.let { runCatching { FFmpegKit.cancel(it.sessionId) } }
+            throw exc
         }
     }
 
