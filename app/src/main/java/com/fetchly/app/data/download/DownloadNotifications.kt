@@ -19,13 +19,20 @@ import com.fetchly.app.domain.util.FormatSize
  * in the media library, and a failure notification that offers one retry.
  *
  * One id per download ([idFor]) so each notification replaces its own
- * predecessor instead of stacking.
+ * predecessor instead of stacking. Terminal notifications use
+ * [terminalIdFor] — a different id — because WorkManager cancels the
+ * foreground notification id itself when the work ends, which would wipe a
+ * terminal notification that reused it.
  */
 object DownloadNotifications {
 
     const val CHANNEL_ID = "fetchly_downloads"
 
+    /** Progress + foreground id; WorkManager owns this one's lifetime. */
     fun idFor(downloadId: String): Int = downloadId.hashCode()
+
+    /** Completed/failed/retrying id, kept clear of WorkManager's cancel. */
+    fun terminalIdFor(downloadId: String): Int = ("done:$downloadId").hashCode()
 
     fun ensureChannel(context: Context) {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
@@ -79,16 +86,21 @@ object DownloadNotifications {
         downloadId: String,
         title: String,
         message: String,
+        retryAction: Boolean = true,
     ): Notification =
         builder(context, title, message)
             .setCategory(NotificationCompat.CATEGORY_ERROR)
             .setAutoCancel(true)
             .setContentIntent(openApp(context))
-            .addAction(
-                0,
-                context.getString(R.string.notification_action_retry),
-                broadcast(context, downloadId, DownloadActionReceiver.ACTION_RETRY, salt = 2),
-            )
+            .apply {
+                if (retryAction) {
+                    addAction(
+                        0,
+                        context.getString(R.string.notification_action_retry),
+                        broadcast(context, downloadId, DownloadActionReceiver.ACTION_RETRY, salt = 2),
+                    )
+                }
+            }
             .build()
 
     /** "Downloading video… 12.4 MB of 84.0 MB · 2.1 MB/s" — parts that are unknown are omitted. */
