@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">Fetchly</string>
     <string name="tagline">Paste. Choose. Fetch.</string>
+    <string name="notifications_channel_downloads">Downloads</string>
+    <string name="notification_action_cancel">Cancel</string>
+    <string name="notification_action_retry">Retry</string>
 </resources>
