@@ -48,7 +48,12 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VER="${GITHUB_REF_NAME#v}"
+          NOTES_FILE="docs/release-notes/v${VER}.md"
           if ! gh release view "${GITHUB_REF_NAME}" > /dev/null 2>&1; then
-            gh release create "${GITHUB_REF_NAME}" --title "${GITHUB_REF_NAME}" --notes "Fetchly ${GITHUB_REF_NAME}" --latest
+            if [ -f "$NOTES_FILE" ]; then
+              gh release create "${GITHUB_REF_NAME}" --title "Fetchly ${GITHUB_REF_NAME}" --notes-file "$NOTES_FILE" --latest
+            else
+              gh release create "${GITHUB_REF_NAME}" --title "${GITHUB_REF_NAME}" --notes "Fetchly ${GITHUB_REF_NAME}" --latest
+            fi
           fi
           gh release upload "${GITHUB_REF_NAME}" "fetchly_v${VER}.apk" --clobber
