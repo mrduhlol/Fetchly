@@ -26,25 +26,32 @@ class OnDeviceMediaRepository(
     private val engine: LinkExtractor,
 ) : MediaRepository {
 
-    override suspend fun analyze(url: String): ResolveOutcome {
+    override suspend fun analyze(url: String, onStage: (String) -> Unit): ResolveOutcome {
         val platform = PlatformDetector.detect(url)
         if (platform == Platform.DIRECT || platform == Platform.OTHER) {
+            onStage("Checking the link…")
             val direct = probe.resolve(url)
             if (direct is DirectResult.File) {
                 return ResolveOutcome.Success(directInfo(url, platform, direct))
             }
         }
-        return analyzeWithEngine(url, platform)
+        return analyzeWithEngine(url, platform, onStage)
     }
 
-    private suspend fun analyzeWithEngine(url: String, platform: Platform): ResolveOutcome =
-        when (val mapped = YtDlpMapper.map(engine.extract(url), url, platform)) {
+    private suspend fun analyzeWithEngine(
+        url: String,
+        platform: Platform,
+        onStage: (String) -> Unit,
+    ): ResolveOutcome {
+        onStage("Asking yt-dlp…")
+        return when (val mapped = YtDlpMapper.map(engine.extract(url), url, platform)) {
             is MapResult.Ok -> ResolveOutcome.Success(mapped.info)
             is MapResult.Fail -> ResolveOutcome.Failed(
                 message = ResolveErrors.messageFor(mapped.rawError),
                 raw = mapped.rawError,
             )
         }
+    }
 
     private fun directInfo(url: String, platform: Platform, file: DirectResult.File): MediaInfo {
         val ext = file.filename
