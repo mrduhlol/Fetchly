@@ -50,7 +50,7 @@ class DownloadsViewModel(
 
     val state: StateFlow<DownloadsUiState> =
         combine(history.observeAll(), works.observe()) { entries, running ->
-            map(entries, running.associateBy { it.downloadId })
+            map(entries, joinWorks(running))
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DownloadsUiState())
 
     fun cancel(id: String) {
@@ -66,6 +66,19 @@ class DownloadsViewModel(
     }
 
     companion object {
+        /**
+         * One work entry per download id: a retry (REPLACE) leaves the old
+         * CANCELLED spec behind next to the new one, so a live job is always
+         * preferred over a finished leftover, then a running one over a
+         * merely enqueued one.
+         */
+        fun joinWorks(works: List<DownloadWork>): Map<String, DownloadWork> =
+            works.groupBy { it.downloadId }.mapValues { (_, candidates) ->
+                candidates.firstOrNull { !it.finished && it.running }
+                    ?: candidates.firstOrNull { !it.finished }
+                    ?: candidates.first()
+            }
+
         /** Pure mapping so the list shape is testable without Android. */
         fun map(entries: List<HistoryEntry>, works: Map<String, DownloadWork>): DownloadsUiState {
             val active = mutableListOf<ActiveDownload>()
