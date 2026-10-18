@@ -12,6 +12,7 @@ import com.fetchly.app.data.download.DownloadWorks
 import com.fetchly.app.data.download.TempFiles
 import com.fetchly.app.data.download.WorkManagerDownloadWorks
 import com.fetchly.app.data.engine.YtDlpEngine
+import com.fetchly.app.data.net.PublicOnlyDns
 import com.fetchly.app.data.prefs.SettingsStore
 import com.fetchly.app.data.repository.MediaRepository
 import com.fetchly.app.data.repository.OnDeviceMediaRepository
@@ -44,6 +45,9 @@ class AppGraph(context: Context) {
     val http: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
+        // Redirects and DNS answers must not reach the phone's own network
+        // even when the pasted link looked public (see PublicOnlyDns).
+        .dns(PublicOnlyDns)
         .build()
 
     val engine = YtDlpEngine(appContext)
