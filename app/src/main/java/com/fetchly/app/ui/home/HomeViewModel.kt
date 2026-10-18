@@ -48,17 +48,21 @@ class HomeViewModel(
             incoming.text.collect { text ->
                 if (text == null) return@collect
                 incoming.consume()
-                // A share that carries a link is prefilled; a share that
-                // carries a refused or missing link says so, instead of
-                // closing the sheet onto silence.
-                val candidate = UrlSecurity.firstUrlCandidate(text)
-                when (val check = candidate?.let { UrlSecurity.validate(it) }) {
-                    is UrlValidation.Valid -> _state.update {
-                        it.copy(input = check.url, detected = detect(check.url), error = null, suggestion = null)
+                // A share that carries a link is prefilled (the first usable
+                // one wins); a share with only a refused link, or none at
+                // all, says so instead of closing onto silence.
+                val valid = UrlSecurity.extractFirstUrl(text)
+                if (valid != null) {
+                    _state.update {
+                        it.copy(input = valid, detected = detect(valid), error = null, suggestion = null)
                     }
-                    is UrlValidation.Invalid -> _state.update { it.copy(error = check.reason) }
-                    null -> _state.update { it.copy(error = "That share didn't contain a link.") }
+                    return@collect
                 }
+                val candidate = UrlSecurity.firstUrlCandidate(text)
+                val reason = candidate
+                    ?.let { UrlSecurity.validate(it) as? UrlValidation.Invalid }
+                    ?.reason
+                _state.update { it.copy(error = reason ?: "That share didn't contain a link.") }
             }
         }
     }
