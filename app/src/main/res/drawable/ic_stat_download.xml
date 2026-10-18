@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Notification small icon: a download arrow meeting a tray. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M11,3h2v9l3.25,-3.25l1.42,1.42L12,16.83l-5.67,-5.66l1.42,-1.42L11,12z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M5,18h14v2H5z" />
+</vector>
