@@ -99,6 +99,7 @@ class DownloadQueue(
             )
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
             .addTag(TAG)
+            .addTag(jobTag(id))
             .build()
         workManager.enqueueUniqueWork(
             HistoryRepository.workNameOf(id),
@@ -110,5 +111,13 @@ class DownloadQueue(
     companion object {
         /** Everything Fetchly schedules carries this tag. */
         const val TAG = "fetchly_downloads"
+
+        /**
+         * One tag per download so WorkManager's progress can be joined back
+         * to its history row (WorkInfo does not expose the unique work name).
+         */
+        const val JOB_TAG_PREFIX = "fetchly_job_"
+
+        fun jobTag(id: String): String = "$JOB_TAG_PREFIX$id"
     }
 }
