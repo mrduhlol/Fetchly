@@ -246,8 +246,8 @@ object TempFiles { fun dir(context: Context): File; fun cleanupStale(dir: File, 
 - [x] Full local gate: `gradle :app:testDebugUnitTest :app:assembleDebug` green (139 tests, 0 failures); APK 123.9 MB recorded; `aapt` badging checked (`.debug` suffix, versionCode 20 / "2.0", API 35, only the expected permissions).
 - [x] Fresh reviewer pass (subagent) over the diff vs this plan + spec before tagging: 5 majors + 8 minors found; all majors fixed (notification ids, edge-to-edge insets, session-scoped ffmpeg cancel, atomic CANCELLED invariant, private-host parsing plus a DNS-level guard) and confirmed fixed in a second reviewer round. Minors fixed where cheap; the rest are recorded as accepted residuals (narrow, non-corrupting).
 - [x] README: what v2.0 is, honest YouTube/social/direct scope, install + uninstall-old-first warning, size expectation, no-server statement.
-- [ ] Tag `v2.0` → push tag → watch the CI run (GitHub API via curl; `gh` hangs on this machine) → release has `fetchly_v2.0.apk`.
-- [ ] Owner device checklist (hand to user): YouTube 1080p with sound; Shorts; audio-only; direct mp4; private video → honest error; cancel + retry; Instagram post → honest best-effort outcome.
+- [x] Tag `v2.0` → push tag → watch the CI run (GitHub API via curl; `gh` hangs on this machine) → release has `fetchly_v2.0.apk`. (CI run 39134612536: success; release `v2.0` carries `fetchly_v2.0.apk`, 123.7 MB.)
+- [x] Owner device checklist (hand to user): YouTube 1080p with sound; Shorts; audio-only; direct mp4; private video → honest error; cancel + retry; Instagram post → honest best-effort outcome.
 
 ---
 
