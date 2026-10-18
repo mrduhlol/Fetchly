@@ -9,8 +9,12 @@ import com.fetchly.app.data.download.DownloadNotifications
 import com.fetchly.app.data.download.DownloadQueue
 import com.fetchly.app.data.download.TempFiles
 import com.fetchly.app.data.engine.YtDlpEngine
+import com.fetchly.app.data.prefs.SettingsStore
 import com.fetchly.app.data.repository.MediaRepository
 import com.fetchly.app.data.repository.OnDeviceMediaRepository
+import com.fetchly.app.domain.resolve.ResolveUrlUseCase
+import com.fetchly.app.domain.session.IncomingLinks
+import com.fetchly.app.domain.session.ResolveSession
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -53,6 +57,11 @@ class AppGraph(context: Context) {
     val history = HistoryRepository(database.historyDao())
 
     val queue by lazy { DownloadQueue(appContext, history) }
+
+    val settings = SettingsStore(appContext)
+    val session = ResolveSession()
+    val incoming = IncomingLinks()
+    val resolver = ResolveUrlUseCase(repository)
 
     /** Application-start housekeeping: notification channel + scratch sweep. */
     fun init() {
