@@ -38,6 +38,19 @@ object PlatformDetector {
         else -> Capability.BEST_EFFORT
     }
 
+    /** How the platform is written in the UI. */
+    fun label(platform: Platform): String = when (platform) {
+        Platform.YOUTUBE -> "YouTube"
+        Platform.INSTAGRAM -> "Instagram"
+        Platform.TIKTOK -> "TikTok"
+        Platform.TWITTER -> "X / Twitter"
+        Platform.REDDIT -> "Reddit"
+        Platform.FACEBOOK -> "Facebook"
+        Platform.PINTEREST -> "Pinterest"
+        Platform.DIRECT -> "Direct file"
+        Platform.OTHER -> "Link"
+    }
+
     /** host is the domain itself or one of its subdomains (www., m., music., …). */
     private fun matches(host: String, domain: String): Boolean =
         host == domain || host.endsWith(".$domain")
