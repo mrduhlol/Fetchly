@@ -11,9 +11,12 @@ import com.fetchly.app.domain.security.UrlValidation
  */
 class ResolveUrlUseCase(private val repo: MediaRepository) {
 
-    suspend operator fun invoke(raw: String): ResolveOutcome =
+    suspend operator fun invoke(
+        raw: String,
+        onStage: (String) -> Unit = {},
+    ): ResolveOutcome =
         when (val validation = UrlSecurity.validate(raw)) {
             is UrlValidation.Invalid -> ResolveOutcome.Failed(validation.reason, raw = null)
-            is UrlValidation.Valid -> repo.analyze(validation.url)
+            is UrlValidation.Valid -> repo.analyze(validation.url, onStage)
         }
 }
