@@ -35,8 +35,10 @@ on-device engine and names the real cause of every failure.
 
 ### Quality
 
-- 128 unit tests, including regression guards: honest error tables, no
-  invented sizes, and "settings contains nothing that points at a server"
+- 139 unit tests, including regression guards for honest error tables, no
+  invented sizes, private-host rejection (including obfuscated forms and a
+  DNS-level guard), cancellation races, and "settings contains nothing
+  that points at a server"
 
 ## Fetchly 1.8
 
