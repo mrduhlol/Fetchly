@@ -61,6 +61,39 @@ class UrlSecurityTest {
     }
 
     @Test
+    fun `obfuscated loopback and lan literals are rejected`() {
+        // inet_aton short/hex/octal forms resolve to loopback or LAN.
+        assertEquals("Local network links aren't supported.", invalidReason("https://127.1/x"))
+        assertEquals("Local network links aren't supported.", invalidReason("https://2130706433/x"))
+        assertEquals("Local network links aren't supported.", invalidReason("https://0x7f000001/x"))
+        assertEquals("Local network links aren't supported.", invalidReason("https://0177.0.0.1/x"))
+        // IPv4-mapped IPv6 literals are still the same private address.
+        assertEquals("Local network links aren't supported.", invalidReason("https://[::ffff:127.0.0.1]/x"))
+        assertEquals("Local network links aren't supported.", invalidReason("https://[::ffff:192.168.1.5]/x"))
+        // Unique-local, link-local and unspecified IPv6.
+        assertEquals("Local network links aren't supported.", invalidReason("https://[fd12:3456::1]/x"))
+        assertEquals("Local network links aren't supported.", invalidReason("https://[fe80::1]/x"))
+        assertEquals("Local network links aren't supported.", invalidReason("https://[::]/x"))
+    }
+
+    @Test
+    fun `hostnames that merely start with fc or fd stay public`() {
+        assertEquals("http://fc2.com/x", valid("http://fc2.com/x"))
+        assertEquals("https://fdic.gov/x", valid("https://fdic.gov/x"))
+        assertEquals("https://fda.gov/x", valid("https://fda.gov/x"))
+    }
+
+    @Test
+    fun `firstUrlCandidate returns refused links so the ui can explain why`() {
+        assertEquals(
+            "http://127.0.0.1/admin",
+            UrlSecurity.firstUrlCandidate("try http://127.0.0.1/admin now"),
+        )
+        assertNull(UrlSecurity.firstUrlCandidate("no links at all"))
+        assertNull(UrlSecurity.firstUrlCandidate(null))
+    }
+
+    @Test
     fun `over long links are rejected`() {
         val long = "https://example.com/" + "a".repeat(UrlSecurity.MAX_URL_LENGTH)
         assertTrue(long.length > UrlSecurity.MAX_URL_LENGTH)
