@@ -11,5 +11,10 @@ sealed interface ResolveOutcome {
 }
 
 interface MediaRepository {
-    suspend fun analyze(url: String): ResolveOutcome
+    /**
+     * Analyzes one link. [onStage] receives user-facing progress lines as the
+     * real steps begin ("Checking the link…" for the probe, "Asking yt-dlp…"
+     * for extraction) — no artificial delays, just honest reporting.
+     */
+    suspend fun analyze(url: String, onStage: (String) -> Unit = {}): ResolveOutcome
 }
