@@ -1,7 +1,7 @@
 # Fetchly rebuild — design
 
 - Date: 2026-10-17
-- Status: built — v2.0 implementation complete per the plan (Tasks 1–11); released as tag v2.0
+- Status: built — v2.0 release verification in progress; the tag follows a clean CI run
 - Supersedes: the entire current application (v1.8 and earlier, plus the uncommitted partial migration sitting in the working tree)
 
 ## Intent and why
