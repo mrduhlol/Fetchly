@@ -1,14 +1,8 @@
 package com.fetchly.app.ui.navigation
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -16,12 +10,15 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.fetchly.app.data.AppGraph
-import com.fetchly.app.ui.components.EmptyState
-import com.fetchly.app.ui.components.ScreenTopBar
+import com.fetchly.app.ui.about.AboutScreen
+import com.fetchly.app.ui.downloads.DownloadsScreen
+import com.fetchly.app.ui.downloads.DownloadsViewModel
 import com.fetchly.app.ui.home.HomeScreen
 import com.fetchly.app.ui.home.HomeViewModel
 import com.fetchly.app.ui.result.ResultScreen
 import com.fetchly.app.ui.result.ResultViewModel
+import com.fetchly.app.ui.settings.SettingsScreen
+import com.fetchly.app.ui.settings.SettingsViewModel
 
 object Routes {
     const val HOME = "home"
@@ -68,44 +65,32 @@ fun FetchlyNav(graph: AppGraph, navController: NavHostController = rememberNavCo
             )
         }
 
-        composable(Routes.DOWNLOADS) { DownloadsPlaceholder(onBack = { navController.popBackStack() }) }
-        composable(Routes.SETTINGS) { SettingsPlaceholder(onBack = { navController.popBackStack() }) }
-        composable(Routes.ABOUT) { AboutPlaceholder(onBack = { navController.popBackStack() }) }
-    }
-}
+        composable(Routes.DOWNLOADS) {
+            val viewModel: DownloadsViewModel = viewModel {
+                DownloadsViewModel(graph.history, graph.queue, graph.downloadWorks)
+            }
+            DownloadsScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+            )
+        }
 
-@Composable
-private fun DownloadsPlaceholder(onBack: () -> Unit) {
-    Column(Modifier.fillMaxSize()) {
-        ScreenTopBar("Downloads", onBack = onBack)
-        EmptyState(
-            icon = Icons.Filled.PlayArrow,
-            title = "No downloads yet",
-            subtitle = "Links you fetch will appear here with their progress.",
-        )
-    }
-}
+        composable(Routes.SETTINGS) {
+            val viewModel: SettingsViewModel = viewModel {
+                SettingsViewModel(graph.settings, graph.history)
+            }
+            SettingsScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+                onOpenAbout = { navController.navigate(Routes.ABOUT) },
+            )
+        }
 
-@Composable
-private fun SettingsPlaceholder(onBack: () -> Unit) {
-    Column(Modifier.fillMaxSize()) {
-        ScreenTopBar("Settings", onBack = onBack)
-        EmptyState(
-            icon = Icons.Filled.Settings,
-            title = "Settings",
-            subtitle = "This screen arrives with the next build step.",
-        )
-    }
-}
-
-@Composable
-private fun AboutPlaceholder(onBack: () -> Unit) {
-    Column(Modifier.fillMaxSize()) {
-        ScreenTopBar("About", onBack = onBack)
-        EmptyState(
-            icon = Icons.Filled.Settings,
-            title = "Fetchly 2.0",
-            subtitle = "This screen arrives with the next build step.",
-        )
+        composable(Routes.ABOUT) {
+            AboutScreen(
+                engine = graph.engine,
+                onBack = { navController.popBackStack() },
+            )
+        }
     }
 }
