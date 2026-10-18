@@ -13,9 +13,10 @@ class ResolveUrlUseCaseTest {
         var calls = 0
         var lastUrl: String? = null
 
-        override suspend fun analyze(url: String): ResolveOutcome {
+        override suspend fun analyze(url: String, onStage: (String) -> Unit): ResolveOutcome {
             calls++
             lastUrl = url
+            onStage("Checking the link…")
             return ResolveOutcome.Failed("reached the repository", raw = null)
         }
     }
@@ -40,5 +41,15 @@ class ResolveUrlUseCaseTest {
 
         assertEquals(1, repository.calls)
         assertEquals("https://youtu.be/test123", repository.lastUrl)
+    }
+
+    @Test
+    fun `repository stages reach the caller`() = runBlocking {
+        val repository = RecordingRepository()
+        val stages = mutableListOf<String>()
+
+        ResolveUrlUseCase(repository)("https://youtu.be/test123", onStage = { stages += it })
+
+        assertEquals(listOf("Checking the link…"), stages)
     }
 }
