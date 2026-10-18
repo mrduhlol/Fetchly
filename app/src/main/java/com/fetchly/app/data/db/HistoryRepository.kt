@@ -27,11 +27,22 @@ class HistoryRepository(private val dao: HistoryDao) {
 
     suspend fun upsert(entry: HistoryEntry) = dao.upsert(entry.toEntity())
 
+    /** QUEUED → RUNNING, atomically; false when a cancel (or completion) already won. */
+    suspend fun claim(id: String, at: Long): Boolean = dao.claim(id, at) > 0
+
+    /** Terminal/non-terminal worker writes; refused (false) on a CANCELLED row. */
+    suspend fun finish(id: String, status: DownloadStatus, message: String?, raw: String?, at: Long): Boolean =
+        dao.finish(id, status.name, message, raw, at) > 0
+
     suspend fun setStatus(id: String, status: DownloadStatus, message: String?, raw: String?, at: Long) =
         dao.setStatus(id, status.name, message, raw, at)
 
-    suspend fun setCompleted(id: String, uri: String, name: String, path: String, size: Long?, at: Long) =
-        dao.setCompleted(id, uri, name, path, size, at)
+    /** Publishes a completed download; false when the user cancelled mid-verify. */
+    suspend fun setCompleted(id: String, uri: String, name: String, path: String, size: Long?, at: Long): Boolean =
+        dao.setCompleted(id, uri, name, path, size, at) > 0
+
+    /** QUEUED/RUNNING → CANCELLED; false when nothing was running. */
+    suspend fun cancelIfActive(id: String, at: Long): Boolean = dao.cancelIfActive(id, at) > 0
 
     suspend fun delete(id: String) = dao.delete(id)
 
