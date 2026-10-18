@@ -25,10 +25,10 @@ class DownloadQueue(
     private val context: Context,
     private val history: HistoryRepository,
     private val workManager: WorkManager = WorkManager.getInstance(context),
-) {
+) : DownloadCommands {
 
     /** Writes a QUEUED row and schedules the download; returns its id. */
-    suspend fun enqueue(media: MediaInfo, option: QualityOption): String {
+    override suspend fun enqueue(media: MediaInfo, option: QualityOption): String {
         val id = UUID.randomUUID().toString()
         val now = System.currentTimeMillis()
         history.upsert(
@@ -61,7 +61,7 @@ class DownloadQueue(
     }
 
     /** Stops a queued or running download; finished rows are left alone. */
-    suspend fun cancel(id: String): Boolean {
+    override suspend fun cancel(id: String): Boolean {
         val entry = history.getById(id) ?: return false
         if (entry.status != DownloadStatus.QUEUED && entry.status != DownloadStatus.RUNNING) return false
         history.setStatus(id, DownloadStatus.CANCELLED, null, null, System.currentTimeMillis())
@@ -70,7 +70,7 @@ class DownloadQueue(
     }
 
     /** FAILED and CANCELLED rows can start over; anything else is ignored. */
-    suspend fun retry(id: String): Boolean {
+    override suspend fun retry(id: String): Boolean {
         val entry = history.getById(id) ?: return false
         if (entry.status != DownloadStatus.FAILED && entry.status != DownloadStatus.CANCELLED) return false
         history.setStatus(id, DownloadStatus.QUEUED, null, null, System.currentTimeMillis())
@@ -79,7 +79,7 @@ class DownloadQueue(
     }
 
     /** Removes the row (and, when asked, its published file). */
-    suspend fun delete(id: String, deleteFile: Boolean): Boolean {
+    override suspend fun delete(id: String, deleteFile: Boolean): Boolean {
         val entry = history.getById(id) ?: return false
         workManager.cancelUniqueWork(HistoryRepository.workNameOf(id))
         if (deleteFile) {
