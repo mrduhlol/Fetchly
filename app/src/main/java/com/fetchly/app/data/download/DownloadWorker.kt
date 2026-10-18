@@ -6,7 +6,6 @@ import android.os.SystemClock
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
-import androidx.work.Result
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.arthenica.ffmpegkit.FFmpegKit
@@ -31,8 +30,10 @@ import java.io.IOException
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
@@ -40,7 +41,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.Call
 import okhttp3.Request
-import kotlin.coroutines.coroutineContext
 
 /**
  * Runs one download, from the stored history row to a file in the user's
@@ -69,18 +69,15 @@ class DownloadWorker(
     @Volatile private var activeHook: DownloadHook? = null
     @Volatile private var activeCall: Call? = null
 
-    /**
-     * Called when WorkManager stops the work (user cancel, constraints…):
-     * stop the Python download at the next chunk, abort the OkHttp body, and
-     * cut any ffmpeg session short.
-     */
-    override suspend fun onStopped() {
-        activeHook?.requestCancel()
-        activeCall?.cancel()
-        FFmpegKit.cancel()
-    }
-
     override suspend fun doWork(): Result {
+        // CoroutineWorker cancels this coroutine when the work is stopped
+        // (onStopped is final), so react to the job's own cancellation:
+        // stop the Python download at its next chunk, abort the OkHttp body,
+        // cut any ffmpeg merge short. Guarded by cause so a normal finish
+        // never touches another download's session.
+        currentCoroutineContext()[Job]?.invokeOnCompletion { cause ->
+            if (cause is CancellationException) cancelActiveWork()
+        }
         val id = inputData.getString(KEY_DOWNLOAD_ID)?.takeIf { it.isNotBlank() }
             ?: return Result.failure()
         val history = graph.history
@@ -321,7 +318,7 @@ class DownloadWorker(
                         dest.outputStream().use { output ->
                             val buffer = ByteArray(BUFFER_BYTES)
                             while (true) {
-                                coroutineContext.ensureActive()
+                                currentCoroutineContext().ensureActive()
                                 val read = input.read(buffer)
                                 if (read < 0) break
                                 output.write(buffer, 0, read)
@@ -341,7 +338,7 @@ class DownloadWorker(
                     StreamResult.Ok(dest)
                 }
             } catch (exc: IOException) {
-                if (!coroutineContext.isActive) {
+                if (!currentCoroutineContext().isActive) {
                     StreamResult.Cancelled
                 } else {
                     val raw = exc.message
@@ -590,6 +587,13 @@ class DownloadWorker(
     private fun cleanupTemps(scratch: File, prefix: String) {
         scratch.listFiles { file -> file.name.startsWith(prefix) }
             ?.forEach { runCatching { it.delete() } }
+    }
+
+    /** Called only on real cancellation — never on a normal finish. */
+    private fun cancelActiveWork() {
+        activeHook?.requestCancel()
+        activeCall?.cancel()
+        FFmpegKit.cancel()
     }
 
     companion object {
