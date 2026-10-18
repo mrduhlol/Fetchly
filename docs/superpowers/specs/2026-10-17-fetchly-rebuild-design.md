@@ -1,7 +1,7 @@
 # Fetchly rebuild — design
 
 - Date: 2026-10-17
-- Status: building — the owner directed the from-scratch rebuild; implementation proceeds per the plan under the owner's per-file commit+push workflow
+- Status: built — v2.0 implementation complete per the plan (Tasks 1–11); released as tag v2.0
 - Supersedes: the entire current application (v1.8 and earlier, plus the uncommitted partial migration sitting in the working tree)
 
 ## Intent and why
