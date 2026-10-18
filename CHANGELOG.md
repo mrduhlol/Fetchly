@@ -1,5 +1,43 @@
 # Changelog
 
+## Fetchly 2.0
+
+A from-scratch rebuild. v1.8's bundled engine went stale and YouTube began
+refusing it ("Please sign in"), which surfaced as a generic *"Fetchly
+couldn't retrieve media information from this link."* v2.0 ships a current
+on-device engine and names the real cause of every failure.
+
+### Fixed
+
+- YouTube resolution works again: the bundled yt-dlp engine is current
+  (2026.08.19), packaged with Chaquopy and running on-device
+- Failures now name the real cause — sign-in demand, private or deleted
+  video, geo-block, rate limit, expired download link, full disk, merge
+  failure — instead of one generic sentence; the raw engine line is kept
+  alongside the friendly wording
+
+### New
+
+- Video + audio are fetched as separate streams and muxed on-device with
+  ffmpeg-kit; direct media files (mp4/mp3/jpg/…) download as-is with
+  `Accept-Encoding: identity` so the byte count matches Content-Length
+- Downloads screen: live stage, percent and speed, cancel; history below
+  with retry and a details sheet (open, share, delete — deleting removes
+  the published file)
+- Result downloads verify themselves before reporting success: magic-byte
+  check, non-empty file, and ≥95% of the expected size when known
+- Expired stream URLs (403/410) transparently re-resolve once before the
+  download is declared failed
+- Settings is theme, default quality and history — and nothing else.
+  Fetchly has no server, no account and nothing remote to configure
+- About screen shows the live bundled engine version, so a stale engine is
+  visible on-screen instead of guessed at
+
+### Quality
+
+- 128 unit tests, including regression guards: honest error tables, no
+  invented sizes, and "settings contains nothing that points at a server"
+
 ## Fetchly 1.8
 
 - YouTube via embedded on-device yt-dlp: paste a link, get thumbnail,
