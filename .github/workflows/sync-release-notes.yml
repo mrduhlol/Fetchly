@@ -1,0 +1,34 @@
+name: Sync release notes
+
+# Release bodies live in docs/release-notes/vX.Y.md so they are versioned
+# with the code. When one of those files changes, the matching release (if it
+# exists) is updated to match it.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/release-notes/*.md"
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update existing releases from their notes files
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for file in docs/release-notes/*.md; do
+            tag="$(basename "$file" .md)"
+            if gh release view "$tag" > /dev/null 2>&1; then
+              echo "Updating ${tag} from ${file}"
+              gh release edit "$tag" --notes-file "$file"
+            else
+              echo "No release named ${tag}; nothing to do"
+            fi
+          done
