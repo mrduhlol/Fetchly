@@ -17,8 +17,9 @@ sealed interface MapResult {
  * Pure translation from yt-dlp's extract JSON (see fetchly_yt.py) into
  * [MediaInfo]. The pairing rules here are the spec of record:
  *
- * - Video streams need a codec and a known height. At one height the muxed
- *   stream wins; otherwise avc1 > vp9/vp09 > av01 > other, then bigger.
+ * - Video streams need a codec; at one height the muxed stream wins;
+ *   otherwise avc1 > vp9/vp09 > av01 > other, then bigger. Videos without a
+ *   known height (some HLS variants) are still offered, labelled "Video".
  * - Best audio: mp4a/aac > opus > vorbis > other, then higher abr.
  * - Every video option pairs with the best audio, unless the video is already
  *   muxed or no audio exists at all — then it is labelled "(no audio)".
@@ -71,19 +72,31 @@ object YtDlpMapper {
         }
 
         var degradedType: MediaType? = null
-        when {
-            videos.isEmpty() && images.isNotEmpty() -> {
-                degradedType = MediaType.IMAGE
-                options += fileOption(images.first(), label = "Image")
+        if (videos.isEmpty()) {
+            val fallbackVideo = heightlessVideoOption(formats, bestAudio)
+            when {
+                fallbackVideo != null -> options += fallbackVideo
+                images.isNotEmpty() -> {
+                    degradedType = MediaType.IMAGE
+                    options += fileOption(images.first(), label = "Image")
+                }
+                formats.size == 1 -> {
+                    val single = formats.first()
+                    degradedType = if (single.ext in AUDIO_EXTS) MediaType.AUDIO else MediaType.VIDEO
+                    options += fileOption(single, label = "File")
+                }
+                else -> Unit
             }
-            videos.isEmpty() && formats.size == 1 -> {
-                val single = formats.first()
-                degradedType = if (single.ext in AUDIO_EXTS) MediaType.AUDIO else MediaType.VIDEO
-                options += fileOption(single, label = "File")
-            }
-            bestAudio != null -> options += audioOption(bestAudio)
-            options.isEmpty() ->
-                return MapResult.Fail("yt-dlp returned no usable streams for this link.")
+        }
+
+        // The standalone audio option rides along with any video option —
+        // including the heightless fallback above — but never next to a
+        // degraded file/image option (that *is* the stream already).
+        val hasDegradedFile = options.any { it.kind != QualityKind.VIDEO }
+        if (bestAudio != null && (videos.isNotEmpty() || !hasDegradedFile)) {
+            options += audioOption(bestAudio)
+        } else if (options.isEmpty()) {
+            return MapResult.Fail("yt-dlp returned no usable streams for this link.")
         }
 
         val mediaType = when {
@@ -118,6 +131,33 @@ object YtDlpMapper {
         needsMerge = false,
         sizeBytes = sumKnownSizes(listOf(audio)),
     )
+
+    /**
+     * The best video format that carries no height (e.g. an HLS variant
+     * whose master play-list omits RESOLUTION): still a real stream, so it
+     * is offered rather than silently dropped. null when there is none.
+     */
+    private fun heightlessVideoOption(
+        formats: List<StreamRef>,
+        bestAudio: StreamRef?,
+    ): QualityOption? {
+        val candidates = formats.filter { it.vcodec != "none" && it.height == null }
+        val video = candidates.sortedWith(VIDEO_RANK).firstOrNull() ?: return null
+        val muxed = video.acodec != "none"
+        val audio = if (muxed) null else bestAudio
+        val streams = if (muxed) listOf(video) else listOfNotNull(video, audio)
+        val hasAudio = muxed || audio != null
+        val effectiveAudioCodec = if (muxed) video.acodec else audio?.acodec
+        return QualityOption(
+            id = "video",
+            label = if (hasAudio) "Video" else "Video (no audio)",
+            kind = QualityKind.VIDEO,
+            container = videoContainer(video.vcodec, effectiveAudioCodec),
+            streams = streams,
+            needsMerge = streams.size > 1,
+            sizeBytes = sumKnownSizes(streams),
+        )
+    }
 
     private fun fileOption(stream: StreamRef, label: String) = QualityOption(
         id = "file",
