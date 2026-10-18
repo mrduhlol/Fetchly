@@ -29,6 +29,7 @@ import java.io.File
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
@@ -69,6 +70,9 @@ class DownloadWorker(
     @Volatile private var activeHook: DownloadHook? = null
     @Volatile private var activeCall: Call? = null
 
+    /** ffmpeg session id while a merge runs; 0 when no merge is active. */
+    @Volatile private var activeMergeSessionId: Long = 0L
+
     override suspend fun doWork(): Result {
         // CoroutineWorker cancels this coroutine when the work is stopped
         // (onStopped is final), so react to the job's own cancellation:
@@ -83,14 +87,13 @@ class DownloadWorker(
         val history = graph.history
 
         val loaded = history.getById(id) ?: return Result.success()
-        if (loaded.status == DownloadStatus.COMPLETED || loaded.status == DownloadStatus.CANCELLED) {
-            return Result.success()
-        }
-        history.setStatus(id, DownloadStatus.RUNNING, null, null, System.currentTimeMillis())
+        if (loaded.status == DownloadStatus.COMPLETED) return Result.success()
 
-        // A cancel that raced the RUNNING write must still win.
-        val entry = history.getById(id) ?: return Result.success()
-        if (entry.status == DownloadStatus.CANCELLED) return Result.success()
+        // QUEUED → RUNNING is one atomic SQL write: a cancel that lands in
+        // between reads can no longer be clobbered, and a row that is already
+        // CANCELLED is left alone.
+        if (!history.claim(id, System.currentTimeMillis())) return Result.success()
+        val entry = loaded
 
         val scratch = TempFiles.dir(applicationContext)
         scratch.mkdirs()
@@ -112,10 +115,16 @@ class DownloadWorker(
 
             return when (outcome) {
                 is PipelineOutcome.Completed -> {
-                    history.setCompleted(
+                    val stored = history.setCompleted(
                         id, outcome.uri, outcome.name, outcome.path, outcome.size,
                         System.currentTimeMillis(),
                     )
+                    if (!stored) {
+                        // The user cancelled while the file was being
+                        // published; their intent wins, so the file goes too.
+                        runCatching { MediaStorePublisher.delete(applicationContext, outcome.uri) }
+                        return Result.success()
+                    }
                     notifyCompleted(entry, outcome)
                     Result.success()
                 }
@@ -140,18 +149,25 @@ class DownloadWorker(
             is StreamsOutcome.Ok -> first to attempt.files
             StreamsOutcome.Cancelled -> return PipelineOutcome.Cancelled
             is StreamsOutcome.Expired -> {
-                val fresh = refreshOption(entry)
-                    ?: return PipelineOutcome.Failed(
+                when (val refreshed = refreshOption(entry)) {
+                    is Refresh.Fresh ->
+                        when (val second = downloadStreams(entry, refreshed.option, scratch)) {
+                            is StreamsOutcome.Ok -> refreshed.option to second.files
+                            StreamsOutcome.Cancelled -> return PipelineOutcome.Cancelled
+                            is StreamsOutcome.Expired -> return PipelineOutcome.Failed(
+                                DownloadErrors.textFor(second.raw), second.raw, network = false,
+                            )
+                            is StreamsOutcome.Failed -> return PipelineOutcome.Failed(
+                                second.message, second.raw, second.network,
+                            )
+                        }
+
+                    Refresh.NoMatch -> return PipelineOutcome.Failed(
                         DownloadErrors.textFor(attempt.raw), attempt.raw, network = false,
                     )
-                when (val second = downloadStreams(entry, fresh, scratch)) {
-                    is StreamsOutcome.Ok -> fresh to second.files
-                    StreamsOutcome.Cancelled -> return PipelineOutcome.Cancelled
-                    is StreamsOutcome.Expired -> return PipelineOutcome.Failed(
-                        DownloadErrors.textFor(second.raw), second.raw, network = false,
-                    )
-                    is StreamsOutcome.Failed -> return PipelineOutcome.Failed(
-                        second.message, second.raw, second.network,
+
+                    is Refresh.ResolveFailed -> return PipelineOutcome.Failed(
+                        refreshed.message, refreshed.raw, network = refreshed.network,
                     )
                 }
             }
@@ -160,7 +176,11 @@ class DownloadWorker(
             )
         }
 
-        stage.set("Merging…")
+        // "Merging…" only when a merge will really run; a single stream in the
+        // right container is simply kept as it arrived.
+        val willMerge = files.size > 1 ||
+            (files.size == 1 && !sameContainer(files.first(), option.container))
+        stage.set(if (willMerge) "Merging…" else "Saving…")
         val artifact = when (
             val assembled = assemble(option, files, scratch, Filenames.tempPrefix(entry.id))
         ) {
@@ -382,8 +402,21 @@ class DownloadWorker(
         }
         args += output.absolutePath
 
+        // Async so this session's id is known while ffmpeg runs: cancelling
+        // can then cancel exactly this merge. The no-argument FFmpegKit.cancel()
+        // would kill every concurrent download's merge in the process.
+        val finished = CompletableDeferred<Unit>()
         val session = withContext(Dispatchers.IO) {
-            FFmpegKit.executeWithArguments(args.toTypedArray())
+            FFmpegKit.executeWithArgumentsAsync(args.toTypedArray()) { finished.complete(Unit) }
+        }
+        activeMergeSessionId = session.sessionId
+        try {
+            finished.await()
+        } catch (exc: CancellationException) {
+            FFmpegKit.cancel(session.sessionId)
+            throw exc
+        } finally {
+            activeMergeSessionId = 0L
         }
         val code = session.returnCode
         return when {
@@ -464,25 +497,35 @@ class DownloadWorker(
     private suspend fun finishFailed(entry: HistoryEntry, failure: PipelineOutcome.Failed): Result {
         val canRetry = failure.network && runAttemptCount < MAX_NETWORK_ATTEMPTS
         val now = System.currentTimeMillis()
-        if (canRetry) {
+        // The guarded write refuses to touch a row the user cancelled; when
+        // that happens the cancel wins and the worker simply ends.
+        val written = if (canRetry) {
             // The row says QUEUED again; WorkManager brings the work back
             // after a 30 s exponential backoff.
-            graph.history.setStatus(entry.id, DownloadStatus.QUEUED, null, failure.raw, now)
+            graph.history.finish(entry.id, DownloadStatus.QUEUED, null, failure.raw, now)
+        } else {
+            graph.history.finish(entry.id, DownloadStatus.FAILED, failure.message, failure.raw, now)
+        }
+        if (!written) return Result.success()
+
+        if (canRetry) {
             runCatching {
+                // No retry action here: the retry is already scheduled, and a
+                // tap while the row is QUEUED would have nothing to do.
                 NotificationManagerCompat.from(applicationContext).notify(
-                    DownloadNotifications.idFor(entry.id),
+                    DownloadNotifications.terminalIdFor(entry.id),
                     DownloadNotifications.failed(
                         applicationContext, entry.id, entry.title,
                         "The connection dropped — retrying…",
+                        retryAction = false,
                     ),
                 )
             }
             return Result.retry()
         }
-        graph.history.setStatus(entry.id, DownloadStatus.FAILED, failure.message, failure.raw, now)
         runCatching {
             NotificationManagerCompat.from(applicationContext).notify(
-                DownloadNotifications.idFor(entry.id),
+                DownloadNotifications.terminalIdFor(entry.id),
                 DownloadNotifications.failed(
                     applicationContext, entry.id, entry.title, failure.message,
                 ),
@@ -491,21 +534,20 @@ class DownloadWorker(
         return Result.failure()
     }
 
-    /** Cancelled by the engine hook — unless a stronger final state is already stored. */
+    /** Cancelled by the engine hook — only a still-active row is flipped. */
     private suspend fun markCancelled(id: String) {
         withContext(NonCancellable) {
-            val current = graph.history.getById(id) ?: return@withContext
-            if (current.status != DownloadStatus.QUEUED && current.status != DownloadStatus.RUNNING) {
-                return@withContext
-            }
-            graph.history.setStatus(id, DownloadStatus.CANCELLED, null, null, System.currentTimeMillis())
+            graph.history.cancelIfActive(id, System.currentTimeMillis())
         }
     }
 
     private fun notifyCompleted(entry: HistoryEntry, done: PipelineOutcome.Completed) {
         runCatching {
             NotificationManagerCompat.from(applicationContext).notify(
-                DownloadNotifications.idFor(entry.id),
+                // A distinct id from the foreground one: WorkManager cancels
+                // the foreground notification when the work ends, and the
+                // "saved" notification must survive that.
+                DownloadNotifications.terminalIdFor(entry.id),
                 DownloadNotifications.completed(
                     applicationContext, entry.id, entry.title,
                     "Saved to your media library as ${done.name}",
@@ -578,10 +620,33 @@ class DownloadWorker(
         sizeBytes = entry.sizeBytes,
     )
 
-    private suspend fun refreshOption(entry: HistoryEntry): QualityOption? {
+    /** How a download-time re-resolve turned out. */
+    private sealed interface Refresh {
+        data class Fresh(val option: QualityOption) : Refresh
+
+        /** The link opened again, but nothing matched the recorded signature. */
+        data object NoMatch : Refresh
+
+        /** The link itself couldn't be opened again. */
+        data class ResolveFailed(val message: String, val raw: String?, val network: Boolean) : Refresh
+    }
+
+    private suspend fun refreshOption(entry: HistoryEntry): Refresh {
         val outcome = graph.repository.analyze(entry.sourceUrl)
-        val info = (outcome as? ResolveOutcome.Success)?.info ?: return null
-        return OptionMatcher.match(entry.signature, info.options)
+        if (outcome is ResolveOutcome.Failed) {
+            return Refresh.ResolveFailed(
+                message = outcome.message,
+                raw = outcome.raw,
+                network = DownloadErrors.isNetworkProblem(outcome.raw),
+            )
+        }
+        val info = (outcome as? ResolveOutcome.Success)?.info
+            ?: return Refresh.ResolveFailed(
+                "The link couldn't be opened again.", null, network = false,
+            )
+        val fresh = OptionMatcher.match(entry.signature, info.options)
+            ?: return Refresh.NoMatch
+        return Refresh.Fresh(fresh)
     }
 
     private fun cleanupTemps(scratch: File, prefix: String) {
@@ -589,11 +654,14 @@ class DownloadWorker(
             ?.forEach { runCatching { it.delete() } }
     }
 
-    /** Called only on real cancellation — never on a normal finish. */
+    /**
+     * Called only on real cancellation — never on a normal finish. The ffmpeg
+     * session is cancelled where it is awaited (assemble), because only that
+     * code knows this download's own session id.
+     */
     private fun cancelActiveWork() {
         activeHook?.requestCancel()
         activeCall?.cancel()
-        FFmpegKit.cancel()
     }
 
     companion object {
