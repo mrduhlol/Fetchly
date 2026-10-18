@@ -1,17 +1,23 @@
 # Security
 
 - Every pasted URL is treated as untrusted (`UrlSecurity.validate`): http(s)
-  only, length-capped, pattern-checked.
+  only, length-capped, pattern-checked. Shared text is mined for the first
+  link only.
 - Platform detection is a pure local host match — no fetching, no scraping.
-- Extraction runs on-device (direct probing, embedded yt-dlp engine):
-  URL validation, host allowlist through capabilities, 1 MB body cap
-  equivalent (headers-only reads), per-source rate awareness.
-- Network timeouts: 15s connect / 30s read on analysis; 20s connect / 60s
-  read on download. Raw server exceptions are never shown to users; the
-  repository maps them to friendly messages.
-- Filenames are sanitized before saving; remote metadata is never trusted
-  for filesystem access.
-- Downloads are size-guarded (2 GB max) and streamed to disk, never held
-  in memory.
+- Resolution and downloading run on-device: a direct-media probe and the
+  bundled yt-dlp engine (Chaquopy). The probe reads response headers only —
+  no body is buffered for analysis.
+- Network timeouts: 15 s connect / read / call cap for the direct probe;
+  15 s connect / 30 s read for direct-file downloads, with no overall call
+  cap — a download is allowed to take as long as it takes. The engine's own
+  HTTP stack follows yt-dlp defaults.
+- Raw server exceptions are never shown to users; the repository maps them
+  to honest sentences and keeps the raw line alongside for diagnosis.
+- Filenames are sanitized (`Filenames`) before saving; remote metadata is
+  never trusted for filesystem access.
+- Downloads stream straight to disk in 64 KB buffers — never held in
+  memory — and must pass magic-byte and size verification before they are
+  published to MediaStore.
+- The download action receiver (notification cancel/retry) is not exported.
 - Out of scope by design: private accounts, login/session scraping, DRM
   bypass, paywall bypass, circumventing platform protections.
