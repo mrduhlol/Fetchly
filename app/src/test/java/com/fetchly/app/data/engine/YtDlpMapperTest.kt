@@ -189,6 +189,26 @@ class YtDlpMapperTest {
     }
 
     @Test
+    fun `a video format without a height is still offered`() {
+        val info = mapped(
+            ok(
+                fmt("hls-1080", ext = "mp4", vcodec = "avc1.640028", filesize = 80_000_000),
+                fmt("140", ext = "m4a", acodec = "mp4a.40.2", abr = 129.5, filesize = 3_400_000),
+            )
+        )
+        assertEquals(MediaType.VIDEO, info.mediaType)
+        val video = info.options.first { it.id == "video" }
+        assertEquals("Video", video.label)
+        assertEquals(QualityKind.VIDEO, video.kind)
+        assertEquals("mp4", video.container)
+        assertEquals(listOf("hls-1080", "140"), video.streams.map { it.formatId })
+        assertTrue(video.needsMerge)
+        assertEquals(80_000_000L + 3_400_000L, video.sizeBytes)
+        // the standalone audio option rides along, as with heighted videos
+        assertTrue(info.options.any { it.id == "audio" })
+    }
+
+    @Test
     fun `signin failure keeps the raw yt dlp message`() {
         val raw = "ERROR: [youtube] test123: Sign in to confirm you're not a bot."
         val result = YtDlpMapper.map(fail(raw), sourceUrl, platform)
