@@ -15,6 +15,8 @@ import com.fetchly.app.domain.model.MediaInfo
 import com.fetchly.app.domain.model.QualityOption
 import java.util.UUID
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * The one door between the UI and downloading. Every method keeps the history
@@ -62,9 +64,8 @@ class DownloadQueue(
 
     /** Stops a queued or running download; finished rows are left alone. */
     override suspend fun cancel(id: String): Boolean {
-        val entry = history.getById(id) ?: return false
-        if (entry.status != DownloadStatus.QUEUED && entry.status != DownloadStatus.RUNNING) return false
-        history.setStatus(id, DownloadStatus.CANCELLED, null, null, System.currentTimeMillis())
+        val cancelled = history.cancelIfActive(id, System.currentTimeMillis())
+        if (!cancelled) return false
         workManager.cancelUniqueWork(HistoryRepository.workNameOf(id))
         return true
     }
@@ -83,7 +84,10 @@ class DownloadQueue(
         val entry = history.getById(id) ?: return false
         workManager.cancelUniqueWork(HistoryRepository.workNameOf(id))
         if (deleteFile) {
-            entry.outputUri?.let { MediaStorePublisher.delete(context, it) }
+            // MediaStore deletion is a ContentResolver call: never on Main.
+            withContext(Dispatchers.IO) {
+                entry.outputUri?.let { MediaStorePublisher.delete(context, it) }
+            }
         }
         history.delete(id)
         return true
