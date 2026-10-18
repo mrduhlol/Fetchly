@@ -37,6 +37,16 @@ class DownloadsViewModelTest {
             rows.value = rows.value.filterNot { it.id == entity.id } + entity
         }
 
+        override suspend fun claim(id: String, updatedAt: Long): Int = 1
+
+        override suspend fun finish(
+            id: String,
+            status: String,
+            message: String?,
+            raw: String?,
+            updatedAt: Long,
+        ): Int = 1
+
         override suspend fun setStatus(
             id: String,
             status: String,
@@ -60,7 +70,9 @@ class DownloadsViewModelTest {
             path: String,
             size: Long?,
             updatedAt: Long,
-        ) = Unit
+        ): Int = 1
+
+        override suspend fun cancelIfActive(id: String, updatedAt: Long): Int = 1
 
         override suspend fun delete(id: String) {
             rows.value = rows.value.filterNot { it.id == id }
@@ -184,6 +196,25 @@ class DownloadsViewModelTest {
             advanceUntilIdle()
             assertEquals(100, viewModel.state.value.active.single().percent)
         }
+
+    @Test
+    fun `join prefers a live job over a finished leftover from a retry`() {
+        val old = DownloadWork(
+            downloadId = "a", running = false, stage = null,
+            bytes = 5, total = 10, speedBytesPerSecond = 0, finished = true,
+        )
+        val fresh = DownloadWork(
+            downloadId = "a", running = false, stage = null,
+            bytes = 0, total = 0, speedBytesPerSecond = 0, finished = false,
+        )
+        assertEquals(fresh, DownloadsViewModel.joinWorks(listOf(old, fresh)).getValue("a"))
+
+        val running = fresh.copy(running = true, stage = "Downloading video…")
+        assertEquals(
+            running,
+            DownloadsViewModel.joinWorks(listOf(old, fresh, running)).getValue("a"),
+        )
+    }
 
     @Test
     fun `actions go straight to the queue`() = runTest(mainDispatcher.dispatcher) {
