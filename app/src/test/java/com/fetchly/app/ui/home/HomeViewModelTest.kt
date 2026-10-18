@@ -183,4 +183,28 @@ class HomeViewModelTest {
             viewModel.onInputChange("https://example.com/some/page")
             assertNull(viewModel.state.value.detected)
         }
+
+    @Test
+    fun `a share without a link says so instead of vanishing`() =
+        runTest(mainDispatcher.dispatcher) {
+            val incoming = IncomingLinks()
+            val (viewModel, _) = viewModel(FakeRepository(ResolveOutcome.Success(info)), incoming)
+
+            incoming.share("look at this cool cat")
+            advanceUntilIdle()
+
+            assertEquals("That share didn't contain a link.", viewModel.state.value.error)
+        }
+
+    @Test
+    fun `a shared local link is refused with the real reason`() =
+        runTest(mainDispatcher.dispatcher) {
+            val incoming = IncomingLinks()
+            val (viewModel, _) = viewModel(FakeRepository(ResolveOutcome.Success(info)), incoming)
+
+            incoming.share("try http://127.0.0.1/admin")
+            advanceUntilIdle()
+
+            assertEquals("Local network links aren't supported.", viewModel.state.value.error)
+        }
 }
