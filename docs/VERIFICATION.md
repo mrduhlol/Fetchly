@@ -4,7 +4,8 @@ The unit suite exercises URL validation and platform routing, extractor JSON map
 quality pairing, queue/view-model behavior, cancellation, storage, and error messages.
 The Python bridge suite covers single-format extractors, multi-video selection,
 missing codecs, thumbnails, regional restrictions, and structured storage failures.
-Run `scripts/check.sh` with JDK 17, Python 3.12 and the Android SDK installed.
+Run `scripts/check.sh` with JDK 17, Python 3.12 with yt-dlp 2026.08.19
+(`pip install yt-dlp==2026.08.19`) and the Android SDK installed.
 The checked-in Gradle wrapper pins Gradle 8.7. CI runs tests, lint and an APK build
 on pushes and pull requests and uploads the reports and APK.
 
