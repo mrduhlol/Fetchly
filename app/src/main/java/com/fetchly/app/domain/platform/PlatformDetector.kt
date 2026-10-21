@@ -22,6 +22,7 @@ object PlatformDetector {
         if (host.isEmpty()) return Platform.OTHER
         return when {
             host == "youtu.be" || matches(host, "youtube.com") -> Platform.YOUTUBE
+            matches(host, "linkedin.com") || host == "lnkd.in" -> Platform.LINKEDIN
             matches(host, "instagram.com") -> Platform.INSTAGRAM
             matches(host, "tiktok.com") -> Platform.TIKTOK
             matches(host, "x.com") || matches(host, "twitter.com") -> Platform.TWITTER
@@ -41,6 +42,7 @@ object PlatformDetector {
     /** How the platform is written in the UI. */
     fun label(platform: Platform): String = when (platform) {
         Platform.YOUTUBE -> "YouTube"
+        Platform.LINKEDIN -> "LinkedIn"
         Platform.INSTAGRAM -> "Instagram"
         Platform.TIKTOK -> "TikTok"
         Platform.TWITTER -> "X / Twitter"

@@ -1,6 +1,8 @@
 package com.fetchly.app.ui.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -28,14 +30,15 @@ fun UrlInput(
         onValueChange = onValueChange,
         enabled = enabled,
         modifier = modifier.fillMaxWidth(),
-        label = { Text("Link") },
-        placeholder = { Text("https://youtube.com/watch?v=…") },
+        shape = RoundedCornerShape(16.dp),
+        label = { Text("Media link") },
+        placeholder = { Text("https://…") },
         singleLine = true,
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Uri,
             imeAction = ImeAction.Go,
         ),
-        keyboardActions = KeyboardActions(onGo = { onGo() }),
+        keyboardActions = KeyboardActions(onGo = { if (enabled && value.isNotBlank()) onGo() }),
         trailingIcon = {
             if (value.isNotEmpty() && enabled) {
                 IconButton(onClick = { onValueChange("") }) {

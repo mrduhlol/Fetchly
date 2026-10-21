@@ -11,8 +11,8 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun SectionHeader(title: String, modifier: Modifier = Modifier) {
     Text(
-        title.uppercase(),
-        style = MaterialTheme.typography.labelSmall,
+        title,
+        style = MaterialTheme.typography.titleSmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = modifier.padding(horizontal = 4.dp, vertical = 10.dp),
     )

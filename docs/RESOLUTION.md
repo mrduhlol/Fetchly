@@ -10,7 +10,8 @@ Fetchly has no backend. Resolving a pasted link is a local pipeline, in order:
    the server sends it, the URL path as its filename fallback.
 3. **Engine** (`YtDlpEngine` → `YtDlpMapper`) — anything else is handed to
    the bundled yt-dlp running on-device (Chaquopy), which extracts formats
-   as JSON. The mapper pairs video + audio into quality options, drops
+   as JSON. The mapper retains distinct output containers per quality, offers
+   available audio containers, pairs video + audio into quality options, drops
    URL-less and storyboard entries, and never invents a size the extractor
    didn't report.
 4. **Classification** (`ResolveErrors`) — when resolution fails, the raw

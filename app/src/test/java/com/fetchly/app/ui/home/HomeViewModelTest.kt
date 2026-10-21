@@ -220,4 +220,39 @@ class HomeViewModelTest {
             assertEquals("https://youtu.be/ok123", viewModel.state.value.input)
             assertNull(viewModel.state.value.error)
         }
+    @Test
+    fun `pasted social share text uses its link`() = runTest(mainDispatcher.dispatcher) {
+        val (viewModel, _) = viewModel(FakeRepository(ResolveOutcome.Success(info)))
+        viewModel.onInputChange("Watch this video https://youtu.be/abc !")
+        assertEquals("https://youtu.be/abc", viewModel.state.value.input)
+        assertEquals(Platform.YOUTUBE, viewModel.state.value.detected)
+        viewModel.fetch()
+        advanceUntilIdle()
+        assertTrue(viewModel.state.value.success)
+    }
+
+    @Test
+    fun `unexpected resolver failure releases loading state and allows retry`() =
+        runTest(mainDispatcher.dispatcher) {
+            val repository = object : MediaRepository {
+                override suspend fun analyze(url: String, onStage: (String) -> Unit): ResolveOutcome {
+                    throw java.io.IOException("Connection timed out")
+                }
+            }
+            val (viewModel, _) = viewModel(repository)
+            viewModel.onInputChange("https://youtu.be/abc")
+            viewModel.fetch()
+            advanceUntilIdle()
+            assertFalse(viewModel.state.value.analyzing)
+            assertTrue(viewModel.state.value.canFetch)
+            assertTrue(viewModel.state.value.error!!.contains("connection"))
+        }
+
+    @Test
+    fun `typing query punctuation preserves the editable URL`() = runTest(mainDispatcher.dispatcher) {
+        val (viewModel, _) = viewModel(FakeRepository(ResolveOutcome.Success(info)))
+        viewModel.onInputChange("https://www.youtube.com/watch?")
+        assertEquals("https://www.youtube.com/watch?", viewModel.state.value.input)
+    }
+
 }

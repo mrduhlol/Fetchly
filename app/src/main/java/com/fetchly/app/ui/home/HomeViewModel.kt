@@ -3,6 +3,8 @@ package com.fetchly.app.ui.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fetchly.app.data.repository.ResolveOutcome
+import com.fetchly.app.data.repository.ResolveErrors
+import kotlinx.coroutines.CancellationException
 import com.fetchly.app.domain.model.Platform
 import com.fetchly.app.domain.platform.PlatformDetector
 import com.fetchly.app.domain.resolve.ResolveUrlUseCase
@@ -68,7 +70,10 @@ class HomeViewModel(
     }
 
     fun onInputChange(value: String) {
-        _state.update { it.copy(input = value, detected = detect(value), error = null) }
+        val input = if (value.any { it.isWhitespace() }) {
+            UrlSecurity.extractFirstUrl(value) ?: value
+        } else value
+        _state.update { it.copy(input = input, detected = detect(input), error = null) }
     }
 
     /** Clipboard peek: offered as a chip the user taps, never auto-filled. */
@@ -107,8 +112,14 @@ class HomeViewModel(
         session.clear()
         _state.update { it.copy(analyzing = true, error = null, status = "Checking the link…") }
         viewModelScope.launch {
-            val outcome = resolver(validated) { stage ->
-                _state.update { it.copy(status = stage) }
+            val outcome = try {
+                resolver(validated) { stage ->
+                    _state.update { it.copy(status = stage) }
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                ResolveOutcome.Failed(ResolveErrors.messageFor(error.message), error.message)
             }
             when (outcome) {
                 is ResolveOutcome.Success -> {

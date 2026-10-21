@@ -17,14 +17,14 @@ sealed interface MapResult {
  * Pure translation from yt-dlp's extract JSON (see fetchly_yt.py) into
  * [MediaInfo]. The pairing rules here are the spec of record:
  *
- * - Video streams need a codec; at one height the muxed stream wins;
- *   otherwise avc1 > vp9/vp09 > av01 > other, then bigger. Videos without a
- *   known height (some HLS variants) are still offered, labelled "Video".
- * - Best audio: mp4a/aac > opus > vorbis > other, then higher abr.
- * - Every video option pairs with the best audio, unless the video is already
- *   muxed or no audio exists at all — then it is labelled "(no audio)".
- * - Container: mp4 when the video is avc1 and the audio is aac/mp4a (or
- *   absent); anything else becomes mkv. Audio options: m4a, or their own ext.
+ * - Keep one preferred stream per real output container at each height.
+ *   Muxed streams rank first, then avc1 > vp9 > av01; preserve alternatives.
+ * - Best audio: mp4a/aac > opus > vorbis > other, then higher abr. Keep one
+ *   standalone audio choice per available container.
+ * - Pair confirmed video-only/unknown-audio streams with known audio when
+ *   available. Unknown embedded audio is not advertised as confirmed silence.
+ * - Safe merged output is mp4 for AVC/AAC, otherwise mkv. Compatible muxed
+ *   WebM and unknown-codec single streams retain their original container.
  * - Sizes are summed only when every stream's size is known — never invented.
  * - No video at all: one stream (plain file) or images degrade to a single
  *   FILE option so best-effort links still offer something honest.
@@ -54,28 +54,17 @@ object YtDlpMapper {
         val options = mutableListOf<QualityOption>()
         val bestByHeight = videos.groupBy { it.height!! }
         for ((height, group) in bestByHeight.entries.sortedByDescending { it.key }) {
-            val video = group.sortedWith(VIDEO_RANK).first()
-            val muxed = video.acodec != "none"
-            val audio = if (muxed) null else bestAudio
-            val streams = if (muxed) listOf(video) else listOfNotNull(video, audio)
-            val hasAudio = muxed || audio != null
-            val effectiveAudioCodec = if (muxed) video.acodec else audio?.acodec
-            options += QualityOption(
-                id = "v$height",
-                label = if (hasAudio) "${height}p" else "${height}p (no audio)",
-                kind = QualityKind.VIDEO,
-                container = videoContainer(video.vcodec, effectiveAudioCodec),
-                streams = streams,
-                needsMerge = streams.size > 1,
-                sizeBytes = sumKnownSizes(streams),
-            )
+            options += videoOptions(group, bestAudio, "v$height", "${height}p")
         }
 
         var degradedType: MediaType? = null
         if (videos.isEmpty()) {
-            val fallbackVideo = heightlessVideoOption(formats, bestAudio)
+            val fallbackVideos = videoOptions(
+                formats.filter { it.vcodec != "none" && it.height == null },
+                bestAudio, "video", "Video",
+            )
             when {
-                fallbackVideo != null -> options += fallbackVideo
+                fallbackVideos.isNotEmpty() -> options += fallbackVideos
                 images.isNotEmpty() -> {
                     degradedType = MediaType.IMAGE
                     options += fileOption(images.first(), label = "Image")
@@ -94,7 +83,11 @@ object YtDlpMapper {
         // degraded file/image option (that *is* the stream already).
         val hasDegradedFile = options.any { it.kind != QualityKind.VIDEO }
         if (bestAudio != null && (videos.isNotEmpty() || !hasDegradedFile)) {
-            options += audioOption(bestAudio)
+            options += audios.sortedWith(AUDIO_RANK)
+                .distinctBy { audioContainer(it.ext) }
+                .mapIndexed { index, audio ->
+                    audioOption(audio).copy(id = if (index == 0) "audio" else "audio-${audioContainer(audio.ext)}")
+                }
         } else if (options.isEmpty()) {
             return MapResult.Fail("yt-dlp returned no usable streams for this link.")
         }
@@ -132,32 +125,39 @@ object YtDlpMapper {
         sizeBytes = sumKnownSizes(listOf(audio)),
     )
 
-    /**
-     * The best video format that carries no height (e.g. an HLS variant
-     * whose master play-list omits RESOLUTION): still a real stream, so it
-     * is offered rather than silently dropped. null when there is none.
-     */
-    private fun heightlessVideoOption(
-        formats: List<StreamRef>,
+    /** One real output container per quality; no transcoding choices are invented. */
+    private fun videoOptions(
+        candidates: List<StreamRef>,
         bestAudio: StreamRef?,
-    ): QualityOption? {
-        val candidates = formats.filter { it.vcodec != "none" && it.height == null }
-        val video = candidates.sortedWith(VIDEO_RANK).firstOrNull() ?: return null
-        val muxed = video.acodec != "none"
-        val audio = if (muxed) null else bestAudio
-        val streams = if (muxed) listOf(video) else listOfNotNull(video, audio)
-        val hasAudio = muxed || audio != null
-        val effectiveAudioCodec = if (muxed) video.acodec else audio?.acodec
-        return QualityOption(
-            id = "video",
-            label = if (hasAudio) "Video" else "Video (no audio)",
-            kind = QualityKind.VIDEO,
-            container = videoContainer(video.vcodec, effectiveAudioCodec),
-            streams = streams,
-            needsMerge = streams.size > 1,
-            sizeBytes = sumKnownSizes(streams),
-        )
-    }
+        baseId: String,
+        label: String,
+    ): List<QualityOption> = candidates.sortedWith(VIDEO_RANK)
+        .map { video ->
+            val muxed = video.acodec != "none" &&
+                (video.acodec != "unknown" || bestAudio == null)
+            val audio = if (muxed) null else bestAudio
+            val streams = if (muxed) listOf(video) else listOfNotNull(video, audio)
+            val hasAudio = muxed || audio != null
+            val effectiveAudioCodec = if (muxed) video.acodec else audio?.acodec
+            val originalContainer = streams.size == 1 && (
+                video.vcodec == "unknown" || video.acodec == "unknown" ||
+                    (video.ext == "webm" &&
+                        (video.vcodec.startsWith("vp9") || video.vcodec.startsWith("vp09") || video.vcodec.startsWith("av01") || video.vcodec.startsWith("vp8")) &&
+                        (effectiveAudioCodec == null || effectiveAudioCodec == "none" || effectiveAudioCodec.startsWith("opus") || effectiveAudioCodec.startsWith("vorbis"))))
+            QualityOption(
+                id = baseId,
+                label = if (hasAudio) label else "$label (no audio)",
+                kind = QualityKind.VIDEO,
+                container = if (originalContainer) video.ext else videoContainer(video.vcodec, effectiveAudioCodec),
+                streams = streams,
+                needsMerge = streams.size > 1,
+                sizeBytes = sumKnownSizes(streams),
+            )
+        }
+        .distinctBy { it.container }
+        .mapIndexed { index, option ->
+            option.copy(id = if (index == 0) baseId else "$baseId-${option.container}")
+        }
 
     private fun fileOption(stream: StreamRef, label: String) = QualityOption(
         id = "file",

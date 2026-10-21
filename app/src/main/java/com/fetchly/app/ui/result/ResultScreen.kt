@@ -1,49 +1,31 @@
 package com.fetchly.app.ui.result
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
 import com.fetchly.app.domain.model.MediaInfo
+import com.fetchly.app.domain.model.QualityKind
 import com.fetchly.app.domain.platform.PlatformDetector
 import com.fetchly.app.ui.components.EmptyState
 import com.fetchly.app.ui.components.QualityRow
+import com.fetchly.app.ui.components.ScreenTopBar
+import com.fetchly.app.ui.components.StatusCard
+import com.fetchly.app.domain.util.FormatSize
 
-/**
- * What the link turned out to be, and the one choice left: quality. A tap on
- * Download hands the option to the queue and lands on Downloads.
- */
 @Composable
 fun ResultScreen(
     viewModel: ResultViewModel,
@@ -51,91 +33,80 @@ fun ResultScreen(
     onQueued: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-
     LaunchedEffect(state.queued) {
         if (state.queued) {
             viewModel.consumeQueued()
             onQueued()
         }
     }
-
     val media = state.media
-    if (media == null) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            EmptyState(
-                icon = Icons.Filled.PlayArrow,
-                title = "Nothing to show",
-                subtitle = "Fetch a link first, then pick a quality here.",
-            )
-        }
-        return
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(20.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-            }
-            Spacer(Modifier.width(4.dp))
-            Text("Ready to fetch", style = MaterialTheme.typography.titleLarge)
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        Thumbnail(media)
-
-        Spacer(Modifier.height(16.dp))
-
-        Text(
-            media.title,
-            style = MaterialTheme.typography.titleLarge,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            factsFor(media),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        Spacer(Modifier.height(24.dp))
-
-        Text("Choose a quality", style = MaterialTheme.typography.titleMedium)
-        Spacer(Modifier.height(10.dp))
-        media.options.forEach { option ->
-            QualityRow(
-                option = option,
-                selected = option.id == state.selectedId,
-                onSelect = { viewModel.select(option.id) },
-            )
-            Spacer(Modifier.height(8.dp))
-        }
-
-        Spacer(Modifier.height(12.dp))
-
-        Button(
-            onClick = viewModel::download,
-            enabled = state.selected != null && !state.enqueuing,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(52.dp),
-        ) {
-            if (state.enqueuing) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(18.dp),
-                    strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                )
-                Spacer(Modifier.width(10.dp))
-                Text("Starting…")
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+        Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
+            ScreenTopBar(title = "Preview & download", onBack = onBack)
+            if (media == null) {
+                EmptyState(Icons.Filled.PlayArrow, "No preview yet", "Go back and fetch a link to see its available formats.", Modifier.weight(1f))
             } else {
-                Text("Download")
+                LazyColumn(
+                    modifier = Modifier.weight(1f).selectableGroup(),
+                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    item {
+                        Thumbnail(media)
+                        Spacer(Modifier.height(20.dp))
+                        Text(media.title, style = MaterialTheme.typography.titleLarge)
+                        Spacer(Modifier.height(8.dp))
+                        Text(factsFor(media), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(Modifier.height(24.dp))
+                        Text("Make it yours", style = MaterialTheme.typography.headlineMedium)
+                        Spacer(Modifier.height(6.dp))
+                        Text("Choose a quality and file format.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    if (media.options.isEmpty()) {
+                        item { Text("No downloadable formats were returned for this link.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    }
+                    media.options.groupBy { it.kind }.forEach { (kind, options) ->
+                        item {
+                            Text(
+                                when (kind) {
+                                    QualityKind.VIDEO -> "Video"
+                                    QualityKind.AUDIO -> "Audio only"
+                                    QualityKind.FILE -> "File"
+                                },
+                                modifier = Modifier.padding(top = 12.dp, bottom = 2.dp),
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                        items(options, key = { it.id }) { option ->
+                            QualityRow(option, option.id == state.selectedId, { if (!state.enqueuing) viewModel.select(option.id) })
+                        }
+                    }
+                }
+                Surface(color = MaterialTheme.colorScheme.surfaceContainerLow, tonalElevation = 2.dp) {
+                    Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        state.error?.let { StatusCard(it, isError = true) }
+                        Text(
+                            state.selected?.let { "${it.label} · ${it.container.uppercase()} · ${FormatSize.formatApprox(it.sizeBytes) ?: "Size unknown"}" }
+                                ?: "Select a format to continue",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Button(
+                            onClick = viewModel::download,
+                            enabled = state.selected != null && !state.enqueuing,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+                        ) {
+                            if (state.enqueuing) {
+                                CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            } else {
+                                Icon(Icons.Filled.KeyboardArrowDown, null, Modifier.size(20.dp))
+                            }
+                            Spacer(Modifier.width(10.dp))
+                            Text(if (state.enqueuing) "Adding to downloads…" else "Download")
+                        }
+                    }
+                }
             }
         }
     }
@@ -144,29 +115,35 @@ fun ResultScreen(
 @Composable
 private fun Thumbnail(media: MediaInfo) {
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(16f / 9f)
-            .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant),
+        Modifier.fillMaxWidth().aspectRatio(16f / 9f)
+            .clip(MaterialTheme.shapes.large).background(MaterialTheme.colorScheme.surfaceContainerHigh),
         contentAlignment = Alignment.Center,
     ) {
-        val thumbnail = media.thumbnailUrl
-        if (thumbnail != null) {
-            AsyncImage(
-                model = thumbnail,
-                contentDescription = null,
+        if (media.thumbnailUrl != null) {
+            SubcomposeAsyncImage(
+                model = media.thumbnailUrl,
+                contentDescription = "Preview of ${media.title}",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
+                loading = {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 2.dp)
+                    }
+                },
+                error = { ThumbnailFallback() },
             )
         } else {
-            Icon(
-                Icons.Filled.PlayArrow,
-                contentDescription = null,
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            ThumbnailFallback()
         }
+    }
+}
+
+@Composable
+private fun ThumbnailFallback() {
+    Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+        Icon(Icons.Filled.PlayArrow, null, Modifier.size(36.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(8.dp))
+        Text("Preview unavailable", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

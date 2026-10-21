@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- A single descending stroke and open tray, centered in the adaptive safe zone. -->
+    <path android:fillColor="@android:color/transparent"
+        android:strokeColor="#6EE7C8" android:strokeWidth="6"
+        android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M54,32 L54,60 M43,50 L54,61 L65,50 M35,64 L35,72 L73,72 L73,64" />
+</vector>

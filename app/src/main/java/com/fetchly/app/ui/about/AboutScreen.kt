@@ -68,7 +68,7 @@ fun AboutScreen(engine: YtDlpEngine, onBack: () -> Unit) {
         SectionHeader("Good to know")
         Card {
             Bullet("A download runs to the end or is cancelled — pause and resume aren't supported yet.")
-            Bullet("YouTube links work fully. Other sites are best effort, and when one fails Fetchly shows the real reason.")
+            Bullet("Public links from YouTube, Instagram, LinkedIn, X, Pinterest and other sites are resolved on-device. Availability depends on the post and source; sign-in and region restrictions can prevent downloads.")
             Bullet("This is a debug-signed build: uninstall any older Fetchly before installing it.")
         }
 

@@ -49,6 +49,68 @@ class YtDlpMapperTest {
     // ------------------------------------------------------------ tests
 
     @Test
+    fun `same quality keeps real mp4 and muxed webm and deduplicates formats`() {
+        val info = mapped(ok(
+            fmt("mp4", vcodec = "avc1", acodec = "aac", height = 720),
+            fmt("webm", ext = "webm", vcodec = "vp9", acodec = "opus", height = 720),
+            fmt("webm-duplicate", ext = "webm", vcodec = "vp9", acodec = "opus", height = 720),
+            fmt("aac", ext = "m4a", acodec = "aac", abr = 128.0),
+            fmt("opus", ext = "webm", acodec = "opus", abr = 160.0),
+        ))
+        assertEquals(listOf("v720", "v720-webm", "audio", "audio-webm"), info.options.map { it.id })
+        val webm = info.options.first { it.id == "v720-webm" }
+        assertEquals("webm", webm.container)
+        assertFalse(webm.needsMerge)
+        assertEquals(listOf("webm"), webm.streams.map { it.formatId })
+        assertEquals("opus", info.options.first { it.id == "audio-webm" }.streams.single().formatId)
+    }
+
+    @Test
+    fun `unknown embedded audio pairs with known external audio`() {
+        val info = mapped(ok(
+            fmt("social", vcodec = "avc1", acodec = "unknown", height = 720),
+            fmt("aac", ext = "m4a", acodec = "aac"),
+        ))
+        val option = info.options.first()
+        assertEquals(listOf("social", "aac"), option.streams.map { it.formatId })
+        assertEquals("720p", option.label)
+        assertTrue(option.needsMerge)
+        assertEquals("mp4", option.container)
+    }
+
+    @Test
+    fun `missing social codec metadata preserves container without asserting silence`() {
+        val info = mapped(ok(fmt("hd", vcodec = "unknown", acodec = "unknown", height = 1080)))
+        val option = info.options.single()
+        assertEquals("1080p", option.label)
+        assertEquals("mp4", option.container)
+        assertFalse(option.needsMerge)
+        assertEquals(1, option.streams.size)
+    }
+
+    @Test
+    fun `multiple heightless social formats still offer video with original container`() {
+        val info = mapped(ok(
+            fmt("mp4", vcodec = "unknown", acodec = "unknown"),
+            fmt("webm", ext = "webm", vcodec = "unknown", acodec = "unknown"),
+        ))
+        assertEquals(listOf("video", "video-webm"), info.options.map { it.id })
+        val option = info.options.first()
+        assertEquals(QualityKind.VIDEO, option.kind)
+        assertEquals("Video", option.label)
+        assertEquals("mp4", option.container)
+        assertFalse(option.needsMerge)
+    }
+
+    @Test
+    fun `reported height survives unknown video codec`() {
+        val info = mapped(ok(fmt("hd", vcodec = "unknown", acodec = "aac", height = 1080)))
+        assertEquals(QualityKind.VIDEO, info.options.single().kind)
+        assertEquals("1080p", info.options.single().label)
+        assertFalse(info.options.single().needsMerge)
+    }
+
+    @Test
     fun `split streams pair with the best compatible audio`() {
         val info = mapped(
             ok(
@@ -59,7 +121,7 @@ class YtDlpMapperTest {
             )
         )
         assertEquals(MediaType.VIDEO, info.mediaType)
-        assertEquals(listOf("v1080", "audio"), info.options.map { it.id })
+        assertEquals(listOf("v1080", "v1080-mkv", "audio", "audio-webm"), info.options.map { it.id })
 
         val video = info.options[0]
         assertEquals("1080p", video.label)
@@ -69,7 +131,7 @@ class YtDlpMapperTest {
         assertEquals(listOf("137", "140"), video.streams.map { it.formatId })
         assertEquals(80_911_999L + 3_449_447L, video.sizeBytes)
 
-        val audio = info.options[1]
+        val audio = info.options.first { it.id == "audio" }
         assertEquals("Audio", audio.label)
         assertEquals(QualityKind.AUDIO, audio.kind)
         assertEquals("m4a", audio.container)
@@ -241,10 +303,10 @@ class YtDlpMapperTest {
 
         val videoIds = info.options.filter { it.kind == QualityKind.VIDEO }.map { it.id }
         assertEquals(
-            listOf("v2160", "v1440", "v1080", "v720", "v480", "v360", "v240", "v144"),
+            listOf("v2160", "v1440", "v1080", "v1080-mkv", "v720", "v720-mkv", "v480", "v480-mkv", "v360", "v360-mkv", "v240", "v240-mkv", "v144", "v144-mkv"),
             videoIds,
         )
-        assertEquals(9, info.options.size) // 8 heights + one audio option
+        assertEquals(16, info.options.size) // 14 real video/container choices + 2 audio containers
 
         val v2160 = info.options.first { it.id == "v2160" }
         assertEquals("2160p", v2160.label)

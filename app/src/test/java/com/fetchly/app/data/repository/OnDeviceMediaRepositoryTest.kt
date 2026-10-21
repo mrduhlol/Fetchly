@@ -97,4 +97,33 @@ class OnDeviceMediaRepositoryTest {
         assertEquals("The source says this media doesn't exist or has been removed.", outcome.message)
         assertEquals("ERROR: [youtube] x: Video unavailable", outcome.raw)
     }
+    @Test
+    fun `media endpoint extension does not override its real container`() = runBlocking {
+        val probe = FakeProbe(DirectResult.File("https://cdn.invalid/download.php", "video/mp4", 123L, "download.php"))
+        val repository = OnDeviceMediaRepository(probe, FakeEngine(engineOk))
+        val result = repository.analyze("https://cdn.invalid/download.php") as ResolveOutcome.Success
+        assertEquals("mp4", result.info.options.single().container)
+    }
+
+    @Test
+    fun `direct image offers its own URL as thumbnail`() = runBlocking {
+        val url = "https://cdn.invalid/photo.jpg"
+        val repository = OnDeviceMediaRepository(
+            FakeProbe(DirectResult.File(url, "image/jpeg", 123L, "photo.jpg")), FakeEngine(engineOk),
+        )
+        val result = repository.analyze(url) as ResolveOutcome.Success
+        assertEquals(MediaType.IMAGE, result.info.mediaType)
+        assertEquals(url, result.info.thumbnailUrl)
+    }
+
+    @Test
+    fun `unmapped media types preserve their source extension`() = runBlocking {
+        val url = "https://cdn.invalid/photo.avif"
+        val repository = OnDeviceMediaRepository(
+            FakeProbe(DirectResult.File(url, "image/avif", 123L, "photo.avif")), FakeEngine(engineOk),
+        )
+        val result = repository.analyze(url) as ResolveOutcome.Success
+        assertEquals("avif", result.info.options.single().container)
+    }
+
 }

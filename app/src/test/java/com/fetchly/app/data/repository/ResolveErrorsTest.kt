@@ -26,9 +26,9 @@ class ResolveErrorsTest {
     }
 
     @Test
-    fun `sign in required`() {
+    fun `bot challenge is not mislabeled as private media`() {
         assertEquals(
-            "This media isn't publicly available. It needs a sign-in, or it's private.",
+            "The source is asking for a bot check. Try again later or open the link in your browser.",
             ResolveErrors.messageFor("ERROR: [youtube] x: Sign in to confirm you're not a bot."),
         )
     }
@@ -39,6 +39,14 @@ class ResolveErrorsTest {
         assertEquals(expected, ResolveErrors.messageFor("[youtube] x: Private video"))
         assertEquals(expected, ResolveErrors.messageFor("[youtube] x: This video is members-only"))
         assertEquals(expected, ResolveErrors.messageFor("ERROR: [generic] x: This request requires authentication"))
+    }
+
+    @Test
+    fun `rate limiting gives an actionable explanation`() {
+        assertEquals(
+            "The source is limiting requests. Wait a little, then try again.",
+            ResolveErrors.messageFor("ERROR: HTTP Error 429: Too Many Requests"),
+        )
     }
 
     @Test

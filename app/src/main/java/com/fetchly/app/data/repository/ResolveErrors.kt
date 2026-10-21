@@ -20,6 +20,12 @@ object ResolveErrors {
             hasAll(text, "age", "confirm") || hasAll(text, "age", "restricted") ->
                 "This video is age-restricted. Fetchly can't sign in, so it can't download it."
 
+            hasAny(text, "not a bot", "captcha", "cloudflare challenge", "bot check") ->
+                "The source is asking for a bot check. Try again later or open the link in your browser."
+
+            hasAny(text, "429", "too many requests", "rate limit") ->
+                "The source is limiting requests. Wait a little, then try again."
+
             hasAny(
                 text,
                 "private video", "login required", "sign in", "log in",

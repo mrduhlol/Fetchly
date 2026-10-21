@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="app/src/main/res/drawable-nodpi/fetchly_logo.png" width="120" alt="Fetchly logo" />
+<img src="docs/fetchly-mark.svg" width="120" alt="Fetchly logo" />
 
 # Fetchly
 
@@ -33,10 +33,10 @@ full disk, merge failure) instead of one catch-all sentence.
 
 ## Honest scope
 
-- **YouTube**: full support — video with sound (streams are fetched and muxed
+- **YouTube**: public video support — video with sound (streams are fetched and muxed
   on-device), Shorts, and audio-only. Formats YouTube gates behind a
   JavaScript runtime aren't offered, because Fetchly doesn't ship one.
-- **Other platforms** (Instagram, TikTok, X, Reddit, Facebook, Pinterest):
+- **Other platforms** (Instagram, TikTok, X, Reddit, Facebook, Pinterest, LinkedIn):
   best effort through the same engine. When a post isn't publicly
   downloadable, the error says exactly why.
 - **Direct links** (mp4, mp3, jpg, …): downloaded as-is, verified by magic
@@ -58,8 +58,8 @@ Python 3.12 on `PATH` (Chaquopy uses the host interpreter to build the
 bundled engine).
 
 ```bash
-gradle :app:assembleDebug        # APK
-gradle :app:testDebugUnitTest    # unit tests
+./gradlew :app:assembleDebug        # APK
+scripts/check.sh                   # Python + Kotlin tests, Android lint, APK
 ```
 
 ## Docs
@@ -69,3 +69,14 @@ gradle :app:testDebugUnitTest    # unit tests
 - [`docs/STORAGE.md`](docs/STORAGE.md) — where downloads and history live
 - [`docs/SECURITY.md`](docs/SECURITY.md) — security model
 - [`docs/RELEASE.md`](docs/RELEASE.md) — releases and limitations
+
+## Reliability updates
+
+Pasted share text is normalized to its media link. The preview lists available video,
+audio and file choices with container and reported size. Single-format extractors and
+multi-video posts are handled consistently; multi-video links currently select the
+first item. Direct image links display an image preview. Audio-only choices are saved
+to Music, with explicit stream mapping when merging.
+
+Checks run on pushes and pull requests. See [verification notes](docs/VERIFICATION.md)
+for the tested sources and the limits of live platform checks.

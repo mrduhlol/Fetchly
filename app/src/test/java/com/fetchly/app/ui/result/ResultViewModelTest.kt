@@ -25,10 +25,11 @@ class ResultViewModelTest {
     @get:Rule
     val mainDispatcher = MainDispatcherRule()
 
-    private class FakeCommands : DownloadCommands {
+    private class FakeCommands(var failEnqueue: Boolean = false) : DownloadCommands {
         val enqueued = mutableListOf<Pair<MediaInfo, QualityOption>>()
 
         override suspend fun enqueue(media: MediaInfo, option: QualityOption): String {
+            if (failEnqueue) throw java.io.IOException("database is full")
             enqueued += media to option
             return "id-${enqueued.size}"
         }
@@ -139,4 +140,32 @@ class ResultViewModelTest {
         assertNull(ResultViewModel.preselect(options, DefaultQuality.ASK))
         assertNull(ResultViewModel.preselect(emptyList(), DefaultQuality.BEST))
     }
+    @Test
+    fun `queue failure is recoverable and retry can succeed`() = runTest(mainDispatcher.dispatcher) {
+        val commands = FakeCommands(failEnqueue = true)
+        val (viewModel, _) = viewModel(DefaultQuality.BEST, commands)
+        advanceUntilIdle()
+        viewModel.download()
+        advanceUntilIdle()
+        assertFalse(viewModel.state.value.enqueuing)
+        assertFalse(viewModel.state.value.queued)
+        assertTrue(viewModel.state.value.error != null)
+        commands.failEnqueue = false
+        viewModel.download()
+        advanceUntilIdle()
+        assertTrue(viewModel.state.value.queued)
+        assertNull(viewModel.state.value.error)
+    }
+
+    @Test
+    fun `repeated taps after queue success do not enqueue twice`() = runTest(mainDispatcher.dispatcher) {
+        val (viewModel, commands) = viewModel(DefaultQuality.BEST)
+        advanceUntilIdle()
+        viewModel.download()
+        advanceUntilIdle()
+        viewModel.download()
+        advanceUntilIdle()
+        assertEquals(1, commands.enqueued.size)
+    }
+
 }

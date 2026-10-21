@@ -17,6 +17,7 @@ Contract (see YtDlpMapper.kt for the consumer):
 import json
 import os
 import time
+from urllib.parse import urlsplit
 
 try:
     import yt_dlp
@@ -40,6 +41,9 @@ def _base_params(**overrides):
         "quiet": True,
         "no_warnings": True,
         "noplaylist": True,
+        # A shared post may contain several videos. Preview and download the
+        # same first item, rather than fetching every item into one filename.
+        "playlist_items": "1",
         "noprogress": True,
         "socket_timeout": 20,
         "retries": 3,
@@ -65,6 +69,7 @@ def extract(url):
         return json.dumps({"ok": False, "error": "yt-dlp is not installed in this build."})
     try:
         with yt_dlp.YoutubeDL(_base_params(skip_download=True)) as ydl:
+            _register_extractors(ydl)
             info = ydl.extract_info(url, download=False)
         info = _first_entry(info)
         if not info:
@@ -75,7 +80,7 @@ def extract(url):
             "uploader": str(info.get("uploader") or info.get("channel") or ""),
             "duration": int(info.get("duration") or 0),
             "thumbnail": _thumbnail(info),
-            "formats": [_clean_format(f) for f in (info.get("formats") or [])],
+            "formats": [_clean_format(f) for f in _formats(info)],
         })
     except Exception as exc:
         return json.dumps({"ok": False, "error": _error_text(exc)})
@@ -90,8 +95,11 @@ def download(url, format_id, dest_dir, prefix, hook):
     if yt_dlp is None:
         return json.dumps({"ok": False, "cancelled": False,
                            "error": "yt-dlp is not installed in this build."})
-    dest_dir = os.path.abspath(dest_dir)
-    os.makedirs(dest_dir, exist_ok=True)
+    try:
+        dest_dir = os.path.abspath(dest_dir)
+        os.makedirs(dest_dir, exist_ok=True)
+    except (OSError, TypeError) as exc:
+        return json.dumps({"ok": False, "cancelled": False, "error": _error_text(exc)})
     finished = {"path": None}
     last = {"at": 0.0, "status": None}
 
@@ -125,6 +133,7 @@ def download(url, format_id, dest_dir, prefix, hook):
     )
     try:
         with yt_dlp.YoutubeDL(params) as ydl:
+            _register_extractors(ydl)
             ydl.download([url])
         path = finished["path"] or _find_output(dest_dir, prefix)
         if not path or not os.path.exists(path):
@@ -144,22 +153,61 @@ def download(url, format_id, dest_dir, prefix, hook):
 # ---------------------------------------------------------------- helpers
 
 
+def _register_extractors(ydl):
+    # TikTok redirects Indian users to /in/about with HTTP 200. Upstream
+    # mistakes this for a malformed challenge, hiding the actual region block.
+    from yt_dlp.extractor.tiktok import TikTokIE as BaseTikTokIE
+    from yt_dlp.utils import GeoRestrictedError
+
+    class TikTokIE(BaseTikTokIE):
+        def _download_webpage_handle(self, *args, **kwargs):
+            response = super()._download_webpage_handle(*args, **kwargs)
+            if response and _tiktok_region_redirect(response[1].url):
+                raise GeoRestrictedError("TikTok is not available in your country.")
+            return response
+
+    ydl.add_info_extractor(TikTokIE())
+
+
+def _tiktok_region_redirect(url):
+    parsed = urlsplit(url)
+    host = (parsed.hostname or "").lower()
+    return (host == "tiktok.com" or host.endswith(".tiktok.com")) and parsed.path.rstrip("/") == "/in/about"
+
+
 def _first_entry(info):
-    if isinstance(info, dict) and info.get("_type") == "playlist":
+    if isinstance(info, dict) and info.get("_type") in ("playlist", "multi_video"):
         for entry in info.get("entries") or []:
             if entry:
-                return entry
+                return _first_entry(entry)
         return None
     return info
 
 
+def _formats(info):
+    """Single-media extractors can return a URL directly, without formats."""
+    formats = info.get("formats") or []
+    if not formats and info.get("url"):
+        return [dict(info, format_id=info.get("format_id") or "best")]
+    return formats
+
+
 def _clean_format(f):
+    ext = str(f.get("ext") or "").lower()
+    is_image = ext in ("jpg", "jpeg", "png", "webp", "gif")
+    is_audio = ext in ("mp3", "m4a", "aac", "ogg", "opus", "wav", "flac")
+    is_video = ext in ("mp4", "m4v", "webm", "mkv", "mov", "flv", "avi", "ts")
+    # "none" means the extractor confirmed absence; missing metadata means
+    # unknown. Do not turn a normal muxed social video into a silent stream.
+    video_codec = f.get("vcodec") or (
+        "none" if is_image or is_audio else "unknown" if is_video or f.get("height") else "none")
+    audio_codec = f.get("acodec") or ("none" if is_image else "unknown")
     return {
         "id": str(f.get("format_id") or ""),
         "url": str(f.get("url") or ""),
         "ext": str(f.get("ext") or ""),
-        "vcodec": str(f.get("vcodec") or "none"),
-        "acodec": str(f.get("acodec") or "none"),
+        "vcodec": str(video_codec),
+        "acodec": str(audio_codec),
         "height": f.get("height"),
         "abr": f.get("abr"),
         "filesize": f.get("filesize"),

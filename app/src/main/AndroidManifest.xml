@@ -52,6 +52,11 @@
             </intent-filter>
         </activity>
 
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="dataSync"
+            tools:node="merge" />
+
         <!-- Download notification buttons (cancel / retry). Not exported:
              only this app's own PendingIntents can reach it. -->
         <receiver

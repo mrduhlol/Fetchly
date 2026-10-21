@@ -40,7 +40,7 @@ class DownloadQueue(
                 uploader = media.uploader,
                 sourceUrl = media.sourceUrl,
                 platform = media.platform,
-                mediaType = media.mediaType,
+                mediaType = DownloadPlan.mediaType(option.kind, media.mediaType),
                 thumbnailUrl = media.thumbnailUrl,
                 durationSeconds = media.durationSeconds,
                 optionLabel = option.label,

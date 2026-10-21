@@ -7,6 +7,7 @@ import com.fetchly.app.domain.model.DefaultQuality
 import com.fetchly.app.domain.model.MediaInfo
 import com.fetchly.app.domain.model.QualityOption
 import com.fetchly.app.domain.session.ResolveSession
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +21,7 @@ data class ResultUiState(
     val selectedId: String? = null,
     val enqueuing: Boolean = false,
     val queued: Boolean = false,
+    val error: String? = null,
 ) {
     val selected: QualityOption? get() = media?.options?.firstOrNull { it.id == selectedId }
 }
@@ -52,11 +54,19 @@ class ResultViewModel(
         val current = _state.value
         val media = current.media ?: return
         val option = current.selected ?: return
-        if (current.enqueuing) return
-        _state.update { it.copy(enqueuing = true) }
+        if (current.enqueuing || current.queued) return
+        _state.update { it.copy(enqueuing = true, error = null) }
         viewModelScope.launch {
-            commands.enqueue(media, option)
-            _state.update { it.copy(enqueuing = false, queued = true) }
+            try {
+                commands.enqueue(media, option)
+                _state.update { it.copy(enqueuing = false, queued = true) }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                _state.update {
+                    it.copy(enqueuing = false, error = "Couldn't start the download. Check available storage and try again.")
+                }
+            }
         }
     }
 

@@ -1,5 +1,10 @@
 package com.fetchly.app.data.download
 
+import android.Manifest
+import android.app.Notification
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.core.content.ContextCompat
 import android.content.Context
 import android.content.pm.ServiceInfo
 import android.os.SystemClock
@@ -32,7 +37,6 @@ import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
@@ -71,15 +75,11 @@ class DownloadWorker(
     @Volatile private var activeHook: DownloadHook? = null
     @Volatile private var activeCall: Call? = null
 
-    override suspend fun doWork(): Result {
-        // CoroutineWorker cancels this coroutine when the work is stopped
-        // (onStopped is final), so react to the job's own cancellation:
-        // stop the Python download at its next chunk, abort the OkHttp body,
-        // cut any ffmpeg merge short. Guarded by cause so a normal finish
-        // never touches another download's session.
-        currentCoroutineContext()[Job]?.invokeOnCompletion { cause ->
-            if (cause is CancellationException) cancelActiveWork()
-        }
+    override suspend fun doWork(): Result = withDownloadCancellation(::cancelActiveWork) {
+        executeWork()
+    }
+
+    private suspend fun executeWork(): Result {
         val id = inputData.getString(KEY_DOWNLOAD_ID)?.takeIf { it.isNotBlank() }
             ?: return Result.failure()
         val history = graph.history
@@ -120,16 +120,6 @@ class DownloadWorker(
 
             return when (outcome) {
                 is PipelineOutcome.Completed -> {
-                    val stored = history.setCompleted(
-                        id, outcome.uri, outcome.name, outcome.path, outcome.size,
-                        System.currentTimeMillis(),
-                    )
-                    if (!stored) {
-                        // The user cancelled while the file was being
-                        // published; their intent wins, so the file goes too.
-                        runCatching { MediaStorePublisher.delete(applicationContext, outcome.uri) }
-                        return Result.success()
-                    }
                     notifyCompleted(entry, outcome)
                     Result.success()
                 }
@@ -206,23 +196,38 @@ class DownloadWorker(
         stage.set("Saving…")
         val name = Filenames.displayName(entry.title, option.label, option.container)
         val mime = MimeTypes.forContainer(option.container, audio = option.kind == QualityKind.AUDIO)
-        return when (
-            val published = MediaStorePublisher.publish(
-                applicationContext, artifact, name, mime, entry.mediaType,
-            )
-        ) {
-            is PublishResult.Ok -> PipelineOutcome.Completed(
-                uri = published.uri,
-                name = name,
-                mime = mime,
-                path = artifact.absolutePath,
-                size = artifact.length(),
-            )
-            is PublishResult.Failed -> PipelineOutcome.Failed(
-                "The download finished but couldn't be saved to your media library.",
-                published.raw,
-                network = false,
-            )
+        // Publish and commit the history row as one cancellation-safe step.
+        // Cancellation after copying must never leave an untracked gallery file.
+        return withContext(NonCancellable + Dispatchers.IO) {
+            when (
+                val published = MediaStorePublisher.publish(
+                    applicationContext, artifact, name, mime,
+                    DownloadPlan.mediaType(option.kind, entry.mediaType),
+                )
+            ) {
+                is PublishResult.Ok -> {
+                    var recorded = false
+                    try {
+                        recorded = graph.history.setCompleted(
+                            entry.id, published.uri, name, published.uri, artifact.length(),
+                            System.currentTimeMillis(),
+                        )
+                        if (recorded) PipelineOutcome.Completed(
+                            uri = published.uri,
+                            name = name,
+                            mime = mime,
+                            size = artifact.length(),
+                        ) else PipelineOutcome.Cancelled
+                    } finally {
+                        if (!recorded) MediaStorePublisher.delete(applicationContext, published.uri)
+                    }
+                }
+                is PublishResult.Failed -> PipelineOutcome.Failed(
+                    "The download finished but couldn't be saved to your media library.",
+                    published.raw,
+                    network = false,
+                )
+            }
         }
     }
 
@@ -261,8 +266,8 @@ class DownloadWorker(
             latest.set(DownloadProgress(0L, stream.sizeBytes ?: 0L, 0.0))
             val stem = when {
                 option.streams.size == 1 && option.kind == QualityKind.FILE -> "${prefix}_file"
-                audioOnly -> "${prefix}_a"
-                else -> "${prefix}_v"
+                audioOnly -> "${prefix}_${index}_a"
+                else -> "${prefix}_${index}_v"
             }
             when (val result = fetchStream(entry, stream, scratch, stem)) {
                 is StreamResult.Ok -> files += result.file
@@ -404,6 +409,7 @@ class DownloadWorker(
         val output = File(scratch, "${prefix}_merged.${option.container}")
         val args = mutableListOf("-y")
         files.forEach { args += listOf("-i", it.absolutePath) }
+        args += DownloadPlan.streamMaps(option)
         args += listOf("-c", "copy")
         if (option.container.equals("mp4", ignoreCase = true)) {
             args += listOf("-movflags", "+faststart")
@@ -478,7 +484,7 @@ class DownloadWorker(
             )
         }
         val expected = option.sizeBytes ?: entry.sizeBytes
-        if (expected != null && expected > 0L && file.length() * 100 < expected * SHORT_FILE_PERCENT) {
+        if (expected != null && expected > 0L && file.length().toDouble() / expected < SHORT_FILE_PERCENT / 100.0) {
             return VerifyProblem(
                 "The download stopped early (" +
                     "${FormatSize.format(file.length()).orEmpty()} of " +
@@ -496,7 +502,6 @@ class DownloadWorker(
             val uri: String,
             val name: String,
             val mime: String,
-            val path: String,
             val size: Long,
         ) : PipelineOutcome
 
@@ -527,7 +532,7 @@ class DownloadWorker(
             runCatching {
                 // No retry action here: the retry is already scheduled, and a
                 // tap while the row is QUEUED would have nothing to do.
-                NotificationManagerCompat.from(applicationContext).notify(
+                notifyIfAllowed(
                     DownloadNotifications.terminalIdFor(entry.id),
                     DownloadNotifications.failed(
                         applicationContext, entry.id, entry.title,
@@ -539,7 +544,7 @@ class DownloadWorker(
             return Result.retry()
         }
         runCatching {
-            NotificationManagerCompat.from(applicationContext).notify(
+            notifyIfAllowed(
                 DownloadNotifications.terminalIdFor(entry.id),
                 DownloadNotifications.failed(
                     applicationContext, entry.id, entry.title, failure.message,
@@ -558,7 +563,7 @@ class DownloadWorker(
 
     private fun notifyCompleted(entry: HistoryEntry, done: PipelineOutcome.Completed) {
         runCatching {
-            NotificationManagerCompat.from(applicationContext).notify(
+            notifyIfAllowed(
                 // A distinct id from the foreground one: WorkManager cancels
                 // the foreground notification when the work ends, and the
                 // "saved" notification must survive that.
@@ -604,12 +609,24 @@ class DownloadWorker(
             )
         )
         runCatching {
-            NotificationManagerCompat.from(applicationContext).notify(
+            notifyIfAllowed(
                 DownloadNotifications.idFor(entry.id),
                 DownloadNotifications.progress(
                     applicationContext, entry.id, entry.title, stageText, progress,
                 ),
             )
+        }
+    }
+
+    private fun notifyIfAllowed(id: Int, notification: Notification) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) return
+        try {
+            NotificationManagerCompat.from(applicationContext).notify(id, notification)
+        } catch (_: SecurityException) {
+            // Permission may be revoked between the check and the notification.
         }
     }
 

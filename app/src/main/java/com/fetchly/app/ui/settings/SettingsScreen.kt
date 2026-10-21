@@ -71,7 +71,7 @@ fun SettingsScreen(
                 onClick = { viewModel.setDefaultQuality(choice) },
             )
         }
-        Note("Fetchly always fetches the best quality available and merges video + audio on this device.")
+        Note("Choose from the formats the source provides. Separate video and audio streams are merged on this device.")
 
         SectionHeader("History")
         ActionRow(

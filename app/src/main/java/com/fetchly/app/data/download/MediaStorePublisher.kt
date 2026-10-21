@@ -43,12 +43,13 @@ object MediaStorePublisher {
             resolver.openOutputStream(uri)?.use { out ->
                 file.inputStream().use { input -> input.copyTo(out) }
             } ?: throw IOException("the media library refused to open the file for writing")
-            resolver.update(
+            val updated = resolver.update(
                 uri,
                 ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) },
                 null,
                 null,
             )
+            if (updated <= 0) throw IOException("the media library could not finalize the file")
             PublishResult.Ok(uri.toString())
         } catch (exc: Exception) {
             runCatching { resolver.delete(uri, null, null) }

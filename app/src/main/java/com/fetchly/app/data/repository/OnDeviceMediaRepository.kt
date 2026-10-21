@@ -12,6 +12,7 @@ import com.fetchly.app.domain.model.QualityKind
 import com.fetchly.app.domain.model.QualityOption
 import com.fetchly.app.domain.model.StreamRef
 import com.fetchly.app.domain.platform.PlatformDetector
+import com.fetchly.app.domain.util.MimeTypes
 
 /**
  * Routing: YouTube and known social hosts go straight to the engine; DIRECT
@@ -54,11 +55,13 @@ class OnDeviceMediaRepository(
     }
 
     private fun directInfo(url: String, platform: Platform, file: DirectResult.File): MediaInfo {
-        val ext = file.filename
-            ?.substringAfterLast('.', "")
-            ?.lowercase()
-            ?.takeIf { it.isNotEmpty() }
-            ?: extensionForMime(file.mime)
+        val namedExt = file.filename?.substringAfterLast('.', "")?.lowercase().orEmpty()
+        val mimeExt = extensionForMime(file.mime)
+        val ext = when {
+            MimeTypes.forContainer(namedExt) != "application/octet-stream" -> namedExt
+            mimeExt.isNotEmpty() -> mimeExt
+            else -> namedExt
+        }
         val stream = StreamRef(
             formatId = "direct",
             url = file.url,
@@ -77,7 +80,7 @@ class OnDeviceMediaRepository(
                 ?: "Direct file",
             uploader = null,
             durationSeconds = null,
-            thumbnailUrl = null,
+            thumbnailUrl = file.url.takeIf { mediaTypeFor(file.mime, ext) == MediaType.IMAGE },
             mediaType = mediaTypeFor(file.mime, ext),
             options = listOf(
                 QualityOption(
@@ -108,6 +111,7 @@ class OnDeviceMediaRepository(
         "video/x-matroska" -> "mkv"
         "video/quicktime" -> "mov"
         "audio/mp4" -> "m4a"
+        "audio/webm" -> "webm"
         "audio/mpeg" -> "mp3"
         "audio/aac" -> "aac"
         "audio/ogg" -> "ogg"

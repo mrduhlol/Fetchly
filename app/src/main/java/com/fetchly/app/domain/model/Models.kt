@@ -1,7 +1,7 @@
 package com.fetchly.app.domain.model
 
 /** Where a link points. DIRECT = a file URL (mp4/mp3/jpg…); OTHER = yt-dlp best-effort. */
-enum class Platform { YOUTUBE, INSTAGRAM, TIKTOK, TWITTER, REDDIT, PINTEREST, FACEBOOK, OTHER, DIRECT }
+enum class Platform { YOUTUBE, INSTAGRAM, TIKTOK, TWITTER, REDDIT, PINTEREST, FACEBOOK, LINKEDIN, OTHER, DIRECT }
 
 enum class MediaType { VIDEO, AUDIO, IMAGE }
 

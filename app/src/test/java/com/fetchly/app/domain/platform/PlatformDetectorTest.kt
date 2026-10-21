@@ -17,6 +17,8 @@ class PlatformDetectorTest {
 
     @Test
     fun `social hosts`() {
+        assertEquals(Platform.LINKEDIN, PlatformDetector.detect("https://www.linkedin.com/posts/user_activity-123"))
+        assertEquals(Platform.LINKEDIN, PlatformDetector.detect("https://lnkd.in/abc"))
         assertEquals(Platform.INSTAGRAM, PlatformDetector.detect("https://www.instagram.com/reel/Cxyz/"))
         assertEquals(Platform.TIKTOK, PlatformDetector.detect("https://www.tiktok.com/@user/video/123"))
         assertEquals(Platform.TWITTER, PlatformDetector.detect("https://x.com/user/status/123"))
