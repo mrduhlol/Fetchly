@@ -164,7 +164,8 @@ fun FetchlyNav(graph: AppGraph, navController: NavHostController = rememberNavCo
                         if (route != destination) navController.navigate(destination) {
                             popUpTo(Routes.HOME) { saveState = true }
                             launchSingleTop = true
-                            restoreState = true
+                            // Home is the retained root; restoring its saved pop can reopen the previous tab.
+                            restoreState = destination != Routes.HOME
                         }
                     },
                     icon = { Icon(painterResource(icon), null, Modifier.size(22.dp)) },
