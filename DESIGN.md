@@ -37,3 +37,7 @@ The real Android 14 phone emulator was used to resolve the owner's public Apollo
 Warm inverse Material roles theme transient snackbars in both palettes. Downloads and Library show a loading state until the combined database/work observation arrives; empty-state copy is reserved for loaded empty data. A regression test covers delayed work observation, the initial queued entry, and a later genuinely empty history.
 
 Architectural artwork fades to the exact theme background along all four edges, with opaque outer stops so inset image boundaries disappear in Gold and White.
+
+## Default UI scale
+
+The shared Fetchly theme applies an 80% visual scale across the main app and compact share UI. Density changes are app-local; Android system chrome is unaffected. Android font preferences and its nonlinear font conversion are retained, and physical minimum touch targets and gesture thresholds are preserved. Logical design token sizes below remain unchanged; their displayed size follows this scale.
