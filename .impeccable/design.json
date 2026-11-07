@@ -6,8 +6,9 @@
   "tokens": {
     "dark": {"background":"#101010", "surfaceLow":"#191817", "foreground":"#F4EEE5", "accent":"#D6BB92"},
     "light": {"background":"#F7F2EA", "surfaceLow":"#F1EAE0", "foreground":"#24211D", "accent":"#675035"},
-    "action": {"background":"#F3E5D0", "foreground":"#211C16", "minimumHeightDp":48, "confirmationMinimumHeightDp":56},
+    "action": {"background":"#D9B873", "foreground":"#282116", "edge":"#765A31", "shape":"chamferedRectangle", "cornerCutDp":10, "minimumHeightDp":48, "confirmationMinimumHeightDp":56},
     "radiiDp":[8,12,16,24,32],
+    "defaultUiScale":0.8,
     "contentMaxWidthDp":640,
     "minimumTouchTargetDp":48,
     "home":{"brandMarkDp":30,"headlineSp":28,"linkPanelHorizontalPaddingDp":14,"linkPanelVerticalPaddingDp":8,"linkPanelGapDp":6,"shortcutCapsuleHeightDp":36,"shortcutMinimumTargetHeightDp":56,"templeHeightDp":112},

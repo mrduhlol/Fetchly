@@ -17,7 +17,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
+import com.fetchly.app.ui.components.PlaqueOutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -96,7 +96,7 @@ fun MediaDetailsSheet(
                 Text(entry.outputName ?: entry.title, style = MaterialTheme.typography.bodyMedium)
                 Text(savedFolder(entry), style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
-                if (!fileAvailable) OutlinedButton(onClick = onChooseFormat) { Text("Download again") }
+                if (!fileAvailable) PlaqueOutlinedButton(onClick = onChooseFormat) { Text("Download again") }
             }
             if (entry.status == DownloadStatus.CANCELLED) {
                 Spacer(Modifier.height(10.dp))
@@ -107,18 +107,18 @@ fun MediaDetailsSheet(
             Spacer(Modifier.height(20.dp))
 
             FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedButton(onClick = onOpen, enabled = entry.status == DownloadStatus.COMPLETED && fileAvailable) {
+                PlaqueOutlinedButton(onClick = onOpen, enabled = entry.status == DownloadStatus.COMPLETED && fileAvailable) {
                     Text("Open file")
                 }
-                OutlinedButton(onClick = onShare, enabled = entry.status == DownloadStatus.COMPLETED && fileAvailable) {
+                PlaqueOutlinedButton(onClick = onShare, enabled = entry.status == DownloadStatus.COMPLETED && fileAvailable) {
                     Text("Share")
                 }
                 if (entry.status == DownloadStatus.FAILED || entry.status == DownloadStatus.CANCELLED) {
-                    OutlinedButton(onClick = onRetry) {
+                    PlaqueOutlinedButton(onClick = onRetry) {
                         Text("Retry")
                     }
                 }
-                OutlinedButton(
+                PlaqueOutlinedButton(
                     onClick = onDelete,
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = MaterialTheme.colorScheme.error,

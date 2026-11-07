@@ -1,5 +1,9 @@
 package com.fetchly.app.ui.batch
 
+import com.fetchly.app.ui.components.PlaqueTonalButton
+
+import com.fetchly.app.ui.components.PlaqueButton
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -29,7 +33,7 @@ fun BatchScreen(viewModel: BatchViewModel, onBack: () -> Unit, onDownloads: () -
                     OutlinedTextField(state.input, viewModel::input, label = { Text("Links, one per line") },
                         enabled = !state.checking && !state.adding, minLines = 3, maxLines = 6, modifier = Modifier.fillMaxWidth())
                     if (state.checking) TextButton(onClick = viewModel::cancel) { Text("Stop checking") }
-                    else FilledTonalButton(onClick = viewModel::check, enabled = !state.adding && state.input.isNotBlank(), modifier = Modifier.heightIn(min = 48.dp)) { Text(if (state.rows.isEmpty()) "Check links" else "Check links again") }
+                    else PlaqueTonalButton(onClick = viewModel::check, enabled = !state.adding && state.input.isNotBlank(), modifier = Modifier.heightIn(min = 48.dp)) { Text(if (state.rows.isEmpty()) "Check links" else "Check links again") }
                     state.message?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
                     var expanded by remember { mutableStateOf(false) }
                     Box {
@@ -77,10 +81,7 @@ fun BatchScreen(viewModel: BatchViewModel, onBack: () -> Unit, onDownloads: () -
         }
         Column(Modifier.fillMaxWidth().padding(16.dp)) {
             val count = state.rows.count { it.selected && !it.added && it.media != null && it.option != null }
-            Button(colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                containerColor = com.fetchly.app.ui.components.FetchlyButtonColors.container,
-                contentColor = com.fetchly.app.ui.components.FetchlyButtonColors.content,
-            ), onClick = viewModel::download, enabled = count > 0 && !state.checking && !state.adding, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
+            PlaqueButton(onClick = viewModel::download, enabled = count > 0 && !state.checking && !state.adding, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
                 Text(if (state.adding) "Adding downloads…" else if (count == 0) "Select files to download" else if (count == 1) "Download 1 file" else "Download $count files")
             }
             TextButton(onDownloads, modifier = Modifier.fillMaxWidth()) { Text("View downloads") }

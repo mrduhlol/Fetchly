@@ -1,5 +1,7 @@
 package com.fetchly.app.ui.result
 
+import com.fetchly.app.ui.components.PlaqueButton
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -135,17 +137,14 @@ fun ResultScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        Button(
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = com.fetchly.app.ui.components.FetchlyButtonColors.container,
-                                contentColor = com.fetchly.app.ui.components.FetchlyButtonColors.content,
-                            ),
+                        PlaqueButton(
+
                             onClick = { if (state.selected?.silentVideo == true) confirmSilent = true else viewModel.download() },
                             enabled = state.selected != null && !state.enqueuing,
                             modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
                         ) {
                             if (state.enqueuing) {
-                                CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = com.fetchly.app.ui.components.FetchlyButtonColors.content)
                             } else {
                                 Icon(Icons.Filled.KeyboardArrowDown, null, Modifier.size(20.dp))
                             }

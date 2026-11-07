@@ -47,6 +47,7 @@ val LightOnError = Color(0xFFFFFFFF)
 val LightErrorContainer = Color(0xFFFFDAD6)
 val LightOnErrorContainer = Color(0xFF410002)
 
-// Flat primary actions retain ivory in either palette.
-val ActionIvory = Color(0xFFF3E5D0)
-val OnActionIvory = Color(0xFF211C16)
+// Shared plaque actions match the approved gold download button.
+val ActionGold = Color(0xFFD9B873)
+val OnActionGold = Color(0xFF282116)
+val ActionGoldEdge = Color(0xFF765A31)

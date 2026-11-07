@@ -1,5 +1,7 @@
 package com.fetchly.app.ui.welcome
 
+import com.fetchly.app.ui.components.PlaqueButton
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -54,18 +56,14 @@ fun WelcomeScreen(state: WelcomeUiState, onGetStarted: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center, modifier = Modifier.widthIn(max = 280.dp))
             Spacer(Modifier.height(28.dp))
-            Button(
+            PlaqueButton(
                 onClick = onGetStarted,
                 enabled = !state.saving,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = FetchlyButtonColors.container,
-                    contentColor = FetchlyButtonColors.content,
-                ),
             ) {
                 if (state.saving) {
                     CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        color = FetchlyButtonColors.content)
                     Spacer(Modifier.width(10.dp))
                 }
                 Text(if (state.saving) "Starting…" else if (state.error != null) "Try again" else "Get started")

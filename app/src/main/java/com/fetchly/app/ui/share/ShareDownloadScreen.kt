@@ -1,5 +1,8 @@
 package com.fetchly.app.ui.share
 
+import com.fetchly.app.ui.components.PlaqueOutlinedButton
+import com.fetchly.app.ui.components.PlaqueButton
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectableGroup
@@ -28,7 +31,7 @@ fun ShareDownloadScreen(state: ShareDownloadState, onKind: (QualityKind) -> Unit
                 if (state.urls.size > 1) {
                     var sourceMenu by remember { mutableStateOf(false) }
                     Box {
-                        OutlinedButton(onClick = { sourceMenu = true }, enabled = !state.adding) { Text("Shared link ${state.urls.indexOf(state.sourceUrl) + 1} of ${state.urls.size}") }
+                        PlaqueOutlinedButton(onClick = { sourceMenu = true }, enabled = !state.adding) { Text("Shared link ${state.urls.indexOf(state.sourceUrl) + 1} of ${state.urls.size}") }
                         DropdownMenu(sourceMenu, { sourceMenu = false }, modifier = Modifier.heightIn(max = 240.dp)) {
                             state.urls.forEachIndexed { index, url -> DropdownMenuItem(text = { Text("${index + 1}. $url", maxLines = 2, overflow = TextOverflow.Ellipsis) },
                                 onClick = { sourceMenu = false; onSource(url) }) }
@@ -53,7 +56,7 @@ fun ShareDownloadScreen(state: ShareDownloadState, onKind: (QualityKind) -> Unit
                     if (state.options.isNotEmpty()) {
                         var qualityMenu by remember(state.kind) { mutableStateOf(false) }
                         Box {
-                            OutlinedButton(onClick = { qualityMenu = true }, enabled = !state.adding, modifier = Modifier.fillMaxWidth()) {
+                            PlaqueOutlinedButton(onClick = { qualityMenu = true }, enabled = !state.adding, modifier = Modifier.fillMaxWidth()) {
                                 Text(state.selected?.let { "${it.label} · ${it.container.uppercase()}" } ?: "Choose quality")
                             }
                             DropdownMenu(qualityMenu, { qualityMenu = false }, modifier = Modifier.heightIn(max = 240.dp)) {
@@ -82,11 +85,8 @@ fun ShareDownloadScreen(state: ShareDownloadState, onKind: (QualityKind) -> Unit
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = onCancel, enabled = !state.adding) { Text("Cancel") }
-                Button(colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                containerColor = com.fetchly.app.ui.components.FetchlyButtonColors.container,
-                contentColor = com.fetchly.app.ui.components.FetchlyButtonColors.content,
-            ), onClick = onDownload, enabled = state.canDownload) {
-                    if (state.adding) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                PlaqueButton(onClick = onDownload, enabled = state.canDownload) {
+                    if (state.adding) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = com.fetchly.app.ui.components.FetchlyButtonColors.content)
                     else Text("Download")
                 }
             }
