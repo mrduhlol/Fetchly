@@ -8,9 +8,9 @@
 
 Paste a public media link, pick a quality, save it to your device.
 
-<p><img src="app/src/main/res/drawable-nodpi/fetchly_logo.png" width="140" alt="Fetchly Apollo app icon" /></p>
+<p><img src="app/src/main/res/drawable-nodpi/fetchly_logo.png" width="280" alt="Fetchly Apollo app icon" /></p>
 
-[![Download APK for Android](docs/download-apk.svg)](https://github.com/mrduhlol/Fetchly/releases/latest/download/fetchly_v2.0.apk)
+<p><a href="https://github.com/mrduhlol/Fetchly/releases/latest/download/fetchly_v2.0.apk"><img src="docs/download-apk.svg" width="220" alt="Download APK for Android" /></a></p>
 
 </div>
 
