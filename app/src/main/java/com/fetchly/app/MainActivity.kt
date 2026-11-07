@@ -11,6 +11,14 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.fetchly.app.ui.welcome.WelcomeViewModel
+import com.fetchly.app.ui.welcome.WelcomeScreen
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
@@ -41,11 +49,13 @@ class MainActivity : ComponentActivity() {
         if (redirectSharedIntent(intent, finishMain = true)) return
         enableEdgeToEdge()
         handleIncoming(intent)
-        requestNotificationPermissionIfNeeded()
         setContent {
+            val welcomeViewModel: WelcomeViewModel = viewModel { WelcomeViewModel(graph.settings) }
+            val welcome by welcomeViewModel.state.collectAsStateWithLifecycle()
             val choice by graph.settings.theme
                 .collectAsStateWithLifecycle(initialValue = ThemeChoice.SYSTEM)
-            val dark = when (choice) {
+            // The welcome page uses the dark Apollo presentation from the design board.
+            val dark = if (welcome.completed != true) true else when (choice) {
                 ThemeChoice.SYSTEM -> isSystemInDarkTheme()
                 ThemeChoice.LIGHT -> false
                 ThemeChoice.DARK -> true
@@ -58,12 +68,21 @@ class MainActivity : ComponentActivity() {
                     navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT) { dark },
                 )
             }
+            LaunchedEffect(welcome.completed) {
+                if (welcome.completed == true) requestNotificationPermissionIfNeeded()
+            }
             FetchlyTheme(darkTheme = dark) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     // Edge-to-edge: keep every screen clear of the status bar,
                     // cutouts and the gesture bar.
                     Box(modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing)) {
-                        FetchlyNav(graph)
+                        when (welcome.completed) {
+                            null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Image(painterResource(R.drawable.fetchly_logo), null, Modifier.size(72.dp))
+                            }
+                            false -> WelcomeScreen(welcome, welcomeViewModel::getStarted)
+                            true -> FetchlyNav(graph)
+                        }
                     }
                 }
             }

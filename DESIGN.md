@@ -8,6 +8,14 @@ Use serif only for editorial headlines; functional labels and body copy use Andr
 
 Home order: brand header, heading, link-entry panel, supported platform shortcuts, then temple artwork. Do not invent platform support. Theme previews live in Settings → Appearance and use the existing persisted SYSTEM/LIGHT/DARK preferences. Library categories reuse the existing media-type filters over completed history entries. Downloads retains active transfers, failed and cancelled entries, search, retry, and file actions. Counts represent stored history rather than a fresh device storage scan.
 
+## First-launch welcome
+
+The welcome page follows the board’s dark Apollo presentation: the exact supplied logo, a spaced serif FETCHLY wordmark, “Paste. Choose. Fetch.” tagline, short purpose copy, and a flat ivory Get started action at least 56 dp high. Its centered, scrollable composition is constrained to 480 dp; Apollo fits without cropping. There is no artificial delay or simulated progress. While the saved welcome state is unknown, a dark brand loader shows Apollo and keeps Home hidden.
+
+DataStore’s `welcome_completed` flag defaults to false, so new installs and existing installs without the key see welcome once. Get started must save completion successfully before entering Home; real saving disables the action and shows “Starting…”, while failure leaves welcome visible with a retry action. Later launches skip welcome. Notification permission is requested only after completion, and the main app resumes the selected or system palette. Incoming VIEW URLs remain pending until Home; existing compact-share routing is unchanged.
+
+Native verification covered an actual VIEW URL with notification permission reset: welcome appeared unobstructed, Get started preceded the permission prompt, Home retained the URL, and force-stop/relaunch entered Home directly. Evidence: `/tmp/fetchly-welcome-first-open.png` and `/tmp/fetchly-welcome-returning-home.png`. Four welcome tests bring the passing unit suite to 232; lint and APK build also passed.
+
 ## Assets
 
 - `fetchly_logo.png` is the exact owner-supplied Apollo image, copied byte-for-byte from `file_0000000011ac8211a5ad581011244116.png`. Preserve its proportions and face.
