@@ -62,34 +62,34 @@ fun HomeScreen(
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         Column(
             modifier = Modifier.widthIn(max = 640.dp).fillMaxSize()
-                .imePadding().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 12.dp),
+                .imePadding().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 4.dp),
         ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Image(painterResource(R.drawable.fetchly_logo), null, Modifier.size(36.dp))
+                Image(painterResource(R.drawable.fetchly_logo), null, Modifier.size(30.dp))
                 Spacer(Modifier.width(10.dp))
-                Text("Fetchly", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                Text("Fetchly", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                 TextButton(onClick = onOpenDownloads) { Text("Downloads") }
                 IconButton(onClick = onOpenSettings) {
                     Icon(Icons.Filled.Settings, contentDescription = "Settings")
                 }
             }
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(4.dp))
             Text("Download a link", style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.height(8.dp))
             Text(
                 "Paste a link, choose a format, and save it.",
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
             Surface(
                 shape = MaterialTheme.shapes.medium,
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
             ) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text("Start with a link", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                        Text("Start with a link", style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
                         TextButton(
                             enabled = !state.analyzing,
                             onClick = { clipboard.getText()?.text?.let(viewModel::onInputChange) },
@@ -121,14 +121,10 @@ fun HomeScreen(
                     }
                 }
             }
-            Spacer(Modifier.height(24.dp))
-            SupportedApps(enabled = !state.analyzing)
-            Spacer(Modifier.height(24.dp))
-            Image(
-                painterResource(R.drawable.fetchly_temple), contentDescription = null,
-                modifier = Modifier.fillMaxWidth().height(130.dp), contentScale = ContentScale.Crop,
-            )
             Spacer(Modifier.height(16.dp))
+            SupportedApps(enabled = !state.analyzing)
+            Spacer(Modifier.height(12.dp))
+            com.fetchly.app.ui.components.TempleArtwork(Modifier.fillMaxWidth().height(112.dp))
         }
     }
 }

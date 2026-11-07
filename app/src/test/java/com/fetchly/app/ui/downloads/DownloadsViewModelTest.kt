@@ -13,6 +13,7 @@ import com.fetchly.app.domain.model.QualityOption
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -112,7 +113,7 @@ class DownloadsViewModelTest {
         }
     }
 
-    private class FakeWorks(private val flow: MutableStateFlow<List<DownloadWork>>) : DownloadWorks {
+    private class FakeWorks(private val flow: Flow<List<DownloadWork>>) : DownloadWorks {
         override fun observe(): Flow<List<DownloadWork>> = flow
     }
 
@@ -141,6 +142,27 @@ class DownloadsViewModelTest {
         createdAt = updatedAt,
         updatedAt = updatedAt,
     )
+
+    @Test
+    fun `initial observation never claims queued downloads are absent`() = runTest(mainDispatcher.dispatcher) {
+        val dao = FakeDao().apply { upsert(entity("queued", "QUEUED")) }
+        // Room can emit before WorkManager; neither means the combined state is loaded yet.
+        val works = MutableSharedFlow<List<DownloadWork>>()
+        val viewModel = DownloadsViewModel(HistoryRepository(dao), FakeCommands(), FakeWorks(works))
+        org.junit.Assert.assertTrue(viewModel.state.value.loading)
+        org.junit.Assert.assertFalse(viewModel.state.value.isEmpty)
+        backgroundScope.launch { viewModel.state.collect {} }
+        runCurrent()
+        org.junit.Assert.assertTrue(viewModel.state.value.loading)
+        works.emit(emptyList())
+        runCurrent()
+        org.junit.Assert.assertFalse(viewModel.state.value.loading)
+        assertEquals("queued", viewModel.state.value.active.single().entry.id)
+        dao.rows.value = emptyList()
+        runCurrent()
+        org.junit.Assert.assertFalse(viewModel.state.value.loading)
+        org.junit.Assert.assertTrue(viewModel.state.value.isEmpty)
+    }
 
     @Test
     fun `map splits unfinished work from finished history`() {

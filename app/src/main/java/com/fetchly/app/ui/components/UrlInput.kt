@@ -31,8 +31,9 @@ fun UrlInput(
         enabled = enabled,
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        label = { Text("Media link") },
-        placeholder = { Text("https://…") },
+        placeholder = { Text("Paste a media link") },
+        textStyle = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+        leadingIcon = { Icon(androidx.compose.ui.res.painterResource(com.fetchly.app.R.drawable.ic_link), null) },
         singleLine = true,
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Uri,

@@ -1,5 +1,14 @@
 package com.fetchly.app.ui.home
 
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
@@ -31,35 +40,34 @@ private val platformShortcuts = listOf(
 internal fun SupportedApps(enabled: Boolean) {
     val context = LocalContext.current
     var failedPlatform by remember { mutableStateOf<String?>(null) }
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text("Apps we support", style = MaterialTheme.typography.titleMedium)
-        Text(
-            "Tap an app to find a link.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
         // Four equal columns keep all eight shortcuts directly below the link panel.
         platformShortcuts.chunked(4).forEach { shortcuts ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 shortcuts.forEach { shortcut ->
                     val name = if (shortcut.platform == Platform.TWITTER) "X" else PlatformDetector.label(shortcut.platform)
-                    Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                        OutlinedButton(
-                            onClick = { failedPlatform = if (ExternalLinks.open(context, shortcut.url)) null else name },
-                            enabled = enabled,
-                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                            contentPadding = PaddingValues(8.dp),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
-                        ) { PlatformIcon(shortcut.platform) }
+                    Column(
+                        Modifier.weight(1f).heightIn(min = 56.dp).alpha(if (enabled) 1f else 0.38f)
+                            .clickable(enabled = enabled, role = Role.Button) {
+                                failedPlatform = if (ExternalLinks.open(context, shortcut.url)) null else name
+                            }
+                            .semantics { contentDescription = name },
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Box(Modifier.fillMaxWidth().height(36.dp)
+                            .border(BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant), CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceContainerLow, CircleShape),
+                            contentAlignment = Alignment.Center,
+                        ) { PlatformIcon(shortcut.platform, compact = true) }
                         Text(name, style = MaterialTheme.typography.labelSmall,
-                            modifier = Modifier.padding(top = 4.dp, bottom = 6.dp))
+                            modifier = Modifier.padding(top = 2.dp, bottom = 2.dp).clearAndSetSemantics { })
                     }
                 }
             }
         }
         Text(
-            "YouTube works best. Other apps depend on the link. You can also paste a direct file link.",
+            "YouTube works best. Other apps vary by link.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

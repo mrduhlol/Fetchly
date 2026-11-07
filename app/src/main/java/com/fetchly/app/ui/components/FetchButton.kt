@@ -30,11 +30,15 @@ fun FetchButton(
     Button(
         onClick = onClick,
         shape = CircleShape,
-        colors = ButtonDefaults.buttonColors(containerColor = FetchlyButtonColors.container, contentColor = FetchlyButtonColors.content),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = FetchlyButtonColors.container, contentColor = FetchlyButtonColors.content,
+            disabledContainerColor = FetchlyButtonColors.container.copy(alpha = 0.85f),
+            disabledContentColor = FetchlyButtonColors.content.copy(alpha = 0.6f),
+        ),
         enabled = enabled && !loading,
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 56.dp),
+            .heightIn(min = 48.dp),
     ) {
         if (loading) {
             CircularProgressIndicator(

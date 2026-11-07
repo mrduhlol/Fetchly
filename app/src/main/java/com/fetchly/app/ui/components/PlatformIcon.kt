@@ -3,7 +3,7 @@ package com.fetchly.app.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Icon
@@ -19,7 +19,7 @@ import com.fetchly.app.domain.model.Platform
 
 /** Brand marks share a neutral background so they work in both themes. */
 @Composable
-fun PlatformIcon(platform: Platform, modifier: Modifier = Modifier) {
+fun PlatformIcon(platform: Platform, modifier: Modifier = Modifier, compact: Boolean = false) {
     val brand = when (platform) {
         Platform.YOUTUBE -> R.drawable.ic_platform_youtube to Color(0xFFFF0033)
         Platform.INSTAGRAM -> R.drawable.ic_platform_instagram to Color(0xFFC13584)
@@ -35,9 +35,15 @@ fun PlatformIcon(platform: Platform, modifier: Modifier = Modifier) {
         Icon(Icons.Filled.Info, contentDescription = null, modifier = modifier.size(28.dp),
             tint = MaterialTheme.colorScheme.onSurfaceVariant)
     } else {
-        Box(modifier.size(28.dp).background(Color.White, CircleShape), contentAlignment = Alignment.Center) {
+        val backing = when (platform) {
+            Platform.TIKTOK, Platform.TWITTER -> if (compact) MaterialTheme.colorScheme.onSurface else Color.White
+            else -> if (compact) brand.second else Color.White
+        }
+        Box(modifier.size(if (compact) 24.dp else 28.dp).background(backing, RoundedCornerShape(if (compact) 6.dp else 14.dp)), contentAlignment = Alignment.Center) {
             Icon(painterResource(brand.first), contentDescription = null,
-                tint = brand.second, modifier = Modifier.size(18.dp))
+                tint = if (compact) {
+                    if (platform == Platform.TIKTOK || platform == Platform.TWITTER) MaterialTheme.colorScheme.surface else Color.White
+                } else brand.second, modifier = Modifier.size(18.dp))
         }
     }
 }

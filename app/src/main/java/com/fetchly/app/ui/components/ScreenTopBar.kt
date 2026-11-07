@@ -29,7 +29,7 @@ fun ScreenTopBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 64.dp)
+            .heightIn(min = 56.dp)
             .padding(horizontal = 4.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -42,7 +42,7 @@ fun ScreenTopBar(
             title,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.titleMedium,
             modifier = Modifier
                 .weight(1f)
                 .semantics { heading() }

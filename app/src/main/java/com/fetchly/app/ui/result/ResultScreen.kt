@@ -65,13 +65,23 @@ fun ResultScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     item {
-                        Thumbnail(media)
-                        Spacer(Modifier.height(10.dp))
-                        PlatformBadge(media.platform)
-                        Spacer(Modifier.height(20.dp))
-                        Text(media.title, style = MaterialTheme.typography.titleLarge)
-                        Spacer(Modifier.height(8.dp))
-                        Text(factsFor(media), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Fetch media", style = MaterialTheme.typography.headlineMedium)
+                        Spacer(Modifier.height(16.dp))
+                        Surface(shape = MaterialTheme.shapes.medium,
+                            border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline),
+                            color = MaterialTheme.colorScheme.surfaceContainerLow) {
+                            Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Thumbnail(media, Modifier.width(96.dp).height(80.dp))
+                                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text(media.title, style = MaterialTheme.typography.titleMedium, maxLines = 3,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                                    PlatformBadge(media.platform)
+                                    if (factsFor(media).isNotBlank()) Text(factsFor(media),
+                                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                        }
                         Spacer(Modifier.height(24.dp))
                         Text("Choose a format", style = MaterialTheme.typography.titleLarge)
                         Spacer(Modifier.height(6.dp))
@@ -150,10 +160,10 @@ fun ResultScreen(
 }
 
 @Composable
-private fun Thumbnail(media: MediaInfo) {
+private fun Thumbnail(media: MediaInfo, modifier: Modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f)) {
     Box(
-        Modifier.fillMaxWidth().aspectRatio(16f / 9f)
-            .clip(MaterialTheme.shapes.large).background(MaterialTheme.colorScheme.surfaceContainerHigh),
+        modifier
+            .clip(MaterialTheme.shapes.small).background(MaterialTheme.colorScheme.surfaceContainerHigh),
         contentAlignment = Alignment.Center,
     ) {
         if (media.thumbnailUrl != null) {

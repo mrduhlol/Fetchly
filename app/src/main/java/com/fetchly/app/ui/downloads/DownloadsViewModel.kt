@@ -44,8 +44,9 @@ data class ActiveDownload(
 data class DownloadsUiState(
     val active: List<ActiveDownload> = emptyList(),
     val history: List<HistoryEntry> = emptyList(),
+    val loading: Boolean = false,
 ) {
-    val isEmpty: Boolean get() = active.isEmpty() && history.isEmpty()
+    val isEmpty: Boolean get() = !loading && active.isEmpty() && history.isEmpty()
 }
 
 /**
@@ -67,7 +68,7 @@ class DownloadsViewModel(
     val state: StateFlow<DownloadsUiState> =
         combine(history.observeAll(), works.observe()) { entries, running ->
             map(entries, joinWorks(running))
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DownloadsUiState())
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DownloadsUiState(loading = true))
 
     fun cancel(id: String) = perform(id, "stop") { commands.cancel(id) }
     fun retry(id: String) = perform(id, "retry") { commands.retry(id) }

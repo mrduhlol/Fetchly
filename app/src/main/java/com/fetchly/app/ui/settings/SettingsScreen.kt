@@ -1,5 +1,6 @@
 package com.fetchly.app.ui.settings
 
+import androidx.compose.material.icons.filled.Settings
 import com.fetchly.app.ui.components.ExternalLinks
 import android.content.Intent
 import android.net.Uri
@@ -52,6 +53,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel,
     onBack: () -> Unit,
     onOpenAbout: () -> Unit,
+    onOpenAppearance: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val historyMessage by viewModel.historyMessage.collectAsStateWithLifecycle()
@@ -65,12 +67,7 @@ fun SettingsScreen(
             ScreenTopBar("Settings", onBack = onBack)
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
 
-                SectionHeader("Appearance")
-                Column(Modifier.selectableGroup()) {
-                    ThemeChoice.entries.forEach { choice ->
-                        PaletteRow(choice, selected = choice == theme, onClick = { viewModel.setTheme(choice) })
-                    }
-                }
+                ActionRow("Appearance", themeLabel(theme), onOpenAppearance)
 
                 SectionHeader("Downloads")
                 Column(Modifier.selectableGroup()) {
@@ -165,44 +162,58 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun PaletteRow(choice: ThemeChoice, selected: Boolean, onClick: () -> Unit) {
+fun AppearanceScreen(viewModel: SettingsViewModel, onBack: () -> Unit) {
+    val theme by viewModel.theme.collectAsStateWithLifecycle()
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+        Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
+            ScreenTopBar("Appearance", onBack = onBack)
+            Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                Text("Make it yours", style = MaterialTheme.typography.headlineMedium,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp))
+                Note("Choose a palette. Your selection applies throughout Fetchly and stays after you close the app.")
+                SectionHeader("Appearance")
+                Column(Modifier.selectableGroup()) {
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)) {
+                        listOf(ThemeChoice.DARK, ThemeChoice.LIGHT).forEach { choice ->
+                            PaletteTile(choice, choice == theme, { viewModel.setTheme(choice) }, Modifier.weight(1f))
+                        }
+                    }
+                    ChoiceRow("Follow system", theme == ThemeChoice.SYSTEM) { viewModel.setTheme(ThemeChoice.SYSTEM) }
+                }
+
+                Spacer(Modifier.height(20.dp))
+                Note("Simple ivory actions, clear type, and a little Apollo. Both palettes share the same controls and layout.")
+                com.fetchly.app.ui.components.TempleArtwork(Modifier.fillMaxWidth().height(180.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun PaletteTile(choice: ThemeChoice, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val dark = choice == ThemeChoice.DARK
-    val previewBackground = if (dark) com.fetchly.app.ui.theme.DarkBackground else com.fetchly.app.ui.theme.LightBackground
-    val previewText = if (dark) com.fetchly.app.ui.theme.DarkOnBackground else com.fetchly.app.ui.theme.LightOnBackground
+    val background = if (dark) com.fetchly.app.ui.theme.DarkBackground else com.fetchly.app.ui.theme.LightBackground
+    val foreground = if (dark) com.fetchly.app.ui.theme.DarkOnBackground else com.fetchly.app.ui.theme.LightOnBackground
     Surface(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        modifier = modifier.selectable(selected = selected, role = Role.RadioButton, onClick = onClick),
         shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        color = background,
         border = androidx.compose.foundation.BorderStroke(1.dp,
             if (selected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Row(
-            Modifier.fillMaxWidth().selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Surface(shape = MaterialTheme.shapes.small, color = previewBackground,
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
-                Column(Modifier.width(72.dp).padding(10.dp)) {
-                    Text("Aa", color = previewText, style = MaterialTheme.typography.titleLarge)
-                    Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp)) {
-                        listOf(previewText, com.fetchly.app.ui.theme.DarkSecondary, com.fetchly.app.ui.theme.DarkOutline).forEach {
-                            Surface(color = it, shape = androidx.compose.foundation.shape.CircleShape,
-                                modifier = Modifier.width(12.dp).then(Modifier.height(12.dp))) { }
-                        }
-                    }
-                }
-            }
-            Spacer(Modifier.width(16.dp))
-            Column(Modifier.weight(1f)) {
-                Text(themeLabel(choice), style = MaterialTheme.typography.titleMedium)
-                Text(when (choice) {
-                    ThemeChoice.SYSTEM -> "Match your device appearance"
-                    ThemeChoice.DARK -> "Obsidian, ivory & antique gold"
-                    ThemeChoice.LIGHT -> "Warm ivory & muted bronze"
-                }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            RadioButton(selected = selected, onClick = null)
+        Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            androidx.compose.foundation.Image(
+                painter = androidx.compose.ui.res.painterResource(com.fetchly.app.R.drawable.fetchly_logo),
+                contentDescription = null,
+                modifier = Modifier.fillMaxWidth().height(104.dp),
+                colorFilter = if (dark) null else androidx.compose.ui.graphics.ColorFilter.colorMatrix(
+                    androidx.compose.ui.graphics.ColorMatrix().apply { setToSaturation(0f) }),
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(themeLabel(choice), style = MaterialTheme.typography.labelLarge, color = foreground)
+            Text(if (selected) "Selected" else "Tap to apply", style = MaterialTheme.typography.labelSmall,
+                color = foreground.copy(alpha = 0.75f))
         }
     }
 }
@@ -231,14 +242,26 @@ private fun ActionRow(title: String, subtitle: String, onClick: () -> Unit) {
             .padding(horizontal = 16.dp, vertical = 4.dp),
         shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
+        border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline),
     ) {
-        Column(Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
+        Row(Modifier.padding(horizontal = 14.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+        androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(when (title) {
+            "Appearance" -> com.fetchly.app.R.drawable.ic_appearance
+            "Android download settings" -> com.fetchly.app.R.drawable.ic_stat_download
+            "Fetchly releases" -> com.fetchly.app.R.drawable.ic_external
+            "Clear finished history" -> com.fetchly.app.R.drawable.ic_clock
+            else -> com.fetchly.app.R.drawable.ic_info
+        }), contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.titleMedium)
             Text(
                 subtitle,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+        androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(com.fetchly.app.R.drawable.ic_chevron), null)
         }
     }
 }

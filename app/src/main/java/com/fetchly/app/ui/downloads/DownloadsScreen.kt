@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -64,11 +66,13 @@ import com.fetchly.app.ui.components.SectionHeader
 @Composable
 fun DownloadsScreen(viewModel: DownloadsViewModel, onBack: () -> Unit, initialNotice: String? = null,
     onOpenSettings: () -> Unit = {}, onChooseFormat: (String) -> Unit = {},
+    libraryOnly: Boolean = false,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var query by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("") }
     var filterName by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("ALL") }
-    val library = DownloadLibrary.filter(state.history, query, LibraryFilter.valueOf(filterName))
+    val history = if (libraryOnly) state.history.filter { it.status == DownloadStatus.COMPLETED } else state.history
+    val library = DownloadLibrary.filter(history, query, LibraryFilter.valueOf(filterName))
     val context = LocalContext.current
     var detailsFor by remember { mutableStateOf<HistoryEntry?>(null) }
     var deleteFor by remember { mutableStateOf<HistoryEntry?>(null) }
@@ -94,15 +98,27 @@ fun DownloadsScreen(viewModel: DownloadsViewModel, onBack: () -> Unit, initialNo
 
     Box(Modifier.fillMaxSize()) {
     Column(Modifier.widthIn(max = 640.dp).fillMaxSize().align(Alignment.TopCenter)) {
-        ScreenTopBar("Downloads", onBack = onBack)
+        ScreenTopBar(if (libraryOnly) "Library" else "Downloads", onBack = onBack)
 
-        if (state.isEmpty) {
+        if (state.loading) {
+            Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)) {
+                    androidx.compose.material3.CircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 2.dp)
+                    Text(if (libraryOnly) "Loading library…" else "Loading downloads…",
+                        style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            return@Column
+        }
+        if (if (libraryOnly) history.isEmpty() else state.isEmpty) {
             EmptyState(
                 icon = Icons.Filled.PlayArrow,
-                title = "No downloads yet",
-                subtitle = "Download a link to see its progress and saved file here.",
+                title = if (libraryOnly) "Your library starts here" else "No downloads yet",
+                subtitle = if (libraryOnly) "Saved videos, audio and images appear here after a download completes." else "Download a link to see its progress and saved file here.",
                 modifier = Modifier.weight(1f),
             )
+            com.fetchly.app.ui.components.TempleArtwork(Modifier.fillMaxWidth().height(140.dp))
             return@Column
         }
 
@@ -110,21 +126,22 @@ fun DownloadsScreen(viewModel: DownloadsViewModel, onBack: () -> Unit, initialNo
             modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
         ) {
-            if (state.active.isNotEmpty()) {
+            if (!libraryOnly && state.active.isNotEmpty()) {
                 item { SectionHeader("Downloading (${state.active.size})", horizontalPadding = 0.dp) }
                 items(state.active, key = { it.entry.id }) { active ->
                     ActiveCard(active = active, enabled = active.entry.id !in busy, onCancel = { viewModel.cancel(active.entry.id) })
                     Spacer(Modifier.height(8.dp))
                 }
             }
-            if (state.history.isNotEmpty()) {
+            if (history.isNotEmpty()) {
                 item {
-                    SectionHeader("Library & history", horizontalPadding = 0.dp)
-                    LibraryCategories(state.history, LibraryFilter.valueOf(filterName)) { filterName = it.name }
+                    if (libraryOnly) {
+                        LibraryCategories(history, LibraryFilter.valueOf(filterName)) { filterName = it.name }
+                    } else SectionHeader("Finished (${history.size})", horizontalPadding = 0.dp)
                     Spacer(Modifier.height(12.dp))
                     androidx.compose.material3.OutlinedTextField(query, { query = it }, label = { Text("Search downloads") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                     androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
-                        items(LibraryFilter.entries) { filter ->
+                        items(LibraryFilter.entries.filter { !libraryOnly || it != LibraryFilter.FAILED }) { filter ->
                             androidx.compose.material3.FilterChip(selected = filterName == filter.name,
                                 onClick = { filterName = filter.name }, label = { Text(filter.label) })
                         }
@@ -234,6 +251,7 @@ private fun ActiveCard(active: ActiveDownload, enabled: Boolean, onCancel: () ->
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
+        border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
     ) {
         Column(Modifier.padding(14.dp)) {
@@ -286,17 +304,20 @@ private fun HistoryRow(
         onClick = onOpenDetails,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
+        border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                statusIcon(entry.status),
-                contentDescription = null,
-                tint = statusTint(entry.status),
-            )
+            if (entry.thumbnailUrl != null) {
+                coil.compose.AsyncImage(
+                    model = entry.thumbnailUrl, contentDescription = null,
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    modifier = Modifier.size(52.dp).clip(MaterialTheme.shapes.small),
+                )
+            } else Icon(statusIcon(entry.status), contentDescription = null, tint = statusTint(entry.status))
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(
