@@ -26,7 +26,7 @@ object Filenames {
             .replace(ILLEGAL.replace(title, " "), " ")
             .trim()
             .trim('.')
-        val stem = cleaned.take(MAX_STEM_LENGTH).trim().trim('.')
+        val stem = clip(cleaned, MAX_STEM_LENGTH, 180).trim().trim('.')
         return stem.ifEmpty { FALLBACK_STEM }
     }
 
@@ -35,9 +35,24 @@ object Filenames {
         displayName(title, option.label, option.container)
 
     fun displayName(title: String, label: String, container: String): String {
-        val cleanLabel = label.trim().ifEmpty { "File" }
-        val ext = container.trim().lowercase(Locale.US).trimStart('.').ifEmpty { "bin" }
+        val cleanLabel = clip(sanitize(label), 40, 60)
+        val ext = container.trim().lowercase(Locale.US).trimStart('.').takeIf { it.matches(Regex("[a-z0-9]{1,10}")) } ?: "bin"
         return "${sanitize(title)} [$cleanLabel].$ext"
+    }
+
+    private fun clip(value: String, units: Int, bytes: Int): String {
+        val result = StringBuilder()
+        var usedBytes = 0
+        var index = 0
+        while (index < value.length) {
+            val code = value.codePointAt(index)
+            val part = String(Character.toChars(code))
+            val size = part.toByteArray(Charsets.UTF_8).size
+            if (result.length + part.length > units || usedBytes + size > bytes) break
+            if (code !in 0xD800..0xDFFF) { result.append(part); usedBytes += size }
+            index += Character.charCount(code)
+        }
+        return result.toString()
     }
 
     /** Scratch-file stem for one download; UUIDs pass through unchanged. */

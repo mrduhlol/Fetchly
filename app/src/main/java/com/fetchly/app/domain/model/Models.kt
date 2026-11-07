@@ -19,6 +19,9 @@ data class StreamRef(
     val abr: Int?,
     val sizeBytes: Long?,
     val protocol: String? = null,
+    val language: String? = null,
+    val languagePreference: Int? = null,
+    val sizeIsEstimate: Boolean = false,
 )
 
 /**
@@ -33,7 +36,17 @@ data class QualityOption(
     val streams: List<StreamRef>,
     val needsMerge: Boolean,
     val sizeBytes: Long?,
-)
+) {
+    val silentVideo: Boolean get() = kind == QualityKind.VIDEO && streams.isNotEmpty() &&
+        streams.all { it.acodec == "none" }
+    val audioDescription: String get() = when {
+        kind == QualityKind.AUDIO -> "Audio only"
+        kind != QualityKind.VIDEO -> "Original file"
+        silentVideo -> "No sound"
+        streams.any { it.acodec != "none" && it.acodec != "unknown" } -> "Includes audio"
+        else -> "Audio availability unconfirmed"
+    }
+}
 
 data class MediaInfo(
     val sourceUrl: String,

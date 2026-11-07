@@ -8,7 +8,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,14 +24,17 @@ import com.fetchly.app.domain.platform.Capability
 import com.fetchly.app.domain.platform.PlatformDetector
 import com.fetchly.app.ui.components.FetchButton
 import com.fetchly.app.ui.components.StatusCard
+import com.fetchly.app.ui.components.RecoveryActions
 import com.fetchly.app.ui.components.UrlInput
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
     onOpenResult: () -> Unit,
     onOpenDownloads: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenBatch: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val clipboard = LocalClipboardManager.current
@@ -50,35 +52,36 @@ fun HomeScreen(
         }
     }
 
+    LaunchedEffect(state.batchReady) {
+        if (state.batchReady) { viewModel.consumeBatchReady(); onOpenBatch() }
+    }
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         Column(
             modifier = Modifier.widthIn(max = 640.dp).fillMaxSize()
-                .imePadding().verticalScroll(rememberScrollState()).padding(24.dp),
+                .imePadding().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 12.dp),
         ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text("fetchly", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-                IconButton(onClick = onOpenDownloads) {
-                    Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "Downloads")
-                }
+                TextButton(onClick = onOpenDownloads) { Text("Downloads") }
                 IconButton(onClick = onOpenSettings) {
                     Icon(Icons.Filled.Settings, contentDescription = "Settings")
                 }
             }
-            Spacer(Modifier.height(36.dp))
-            Text("A link.\nYour next download.", style = MaterialTheme.typography.headlineLarge)
+            Spacer(Modifier.height(24.dp))
+            Text("Download a link", style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.height(12.dp))
             Text(
-                "Paste a media link to preview it and choose an available format.",
-                style = MaterialTheme.typography.bodyLarge,
+                "Paste a link, choose a format, and save it.",
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(24.dp))
             Surface(
-                shape = MaterialTheme.shapes.large,
+                shape = MaterialTheme.shapes.medium,
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
             ) {
-                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Text("Start with a link", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                         TextButton(
@@ -98,19 +101,23 @@ fun HomeScreen(
                         ClipboardSuggestion(it, viewModel::acceptSuggestion, viewModel::dismissSuggestion)
                     }
                     FetchButton(loading = state.analyzing, enabled = state.canFetch, onClick = fetch)
+                    TextButton(onClick = viewModel::openBatch, enabled = !state.analyzing, modifier = Modifier.align(Alignment.CenterHorizontally)) { Text("Add multiple links") }
                     state.status?.let { StatusCard(it, isError = false) }
-                    state.error?.let { StatusCard(it, isError = true) }
+                    if (state.analyzing) TextButton(onClick = viewModel::cancelFetch) { Text("Cancel") }
+                    state.error?.let {
+                        StatusCard(it, isError = true)
+                        if (com.fetchly.app.domain.security.UrlSecurity.validate(state.input) is com.fetchly.app.domain.security.UrlValidation.Valid) RecoveryActions(
+                            raw = state.errorRaw ?: it,
+                            sourceUrl = state.input,
+                            onRetry = { viewModel.fetch() },
+                            onOpenSettings = onOpenSettings,
+                        )
+                    }
                 }
             }
-            Spacer(Modifier.height(28.dp))
-            Text("LINK → PREVIEW → DOWNLOAD", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-            Spacer(Modifier.height(10.dp))
-            Text(
-                "Review the available quality, file format and reported size before downloading.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
             Spacer(Modifier.height(24.dp))
+            SupportedApps(enabled = !state.analyzing)
+            Spacer(Modifier.height(16.dp))
         }
     }
 }

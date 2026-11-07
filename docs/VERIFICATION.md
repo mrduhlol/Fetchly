@@ -54,3 +54,70 @@ the source; arbitrary format conversion is not implemented.
 - Notification delivery checks permission and tolerates revocation.
 - Direct endpoint filenames cannot override a recognized media container with `.php`.
 - Direct image previews use the image URL itself.
+
+## Direct-download resume and retries — 2026-11-06
+
+Local verification: **189 Kotlin tests, 12 Python tests, Android lint and debug
+APK assembly passed**. The Kotlin direct-downloader tests now cover cancellation
+followed by resume in a new instance, retrying a disconnected segment from its
+saved offset, skipping completed segments, changed ETags and URLs, malformed
+checkpoints, cache eviction, bounded retry budgets, cancellation during backoff,
+small-file resume, concurrent replacement attempts and local storage failures.
+Deletion cleanup is tested against unrelated jobs' files.
+
+Resume uses the existing Retry action. It requires a range-capable source with a
+strong ETag and known size; unsupported or changed sources restart safely. The
+private cache and sidecar survive interruptions, but Android cache eviction and
+the 48-hour stale sweep can remove them. These are JVM integration tests using
+MockWebServer, not Android process-kill or real-device lifecycle tests.
+
+## Source recovery and completion reliability — 2026-11-07
+
+**206 Kotlin tests, 21 Python tests, Android lint and APK assembly passed.**
+The Python suite was run against the same yt-dlp 2026.10.26 and packaging 25.0
+requirements used in the APK. Python 3.12 is now bundled. The official-wheel
+smoke test fetched the real compatible wheel from PyPI, verified its hash and
+staged it successfully in a temporary directory.
+
+New regression coverage includes bot-check versus expired-URL classification,
+source restrictions and engine recovery advice, indeterminate non-transfer
+stages, guarded retry actions and command failures, stale terminal workers,
+analysis cancellation, audible-quality defaults, source language selection,
+refresh preservation of language/bitrate, estimated-size metadata, update hashes,
+unsafe archives, HTTPS downgrade rejection, runtime compatibility, failed-update
+fallback and newer-bundle precedence.
+
+Android 14 emulator functional check: a public WebP image at
+`https://www.gstatic.com/webp/gallery/1.webp` was resolved, explicitly selected,
+downloaded and published. The completed row displayed `Saved — 29.6 KB` and
+`Open file`. The final APK also passed lint/build after the remaining copy and
+update-integrity changes.
+
+Device support subsequently failed with `Could not communicate with device
+support. Try refreshing devices.` Refreshing failed too. Device work was stopped;
+file opening, the in-app live engine-update check, and final screenshots remain
+unverified on Android. No screenshot or native visual pass is claimed for those
+changed screens. JVM tests do not substitute for OEM battery-policy testing.
+
+See [RELIABILITY.md](RELIABILITY.md) for behavior and remaining source limitations.
+
+### Batch and library work (2026-11-07)
+
+Added regression coverage for batch parsing and public-link limits, audible
+quality caps, per-file failures, cancellation with a late extractor result,
+partial queue retries, duplicate-tap protection, custom filenames, queue
+admission order/limits, refreshed stream URLs, source/language distinctions,
+search filters, and Unicode filename byte limits. The Kotlin suite now has
+218 passing tests; the Python suite has 21 passing tests.
+
+Device validation limitation: fetchly_test (Android 14, emulator-5556) opened
+Fetchly and returned a Home accessibility snapshot. Device screenshot capture
+then failed twice with "The device hub could not complete the request" after
+checking the reported device state as advised. Further device work was stopped.
+The new batch/library UI and real batch transfer have not been visually or
+interactively verified on this emulator in this pass.
+
+Final validation: `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug`
+completed successfully offline with Kotlin/KSP incremental compilation disabled.
+The final APK is `app/build/outputs/apk/debug/app-debug.apk`. Lint has no errors;
+existing warnings remain. `git diff --check` also passed. No release was published.

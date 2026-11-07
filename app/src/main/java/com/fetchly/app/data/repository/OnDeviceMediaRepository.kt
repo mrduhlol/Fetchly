@@ -44,7 +44,7 @@ class OnDeviceMediaRepository(
         platform: Platform,
         onStage: (String) -> Unit,
     ): ResolveOutcome {
-        onStage("Asking yt-dlp…")
+        onStage("Finding the good stuff…")
         return when (val mapped = YtDlpMapper.map(engine.extract(url), url, platform)) {
             is MapResult.Ok -> ResolveOutcome.Success(mapped.info)
             is MapResult.Fail -> ResolveOutcome.Failed(

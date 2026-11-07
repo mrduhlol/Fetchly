@@ -105,4 +105,23 @@ class OptionMatcherTest {
     fun `empty signature never matches`() {
         assertNull(OptionMatcher.match(emptyList(), listOf(audioOption())))
     }
+    @Test fun `refresh preserves a selected language and never silently switches it`() {
+        val hindi = audioM4a.copy(language = "hi", abr = 192)
+        val english = audioOption().copy(id = "en", streams = listOf(audioM4a.copy(language = "en", abr = 192)))
+        val freshHindi = audioOption().copy(id = "hi", streams = listOf(hindi.copy(formatId = "new")))
+        assertEquals("hi", OptionMatcher.match(listOf(hindi), listOf(english, freshHindi))?.id)
+        assertNull(OptionMatcher.match(listOf(hindi), listOf(english)))
+    }
+
+    @Test fun `refresh does not downgrade an explicitly selected audio bitrate`() {
+        val selected = audioM4a.copy(abr = 320)
+        val low = audioOption().copy(streams = listOf(audioM4a.copy(abr = 128)))
+        assertNull(OptionMatcher.match(listOf(selected), listOf(low)))
+    }
+
+    @Test fun `old signatures without language still match source language metadata`() {
+        val fresh = audioOption().copy(streams = listOf(audioM4a.copy(language = "en")))
+        assertEquals("audio", OptionMatcher.match(listOf(audioM4a), listOf(fresh))?.id)
+    }
+
 }

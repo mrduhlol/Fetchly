@@ -46,7 +46,7 @@ class ResultViewModelTest {
         url = "https://cdn.example.invalid/137",
         ext = "mp4",
         vcodec = "avc1.640028",
-        acodec = "none",
+        acodec = "mp4a.40.2",
         height = 1080,
         abr = null,
         sizeBytes = null,
@@ -58,7 +58,7 @@ class ResultViewModelTest {
         label = label,
         kind = kind,
         container = if (kind == QualityKind.AUDIO) "m4a" else "mp4",
-        streams = listOf(stream),
+        streams = listOf(if (kind == QualityKind.AUDIO) stream.copy(vcodec = "none", height = null, abr = 128) else stream),
         needsMerge = false,
         sizeBytes = null,
     )
@@ -77,12 +77,26 @@ class ResultViewModelTest {
         ),
     )
 
+    private val audioOnlyMedia = media.copy(
+        mediaType = MediaType.AUDIO,
+        options = listOf(option("audio", "Audio", QualityKind.AUDIO)),
+    )
+
     private fun viewModel(
         choice: DefaultQuality,
         commands: FakeCommands = FakeCommands(),
     ): Pair<ResultViewModel, FakeCommands> {
         val session = ResolveSession().apply { hold(media) }
         return ResultViewModel(session, flowOf(choice), commands) to commands
+    }
+
+    @Test
+    fun `chosen filename is sanitized before queueing`() = runTest(mainDispatcher.dispatcher) {
+        val (vm, commands) = viewModel(DefaultQuality.BEST)
+        advanceUntilIdle()
+        vm.rename("My / custom clip")
+        vm.download(); advanceUntilIdle()
+        assertEquals("My custom clip", commands.enqueued.single().first.title)
     }
 
     @Test
@@ -102,11 +116,53 @@ class ResultViewModelTest {
     }
 
     @Test
+    fun `activeKind starts on the first group and selectKind swaps the group`() =
+        runTest(mainDispatcher.dispatcher) {
+            val (viewModel, _) = viewModel(DefaultQuality.BEST)
+            advanceUntilIdle()
+
+            assertEquals(QualityKind.VIDEO, viewModel.state.value.activeKind)
+
+            viewModel.selectKind(QualityKind.AUDIO)
+            assertEquals(QualityKind.AUDIO, viewModel.state.value.activeKind)
+            assertEquals("audio", viewModel.state.value.selectedId)
+            assertEquals(listOf("audio"), viewModel.state.value.visibleOptions.map { it.id })
+
+            viewModel.selectKind(QualityKind.VIDEO)
+            assertEquals(QualityKind.VIDEO, viewModel.state.value.activeKind)
+            assertEquals("v1080", viewModel.state.value.selectedId)
+            assertEquals(listOf("v1080"), viewModel.state.value.visibleOptions.map { it.id })
+        }
+
+    @Test
+    fun `selectKind resets the selection to that group's default`() =
+        runTest(mainDispatcher.dispatcher) {
+            val (viewModel, _) = viewModel(DefaultQuality.ASK)
+            advanceUntilIdle()
+
+            viewModel.select("audio") // a selection from another group must not survive the switch
+            viewModel.selectKind(QualityKind.VIDEO)
+            assertNull(viewModel.state.value.selectedId)
+        }
+
+    @Test
+    fun `audio-only media has a single group and still preselects its top`() =
+        runTest(mainDispatcher.dispatcher) {
+            val session = ResolveSession().apply { hold(audioOnlyMedia) }
+            val viewModel = ResultViewModel(session, flowOf(DefaultQuality.BEST), FakeCommands())
+            advanceUntilIdle()
+
+            assertEquals(QualityKind.AUDIO, viewModel.state.value.activeKind)
+            assertEquals("audio", viewModel.state.value.selectedId)
+        }
+
+    @Test
     fun `download enqueues the selected option and flags the move`() =
         runTest(mainDispatcher.dispatcher) {
             val (viewModel, commands) = viewModel(DefaultQuality.ASK)
             advanceUntilIdle()
 
+            viewModel.selectKind(QualityKind.AUDIO)
             viewModel.select("audio")
             viewModel.download()
             advanceUntilIdle()

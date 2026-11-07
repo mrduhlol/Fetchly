@@ -130,6 +130,10 @@ def download(url, format_id, dest_dir, prefix, hook):
         format=format_id or "best",
         outtmpl=os.path.join(dest_dir, prefix + ".%(ext)s"),
         progress_hooks=[progress],
+        # Native HLS/DASH fragments only; plain HTTP is unaffected. Bound
+        # concurrency for mobile memory, sockets, and CDN rate limits.
+        concurrent_fragment_downloads=4,
+        skip_unavailable_fragments=False,
     )
     try:
         with yt_dlp.YoutubeDL(params) as ydl:
@@ -213,6 +217,8 @@ def _clean_format(f):
         "filesize": f.get("filesize"),
         "filesize_approx": f.get("filesize_approx"),
         "protocol": str(f.get("protocol") or ""),
+        "language": f.get("language"),
+        "language_preference": f.get("language_preference"),
     }
 
 

@@ -125,6 +125,9 @@ internal object Signatures {
                     putOpt("abr", stream.abr)
                     putOpt("sizeBytes", stream.sizeBytes)
                     putOpt("protocol", stream.protocol)
+                    putOpt("language", stream.language)
+                    putOpt("languagePreference", stream.languagePreference)
+                    put("sizeIsEstimate", stream.sizeIsEstimate)
                 }
             )
         }
@@ -157,6 +160,9 @@ internal object Signatures {
                     abr = entry.intOrNull("abr"),
                     sizeBytes = entry.longOrNull("sizeBytes"),
                     protocol = entry.stringOrNull("protocol"),
+                    language = entry.stringOrNull("language"),
+                    languagePreference = entry.intOrNull("languagePreference"),
+                    sizeIsEstimate = entry.optBoolean("sizeIsEstimate", true),
                 )
             }
         }.getOrDefault(emptyList())

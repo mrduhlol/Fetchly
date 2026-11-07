@@ -83,6 +83,14 @@ class BridgeTests(unittest.TestCase):
         self.assertFalse(result['cancelled'])
         self.assertTrue(result['error'])
 
+    def test_download_enables_bounded_fragment_parallelism(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(bridge, 'yt_dlp') as engine:
+                bridge.download('https://example.com/video', 'best', directory, 'test', None)
+                params = engine.YoutubeDL.call_args.args[0]
+                self.assertEqual(4, params['concurrent_fragment_downloads'])
+                self.assertFalse(params['skip_unavailable_fragments'])
+
     def test_empty_collection_returns_explicit_failure(self):
         result, _ = self.extract({'_type': 'playlist', 'entries': []})
         self.assertFalse(result['ok'])

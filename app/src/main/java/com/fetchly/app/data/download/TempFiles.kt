@@ -5,7 +5,8 @@ import java.io.File
 
 /**
  * Scratch space for downloads: `cacheDir/fetchly`. Everything under it is
- * disposable — the worker removes a download's own files when it finishes,
+ * disposable — completed downloads are removed immediately; direct-file
+ * checkpoints survive interruptions for Retry,
  * and [cleanupStale] sweeps anything a kill left behind.
  */
 object TempFiles {
@@ -14,6 +15,12 @@ object TempFiles {
     const val DEFAULT_MAX_AGE_MS = 48L * 60 * 60 * 1000
 
     fun dir(context: Context): File = File(context.cacheDir, "fetchly")
+
+    /** Remove this job's output and checkpoint sidecars together. */
+    fun deleteFor(dir: File, prefix: String) {
+        dir.listFiles { file -> file.name.startsWith(prefix + "_") }
+            ?.forEach { runCatching { it.deleteRecursively() } }
+    }
 
     /**
      * Deletes entries under [dir] whose last-modified time is older than

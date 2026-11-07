@@ -10,6 +10,8 @@ import com.fetchly.app.data.download.DownloadWork
 import com.fetchly.app.data.download.DownloadWorks
 import com.fetchly.app.domain.model.MediaInfo
 import com.fetchly.app.domain.model.QualityOption
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -84,6 +86,8 @@ class DownloadsViewModelTest {
     }
 
     private class FakeCommands : DownloadCommands {
+        var failRetry = false
+        var retryGate: CompletableDeferred<Unit>? = null
         val cancelled = mutableListOf<String>()
         val retried = mutableListOf<String>()
         val deleted = mutableListOf<Pair<String, Boolean>>()
@@ -96,7 +100,9 @@ class DownloadsViewModelTest {
         }
 
         override suspend fun retry(id: String): Boolean {
+            if (failRetry) throw IllegalStateException("storage unavailable")
             retried += id
+            retryGate?.await()
             return true
         }
 
@@ -194,7 +200,7 @@ class DownloadsViewModelTest {
 
             works.value = listOf(DownloadWork("a", true, "Merging video and audio…", 200, 200, 0))
             advanceUntilIdle()
-            assertEquals(100, viewModel.state.value.active.single().percent)
+            assertNull(viewModel.state.value.active.single().percent)
         }
 
     @Test
@@ -234,4 +240,41 @@ class DownloadsViewModelTest {
         assertEquals(listOf("b"), commands.retried)
         assertEquals(listOf("c" to true), commands.deleted)
     }
+    @Test fun `failed worker never leaves an active row stuck forever`() {
+        val state = DownloadsViewModel.map(listOf(entity("a", "RUNNING").toDomain()), mapOf(
+            "a" to DownloadWork("a", false, null, 0, 0, 0, finished = true, failed = true),
+        ))
+        assertEquals(0, state.active.size)
+        assertEquals(com.fetchly.app.domain.model.DownloadStatus.FAILED, state.history.single().status)
+    }
+
+    @Test fun `retry errors are visible and the button is released`() = runTest(mainDispatcher.dispatcher) {
+        val commands = FakeCommands().apply { failRetry = true }
+        val viewModel = DownloadsViewModel(HistoryRepository(FakeDao()), commands, FakeWorks(MutableStateFlow(emptyList())))
+        val messages = mutableListOf<String>()
+        backgroundScope.launch { viewModel.messages.collect { messages += it } }
+        runCurrent()
+        viewModel.retry("a")
+        advanceUntilIdle()
+        org.junit.Assert.assertTrue(viewModel.busyIds.value.isEmpty())
+        org.junit.Assert.assertTrue(messages.single().contains("Couldn't retry"))
+        commands.failRetry = false
+        viewModel.retry("a")
+        advanceUntilIdle()
+        assertEquals(listOf("a"), commands.retried)
+    }
+
+    @Test fun `rapid retry taps do not replace the same job repeatedly`() = runTest(mainDispatcher.dispatcher) {
+        val gate = CompletableDeferred<Unit>()
+        val commands = FakeCommands().apply { retryGate = gate }
+        val viewModel = DownloadsViewModel(HistoryRepository(FakeDao()), commands, FakeWorks(MutableStateFlow(emptyList())))
+        viewModel.retry("a")
+        viewModel.retry("a")
+        runCurrent()
+        assertEquals(listOf("a"), commands.retried)
+        gate.complete(Unit)
+        advanceUntilIdle()
+        org.junit.Assert.assertTrue(viewModel.busyIds.value.isEmpty())
+    }
+
 }

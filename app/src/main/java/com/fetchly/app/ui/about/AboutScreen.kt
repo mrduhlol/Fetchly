@@ -1,5 +1,7 @@
 package com.fetchly.app.ui.about
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.fetchly.app.BuildConfig
@@ -31,12 +34,10 @@ import com.fetchly.app.ui.components.SectionHeader
 fun AboutScreen(engine: YtDlpEngine, onBack: () -> Unit) {
     val ytDlp by produceState<String?>(initialValue = null) { value = engine.engineVersion() }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-    ) {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+    Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
         ScreenTopBar("About", onBack = onBack)
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
 
         Column(Modifier.padding(horizontal = 16.dp)) {
             Text("Fetchly ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.titleLarge)
@@ -51,7 +52,7 @@ fun AboutScreen(engine: YtDlpEngine, onBack: () -> Unit) {
         Spacer(Modifier.height(12.dp))
         Card {
             Text(
-                "No accounts. No servers. No API keys. Fetching, downloading and merging all " +
+                "No account or API key is required. Link resolution, downloading and merging all " +
                     "happen on this phone.",
                 style = MaterialTheme.typography.bodyMedium,
             )
@@ -60,16 +61,16 @@ fun AboutScreen(engine: YtDlpEngine, onBack: () -> Unit) {
         SectionHeader("Engine")
         Card {
             Text(
-                ytDlp?.let { "yt-dlp $it, bundled inside the app" } ?: "Checking the engine…",
+                ytDlp?.let { "yt-dlp $it. Check for engine updates in Settings." } ?: "Checking the engine…",
                 style = MaterialTheme.typography.bodyMedium,
             )
         }
 
         SectionHeader("Good to know")
         Card {
-            Bullet("A download runs to the end or is cancelled — pause and resume aren't supported yet.")
+            Bullet("Retry resumes eligible direct files when the source still provides the same file. Other media downloads may restart.")
             Bullet("Public links from YouTube, Instagram, LinkedIn, X, Pinterest and other sites are resolved on-device. Availability depends on the post and source; sign-in and region restrictions can prevent downloads.")
-            Bullet("This is a debug-signed build: uninstall any older Fetchly before installing it.")
+            Bullet("Merging and saving continue after the transfer finishes. Completed files offer Open file in Downloads.")
         }
 
         SectionHeader("Licences")
@@ -82,6 +83,8 @@ fun AboutScreen(engine: YtDlpEngine, onBack: () -> Unit) {
         }
         Spacer(Modifier.height(24.dp))
     }
+    }
+    }
 }
 
 @Composable
@@ -91,7 +94,7 @@ private fun Card(content: @Composable () -> Unit) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp),
         shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
     ) {
         Column(Modifier.padding(14.dp)) { content() }
     }

@@ -46,19 +46,22 @@ object YtDlpMapper {
         val formats = readFormats(root)
         val videos = formats.filter { it.vcodec != "none" && it.height != null }
         val audios = formats.filter { it.acodec != "none" && it.vcodec == "none" }
+        val isYoutubeMusic = runCatching {
+            java.net.URI(sourceUrl).host.equals("music.youtube.com", ignoreCase = true)
+        }.getOrDefault(false)
         val images = formats.filter {
             it.ext in IMAGE_EXTS && it.vcodec == "none" && it.acodec == "none"
         }
         val bestAudio = audios.sortedWith(AUDIO_RANK).firstOrNull()
 
         val options = mutableListOf<QualityOption>()
-        val bestByHeight = videos.groupBy { it.height!! }
+        val bestByHeight = if (isYoutubeMusic) emptyMap() else videos.groupBy { it.height!! }
         for ((height, group) in bestByHeight.entries.sortedByDescending { it.key }) {
             options += videoOptions(group, bestAudio, "v$height", "${height}p")
         }
 
         var degradedType: MediaType? = null
-        if (videos.isEmpty()) {
+        if (!isYoutubeMusic && videos.isEmpty()) {
             val fallbackVideos = videoOptions(
                 formats.filter { it.vcodec != "none" && it.height == null },
                 bestAudio, "video", "Video",
@@ -82,15 +85,24 @@ object YtDlpMapper {
         // including the heightless fallback above — but never next to a
         // degraded file/image option (that *is* the stream already).
         val hasDegradedFile = options.any { it.kind != QualityKind.VIDEO }
-        if (bestAudio != null && (videos.isNotEmpty() || !hasDegradedFile)) {
-            options += audios.sortedWith(AUDIO_RANK)
-                .distinctBy { audioContainer(it.ext) }
-                .mapIndexed { index, audio ->
-                    audioOption(audio).copy(id = if (index == 0) "audio" else "audio-${audioContainer(audio.ext)}")
-                }
+        if (bestAudio != null && (isYoutubeMusic || platform != Platform.PINTEREST) &&
+            (isYoutubeMusic || videos.isNotEmpty() || !hasDegradedFile)) {
+            if (isYoutubeMusic) {
+                options += audios.filter { (it.abr ?: 0) >= 128 }
+                    .sortedWith(compareBy<StreamRef> { it.abr }.then(AUDIO_RANK))
+                    .distinctBy { it.abr }
+                    .map { audio -> audioOption(audio).copy(id = "audio-${audio.abr}kbps", label = "${audio.abr} kb/s") }
+            } else {
+                options += audios.sortedWith(AUDIO_RANK)
+                    .distinctBy { audioContainer(it.ext) to it.language }
+                    .mapIndexed { index, audio ->
+                        audioOption(audio).copy(id = if (index == 0) "audio" else "audio-${audioContainer(audio.ext)}" + (audio.language?.let { "-$it" } ?: ""))
+                    }
+            }
         } else if (options.isEmpty()) {
             return MapResult.Fail("yt-dlp returned no usable streams for this link.")
         }
+        if (options.isEmpty()) return MapResult.Fail("yt-dlp returned no usable streams for this link.")
 
         val mediaType = when {
             options.any { it.kind == QualityKind.VIDEO } -> MediaType.VIDEO
@@ -117,7 +129,7 @@ object YtDlpMapper {
 
     private fun audioOption(audio: StreamRef) = QualityOption(
         id = "audio",
-        label = "Audio",
+        label = audio.language?.let { "Audio · $it" } ?: "Audio",
         kind = QualityKind.AUDIO,
         container = audioContainer(audio.ext),
         streams = listOf(audio),
@@ -195,7 +207,8 @@ object YtDlpMapper {
         .thenBy { videoCodecRank(it.vcodec) }
         .thenByDescending { it.sizeBytes ?: 0L }
 
-    private val AUDIO_RANK = compareBy<StreamRef> { audioCodecRank(it.acodec) }
+    private val AUDIO_RANK = compareByDescending<StreamRef> { it.languagePreference ?: 0 }
+        .thenBy { audioCodecRank(it.acodec) }
         .thenByDescending { it.abr ?: 0 }
         .thenByDescending { it.sizeBytes ?: 0L }
 
@@ -233,6 +246,9 @@ object YtDlpMapper {
                 abr = f.doubleOrNull("abr")?.toInt(),
                 sizeBytes = f.longOrNull("filesize") ?: f.longOrNull("filesize_approx"),
                 protocol = f.str("protocol"),
+                language = f.str("language"),
+                languagePreference = f.intOrNull("language_preference"),
+                sizeIsEstimate = f.longOrNull("filesize") == null && f.longOrNull("filesize_approx") != null,
             )
         }
         return out

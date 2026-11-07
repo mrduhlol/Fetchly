@@ -52,13 +52,14 @@ object DownloadNotifications {
         stage: String,
         progress: DownloadProgress,
     ): Notification {
-        val knownTotal = progress.totalBytes > 0
-        return builder(context, title, progressText(stage, progress))
+        val display = DownloadStages.progressFor(stage, progress)
+        val knownTotal = display.totalBytes > 0
+        return builder(context, title, progressText(stage, display))
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setSilent(true)
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
-            .setProgress(if (knownTotal) 100 else 0, percentOf(progress), !knownTotal)
+            .setProgress(if (knownTotal) 100 else 0, percentOf(display), !knownTotal)
             .addAction(
                 0,
                 context.getString(R.string.notification_action_cancel),
@@ -79,6 +80,7 @@ object DownloadNotifications {
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .setAutoCancel(true)
             .setContentIntent(openFile(context, uri, mime))
+            .addAction(0, "Open file", openFile(context, uri, mime))
             .build()
 
     fun failed(
@@ -120,7 +122,7 @@ object DownloadNotifications {
         if (progress.totalBytes <= 0) {
             0
         } else {
-            ((progress.downloadedBytes * 100) / progress.totalBytes).toInt().coerceIn(0, 100)
+            (progress.downloadedBytes.toDouble() / progress.totalBytes * 100).toInt().coerceIn(0, 100)
         }
 
     private fun builder(context: Context, title: String, text: String): NotificationCompat.Builder =

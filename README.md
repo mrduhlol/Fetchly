@@ -22,12 +22,19 @@ Paste a public media link, pick a quality, save it to your device.
 
 No backend, no accounts, no API keys, no configuration — resolution, downloading and merging all run on-device.
 
+- Review up to 50 links together, choose per-file formats and names, and queue downloads two at a time.
+- Accidental duplicate downloads reuse active or saved copies; history supports search and media filters.
+- Eligible direct files resume on Retry; individual failed segments retry without repeating completed parts.
+- Downloads distinguish transfer, merging, checking and saving, with an **Open file** action after completion.
+- Quality choices identify sound and source languages. Silent video needs confirmation and is never selected as best by default.
+- Failures offer recovery actions; **Settings → Download engine** checks for verified, compatible official engine updates.
+
 ## Coming from v1.8?
 
 v1.8 shipped a yt-dlp engine pinned in 2024. YouTube eventually started refusing
 it ("Please sign in"), and v1.8 surfaced that as a generic *"Fetchly couldn't
 retrieve media information from this link."* v2.0 is a from-scratch rebuild
-with a current engine (2026.08.19) — and every failure now names its real
+with a current engine (2026.10.26) — and every failure now names its real
 cause (sign-in demand, private or deleted video, geo-block, expired link,
 full disk, merge failure) instead of one catch-all sentence.
 
@@ -47,7 +54,7 @@ full disk, merge failure) instead of one catch-all sentence.
 
 - **Uninstall any older Fetchly first.** These are debug-signed builds with a
   different signing key, so Android will refuse to update over an old install.
-- The APK is about 124 MB — it carries the Python engine and ffmpeg for
+- The APK carries the Python engine and ffmpeg for
   on-device merging.
 - Needs Android 10 (API 29) or newer.
 

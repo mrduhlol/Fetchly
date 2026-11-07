@@ -72,12 +72,24 @@ class YtDlpEngine(
         parseDownloadResult(raw)
     }
 
+    private val updatesDir get() = File(context.noBackupFilesDir, "engine-updates").absolutePath
+
+    suspend fun maintenance(action: String): String = withContext(io) {
+        require(action in setOf("status", "check", "install", "reset"))
+        runCatching {
+            val current = engineVersion()
+            Python.getInstance().getModule("engine_updates").callAttr(action, updatesDir, current).toString()
+        }.getOrElse { failureJson(it.message ?: "Couldn't maintain the download engine.") }
+    }
+
     @Synchronized
     private fun module(): PyObject {
         if (!Python.isStarted()) {
             Python.start(AndroidPlatform(context.applicationContext))
         }
-        return Python.getInstance().getModule(MODULE)
+        val python = Python.getInstance()
+        python.getModule("engine_updates").callAttr("activate", updatesDir)
+        return python.getModule(MODULE)
     }
 
     private fun parseDownloadResult(raw: String): EngineDownload {

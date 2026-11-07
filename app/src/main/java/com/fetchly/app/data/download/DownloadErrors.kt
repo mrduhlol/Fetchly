@@ -1,5 +1,9 @@
 package com.fetchly.app.data.download
 
+import com.fetchly.app.domain.recovery.FailureKind
+import com.fetchly.app.domain.recovery.FailureRecovery
+import com.fetchly.app.data.repository.ResolveErrors
+
 /**
  * Turns a download or merge failure's raw text into one honest sentence.
  *
@@ -20,6 +24,10 @@ object DownloadErrors {
             hasAny(text, "ffmpeg", "merge", "mux") ->
                 "The media was downloaded but couldn't be assembled (merge failed)."
 
+            FailureRecovery.kind(original) in setOf(FailureKind.BOT_CHECK, FailureKind.SIGN_IN,
+                FailureKind.REGION, FailureKind.RATE_LIMIT, FailureKind.DRM, FailureKind.ENGINE,
+                FailureKind.REMOVED) -> ResolveErrors.messageFor(original)
+
             isExpiredLink(original) ->
                 "The download link expired and even a fresh one was refused. Try again later."
 
@@ -33,16 +41,20 @@ object DownloadErrors {
     /** 403/410-style refusals: worth one re-resolve before telling the user. */
     fun isExpiredLink(raw: String?): Boolean {
         val text = (raw ?: "").trim().lowercase()
-        return hasAny(text, "403", "410", "forbidden")
+        return FailureRecovery.kind(raw) !in setOf(FailureKind.BOT_CHECK, FailureKind.SIGN_IN,
+            FailureKind.REGION, FailureKind.RATE_LIMIT, FailureKind.DRM, FailureKind.ENGINE) &&
+            hasAny(text, "403", "410", "forbidden")
     }
 
     fun isNetworkProblem(raw: String?): Boolean {
         val text = (raw ?: "").trim().lowercase()
+        if (FailureRecovery.kind(raw) in setOf(FailureKind.BOT_CHECK, FailureKind.SIGN_IN,
+                FailureKind.REGION, FailureKind.DRM, FailureKind.ENGINE, FailureKind.RATE_LIMIT)) return false
         return hasAny(
             text,
             "timed out", "timeout", "temporary failure", "getaddrinfo",
             "name or service not known", "connection", "network", "proxy",
-            "unreachable", "reset by peer", "eof occurred",
+            "unreachable", "reset by peer", "eof occurred", "incomplete http", "unexpected end",
         )
     }
 

@@ -29,9 +29,10 @@ fun QualityRow(
     selected: Boolean,
     onSelect: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     Surface(
-        modifier = modifier.fillMaxWidth().selectable(selected = selected, role = Role.RadioButton, onClick = onSelect),
+        modifier = modifier.fillMaxWidth().selectable(selected = selected, enabled = enabled, role = Role.RadioButton, onClick = onSelect),
         border = BorderStroke(1.dp, if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
         shape = RoundedCornerShape(16.dp),
         color = if (selected) {
@@ -44,7 +45,7 @@ fun QualityRow(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            RadioButton(selected = selected, onClick = null)
+            RadioButton(selected = selected, onClick = null, enabled = enabled)
             Spacer(Modifier.width(8.dp))
             Column(
                 modifier = Modifier
@@ -66,8 +67,8 @@ private fun subtitleFor(option: QualityOption): String = buildString {
     append(option.container.uppercase())
     append(" · ")
     append(FormatSize.formatApprox(option.sizeBytes) ?: "size unknown")
-    when {
-        option.kind == QualityKind.AUDIO -> append(" · audio only")
-        option.kind == QualityKind.VIDEO && option.needsMerge -> append(" · video + audio")
-    }
+    append(" · ${option.audioDescription}")
+    option.streams.mapNotNull { it.language }.distinct().takeIf { it.isNotEmpty() }
+        ?.let { append(" · ${it.joinToString(", ")}") }
+    if (option.needsMerge) append(" · merges on this device")
 }

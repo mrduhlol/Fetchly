@@ -61,6 +61,17 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun `multiple pasted links open review without analyzing only the first`() = runTest(mainDispatcher.dispatcher) {
+        val repo = FakeRepository(ResolveOutcome.Success(info))
+        val (vm, session) = viewModel(repo)
+        val links = "https://example.com/a\nhttps://example.com/b"
+        vm.onInputChange(links); vm.fetch(); advanceUntilIdle()
+        assertTrue(vm.state.value.batchReady)
+        assertEquals(links, session.batchInput.value)
+        assertEquals(0, repo.calls)
+    }
+
+    @Test
     fun `success holds the info in the session and flags navigation`() =
         runTest(mainDispatcher.dispatcher) {
             val repository = FakeRepository(ResolveOutcome.Success(info))
@@ -119,7 +130,7 @@ class HomeViewModelTest {
                 override suspend fun analyze(url: String, onStage: (String) -> Unit): ResolveOutcome {
                     onStage("Checking the link…")
                     gate.await()
-                    onStage("Asking yt-dlp…")
+                    onStage("Finding the good stuff…")
                     return ResolveOutcome.Success(info)
                 }
             }
@@ -253,6 +264,28 @@ class HomeViewModelTest {
         val (viewModel, _) = viewModel(FakeRepository(ResolveOutcome.Success(info)))
         viewModel.onInputChange("https://www.youtube.com/watch?")
         assertEquals("https://www.youtube.com/watch?", viewModel.state.value.input)
+    }
+
+    @Test fun `cancelling analysis releases the form and discards its result`() = runTest(mainDispatcher.dispatcher) {
+        val result = CompletableDeferred<ResolveOutcome>()
+        val repo = object : MediaRepository {
+            override suspend fun analyze(url: String, onStage: (String) -> Unit): ResolveOutcome {
+                onStage("Reading source…")
+                return result.await()
+            }
+        }
+        val (model, session) = viewModel(repo)
+        model.onInputChange("https://youtu.be/abc")
+        model.fetch()
+        runCurrent()
+        assertTrue(model.state.value.analyzing)
+        model.cancelFetch()
+        result.complete(ResolveOutcome.Success(info))
+        advanceUntilIdle()
+        assertFalse(model.state.value.analyzing)
+        assertFalse(model.state.value.success)
+        assertNull(model.state.value.status)
+        assertNull(session.info.value)
     }
 
 }

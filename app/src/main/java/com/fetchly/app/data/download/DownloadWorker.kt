@@ -7,7 +7,6 @@ import android.os.Build
 import androidx.core.content.ContextCompat
 import android.content.Context
 import android.content.pm.ServiceInfo
-import android.os.SystemClock
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
@@ -33,11 +32,14 @@ import com.fetchly.app.domain.util.MediaSniffer
 import com.fetchly.app.domain.util.MimeTypes
 import java.io.File
 import java.io.IOException
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
@@ -45,8 +47,8 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import okhttp3.Call
-import okhttp3.Request
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 
 /**
  * Runs one download, from the stored history row to a file in the user's
@@ -72,11 +74,21 @@ class DownloadWorker(
     private val stage = AtomicReference<String?>(null)
     private val latest = AtomicReference(DownloadProgress(0L, 0L, 0.0))
 
-    @Volatile private var activeHook: DownloadHook? = null
-    @Volatile private var activeCall: Call? = null
+    private val activeHooks = ConcurrentHashMap.newKeySet<DownloadHook>()
 
     override suspend fun doWork(): Result = withDownloadCancellation(::cancelActiveWork) {
-        executeWork()
+        try {
+            executeWork()
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (failure: Exception) {
+            inputData.getString(KEY_DOWNLOAD_ID)?.let { id ->
+                graph.history.finish(id, DownloadStatus.FAILED,
+                    "The download was interrupted. Open Fetchly and Retry to continue.",
+                    failure.message, System.currentTimeMillis())
+            }
+            Result.failure()
+        }
     }
 
     private suspend fun executeWork(): Result {
@@ -103,6 +115,9 @@ class DownloadWorker(
         val scratch = TempFiles.dir(applicationContext)
         scratch.mkdirs()
         val prefix = Filenames.tempPrefix(id)
+        // Keep validated direct-file checkpoints for automatic and manual retries.
+        var retainPartial = entry.kind == QualityKind.FILE &&
+            entry.signature.any { it.formatId == DIRECT_FORMAT_ID }
 
         try {
             setForeground(foregroundInfo(entry))
@@ -120,6 +135,7 @@ class DownloadWorker(
 
             return when (outcome) {
                 is PipelineOutcome.Completed -> {
+                    retainPartial = false
                     notifyCompleted(entry, outcome)
                     Result.success()
                 }
@@ -132,7 +148,10 @@ class DownloadWorker(
                 is PipelineOutcome.Failed -> finishFailed(entry, outcome)
             }
         } finally {
-            cleanupTemps(scratch, prefix)
+            withContext(NonCancellable + Dispatchers.IO) {
+                // A deletion racing cancellation must not leave newly written files.
+                if (!retainPartial || history.getById(id) == null) cleanupTemps(scratch, prefix)
+            }
         }
     }
 
@@ -178,7 +197,7 @@ class DownloadWorker(
         // right container is simply kept as it arrived.
         val willMerge = files.size > 1 ||
             (files.size == 1 && !sameContainer(files.first(), option.container))
-        stage.set(if (willMerge) "Merging…" else "Saving…")
+        setStage(if (willMerge) "Merging…" else "Checking file…")
         val artifact = when (
             val assembled = assemble(option, files, scratch, Filenames.tempPrefix(entry.id))
         ) {
@@ -189,11 +208,15 @@ class DownloadWorker(
             )
         }
 
+        setStage("Checking file…")
         verify(artifact, option, entry)?.let { problem ->
+            // Verification failure must not leave a completed checkpoint that
+            // would serve the same rejected local bytes on the next Retry.
+            withContext(Dispatchers.IO) { HttpDownloadState.clear(artifact) }
             return PipelineOutcome.Failed(problem.message, problem.raw, network = false)
         }
 
-        stage.set("Saving…")
+        setStage("Saving…")
         val name = Filenames.displayName(entry.title, option.label, option.container)
         val mime = MimeTypes.forContainer(option.container, audio = option.kind == QualityKind.AUDIO)
         // Publish and commit the history row as one cancellation-safe step.
@@ -209,12 +232,12 @@ class DownloadWorker(
                     var recorded = false
                     try {
                         recorded = graph.history.setCompleted(
-                            entry.id, published.uri, name, published.uri, artifact.length(),
+                            entry.id, published.uri, published.displayName, published.uri, artifact.length(),
                             System.currentTimeMillis(),
                         )
                         if (recorded) PipelineOutcome.Completed(
                             uri = published.uri,
-                            name = name,
+                            name = published.displayName,
                             mime = mime,
                             size = artifact.length(),
                         ) else PipelineOutcome.Cancelled
@@ -253,58 +276,71 @@ class DownloadWorker(
         scratch: File,
     ): StreamsOutcome {
         val prefix = Filenames.tempPrefix(entry.id)
-        val files = mutableListOf<File>()
-        for ((index, stream) in option.streams.withIndex()) {
-            val audioOnly = stream.vcodec == "none" && stream.acodec != "none"
-            stage.set(
-                when {
-                    option.kind == QualityKind.FILE -> "Downloading…"
-                    audioOnly -> "Downloading audio…"
-                    else -> "Downloading video…"
-                }
-            )
-            latest.set(DownloadProgress(0L, stream.sizeBytes ?: 0L, 0.0))
-            val stem = when {
-                option.streams.size == 1 && option.kind == QualityKind.FILE -> "${prefix}_file"
-                audioOnly -> "${prefix}_${index}_a"
-                else -> "${prefix}_${index}_v"
+        val progress = StreamProgress(option.streams.map { it.sizeBytes ?: 0L }) { latest.set(it) }
+        stage.set(if (option.streams.size > 1) "Downloading video and audio…" else "Downloading…")
+        val permits = Semaphore(2)
+        return try {
+            val files = coroutineScope {
+                option.streams.mapIndexed { index, stream ->
+                    async {
+                        permits.withPermit {
+                            val audioOnly = stream.vcodec == "none" && stream.acodec != "none"
+                            val stem = when {
+                                option.streams.size == 1 && option.kind == QualityKind.FILE -> "${prefix}_file"
+                                audioOnly -> "${prefix}_${index}_a"
+                                else -> "${prefix}_${index}_v"
+                            }
+                            when (val result = fetchStream(entry, stream, scratch, stem) { progress.update(index, it) }) {
+                                is StreamResult.Ok -> {
+                                    progress.complete(index, result.file.length())
+                                    result.file
+                                }
+                                else -> throw StreamStopped(result)
+                            }
+                        }
+                    }
+                }.awaitAll() // Preserve the input order for FFmpeg stream maps.
             }
-            when (val result = fetchStream(entry, stream, scratch, stem)) {
-                is StreamResult.Ok -> files += result.file
-                StreamResult.Cancelled -> return StreamsOutcome.Cancelled
-                is StreamResult.Expired -> return StreamsOutcome.Expired(result.raw)
-                is StreamResult.Failed -> return StreamsOutcome.Failed(
-                    result.message, result.raw, result.network,
-                )
+            StreamsOutcome.Ok(files)
+        } catch (stopped: StreamStopped) {
+            when (val result = stopped.result) {
+                StreamResult.Cancelled -> StreamsOutcome.Cancelled
+                is StreamResult.Expired -> StreamsOutcome.Expired(result.raw)
+                is StreamResult.Failed -> StreamsOutcome.Failed(result.message, result.raw, result.network)
+                is StreamResult.Ok -> error("A successful stream cannot stop its siblings")
             }
         }
-        return StreamsOutcome.Ok(files)
     }
+
+    private class StreamStopped(val result: StreamResult) : Exception()
 
     private suspend fun fetchStream(
         entry: HistoryEntry,
         stream: StreamRef,
         scratch: File,
         stem: String,
+        onProgress: (DownloadProgress) -> Unit,
     ): StreamResult {
         // A probed direct file is plain bytes at a URL: fetch it ourselves so
         // an HTML sign-in page can never pass for media (magic bytes are
         // checked before saving).
         if (entry.kind == QualityKind.FILE && stream.formatId == DIRECT_FORMAT_ID) {
-            return downloadDirect(stream, File(scratch, "$stem.${stream.ext.ifEmpty { "bin" }}"))
+            return downloadDirect(stream, File(scratch, "$stem.${stream.ext.ifEmpty { "bin" }}"), onProgress)
         }
-        val hook = DownloadHook { latest.set(it) }
-        activeHook = hook
+        val hook = DownloadHook(onProgress)
+        activeHooks.add(hook)
         return try {
-            when (val outcome = graph.engine.download(
-                entry.sourceUrl, stream.formatId, scratch, stem, hook,
-            )) {
-                is EngineDownload.Ok -> StreamResult.Ok(outcome.file)
-                EngineDownload.Cancelled -> StreamResult.Cancelled
-                is EngineDownload.Failed -> classifyEngineFailure(outcome.message)
+            withDownloadCancellation(hook::requestCancel) {
+                when (val outcome = graph.engine.download(
+                    entry.sourceUrl, stream.formatId, scratch, stem, hook,
+                )) {
+                    is EngineDownload.Ok -> StreamResult.Ok(outcome.file)
+                    EngineDownload.Cancelled -> StreamResult.Cancelled
+                    is EngineDownload.Failed -> classifyEngineFailure(outcome.message)
+                }
             }
         } finally {
-            activeHook = null
+            activeHooks.remove(hook)
         }
     }
 
@@ -317,70 +353,31 @@ class DownloadWorker(
             )
         }
 
-    private suspend fun downloadDirect(stream: StreamRef, dest: File): StreamResult =
+    private suspend fun downloadDirect(
+        stream: StreamRef, dest: File, onProgress: (DownloadProgress) -> Unit,
+    ): StreamResult =
         withContext(Dispatchers.IO) {
-            val request = Request.Builder()
-                .url(stream.url)
-                // Byte counts must match Content-Length; compressed transfer
-                // would make the progress numbers lie.
-                .header("Accept-Encoding", "identity")
-                .build()
-            val call = graph.http.newCall(request)
-            activeCall = call
             try {
-                call.execute().use { response ->
-                    if (!response.isSuccessful) {
-                        val raw = "HTTP ${response.code} ${response.message}"
-                        return@withContext if (DownloadErrors.isExpiredLink(raw)) {
-                            StreamResult.Expired(raw)
-                        } else {
-                            StreamResult.Failed(
-                                "The server refused the file ($raw).",
-                                raw,
-                                network = response.code >= 500,
-                            )
-                        }
-                    }
-                    val body = response.body ?: return@withContext StreamResult.Failed(
-                        "The server replied without a file.", null, network = true,
-                    )
-                    val total = body.contentLength().takeIf { it > 0 } ?: (stream.sizeBytes ?: 0L)
-                    val startedAt = SystemClock.elapsedRealtime()
-                    var received = 0L
-                    body.byteStream().use { input ->
-                        dest.outputStream().use { output ->
-                            val buffer = ByteArray(BUFFER_BYTES)
-                            while (true) {
-                                currentCoroutineContext().ensureActive()
-                                val read = input.read(buffer)
-                                if (read < 0) break
-                                output.write(buffer, 0, read)
-                                received += read
-                                val elapsedMs =
-                                    (SystemClock.elapsedRealtime() - startedAt).coerceAtLeast(1L)
-                                latest.set(
-                                    DownloadProgress(
-                                        downloadedBytes = received,
-                                        totalBytes = total,
-                                        speedBytesPerSecond = received * 1000.0 / elapsedMs,
-                                    )
-                                )
-                            }
-                        }
-                    }
-                    StreamResult.Ok(dest)
+                DirectDownloader(graph.http, onRetry = { _, wait ->
+                    setStage("Retrying in ${(wait + 999) / 1000} seconds…")
+                }).download(stream.url, dest) {
+                    if (!DownloadStages.isTransfer(stage.get())) setStage("Resuming download…")
+                    onProgress(it)
                 }
+                StreamResult.Ok(dest)
             } catch (exc: IOException) {
-                if (!currentCoroutineContext().isActive) {
-                    StreamResult.Cancelled
+                currentCoroutineContext().ensureActive()
+                val raw = exc.message
+                if (DownloadErrors.isExpiredLink(raw)) {
+                    StreamResult.Expired(raw.orEmpty())
                 } else {
-                    val raw = exc.message
-                    StreamResult.Failed(
-                        DownloadErrors.textFor(raw), raw, network = true,
-                    )
+                    StreamResult.Failed(DownloadErrors.textFor(raw), raw,
+                        network = when (exc) {
+                            is DownloadStorageException -> false
+                            is DirectDownloader.HttpFailure -> exc.code in setOf(408, 429, 500, 502, 503, 504)
+                            else -> true
+                        })
                 }
-            } finally {
-                activeCall = null
             }
         }
 
@@ -483,7 +480,10 @@ class DownloadWorker(
                 "magic bytes do not match container ${option.container}",
             )
         }
-        val expected = option.sizeBytes ?: entry.sizeBytes
+        // An estimate is useful in the picker but cannot prove truncation.
+        val expected = (option.sizeBytes ?: entry.sizeBytes).takeIf {
+            option.streams.isNotEmpty() && option.streams.all { !it.sizeIsEstimate }
+        }
         if (expected != null && expected > 0L && file.length().toDouble() / expected < SHORT_FILE_PERCENT / 100.0) {
             return VerifyProblem(
                 "The download stopped early (" +
@@ -597,9 +597,14 @@ class DownloadWorker(
         }
     }
 
+    private fun setStage(label: String) {
+        stage.set(label)
+        if (!DownloadStages.isTransfer(label)) latest.set(DownloadProgress(0, 0, 0.0))
+    }
+
     private suspend fun pushProgress(entry: HistoryEntry) {
         val stageText = stage.get() ?: return
-        val progress = latest.get()
+        val progress = DownloadStages.progressFor(stageText, latest.get())
         setProgress(
             workDataOf(
                 KEY_STAGE to stageText,
@@ -682,8 +687,7 @@ class DownloadWorker(
     }
 
     private fun cleanupTemps(scratch: File, prefix: String) {
-        scratch.listFiles { file -> file.name.startsWith(prefix) }
-            ?.forEach { runCatching { it.delete() } }
+        TempFiles.deleteFor(scratch, prefix)
     }
 
     /**
@@ -692,8 +696,7 @@ class DownloadWorker(
      * code knows this download's own session id.
      */
     private fun cancelActiveWork() {
-        activeHook?.requestCancel()
-        activeCall?.cancel()
+        activeHooks.forEach { it.requestCancel() }
     }
 
     companion object {
@@ -704,7 +707,6 @@ class DownloadWorker(
         const val KEY_SPEED = "speed"
 
         private const val DIRECT_FORMAT_ID = "direct"
-        private const val BUFFER_BYTES = 64 * 1024
         private const val PROGRESS_PUMP_MS = 500L
 
         /** Two retries after the first attempt, then the failure is final. */

@@ -41,14 +41,14 @@ interface HistoryDao {
 
     @Query(
         "UPDATE downloads SET status = :status, errorMessage = :message, errorRaw = :raw, " +
-            "updatedAt = :updatedAt WHERE id = :id AND status != 'CANCELLED'"
+            "updatedAt = :updatedAt WHERE id = :id AND status IN ('QUEUED', 'RUNNING')"
     )
     suspend fun finish(id: String, status: String, message: String?, raw: String?, updatedAt: Long): Int
 
     @Query(
         "UPDATE downloads SET status = 'COMPLETED', outputUri = :uri, outputName = :name, " +
             "outputPath = :path, sizeBytes = COALESCE(:size, sizeBytes), errorMessage = NULL, " +
-            "errorRaw = NULL, updatedAt = :updatedAt WHERE id = :id AND status != 'CANCELLED'"
+            "errorRaw = NULL, updatedAt = :updatedAt WHERE id = :id AND status IN ('QUEUED', 'RUNNING')"
     )
     suspend fun setCompleted(id: String, uri: String, name: String, path: String, size: Long?, updatedAt: Long): Int
 
@@ -61,6 +61,6 @@ interface HistoryDao {
     @Query("DELETE FROM downloads WHERE id = :id")
     suspend fun delete(id: String)
 
-    @Query("DELETE FROM downloads")
+    @Query("DELETE FROM downloads WHERE status NOT IN ('QUEUED', 'RUNNING')")
     suspend fun clear()
 }

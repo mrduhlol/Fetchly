@@ -80,6 +80,9 @@ object UrlSecurity {
         return null
     }
 
+    fun urlCandidates(text: String?): List<String> = URL_CANDIDATE.findAll(text.orEmpty())
+        .map { trimJunk(it.value) }.filter { it.isNotEmpty() }.toList()
+
     /**
      * The first http(s) candidate before validation — lets the UI explain
      * *why* a shared link was refused instead of silently doing nothing.

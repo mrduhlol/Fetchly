@@ -15,6 +15,9 @@ data class DownloadWork(
     val speedBytesPerSecond: Long,
     /** True for SUCCEEDED/FAILED/CANCELLED — a REPLACE-retry leaves those behind. */
     val finished: Boolean = false,
+    val failed: Boolean = false,
+    val cancelled: Boolean = false,
+    val attempt: Int = 0,
 )
 
 /** The slice of WorkManager the Downloads screen needs; fakeable in tests. */
@@ -50,6 +53,9 @@ class WorkManagerDownloadWorks(
             total = progress.getLong(DownloadWorker.KEY_TOTAL, 0L),
             speedBytesPerSecond = progress.getLong(DownloadWorker.KEY_SPEED, 0L),
             finished = info.state.isFinished,
+            failed = info.state == WorkInfo.State.FAILED,
+            cancelled = info.state == WorkInfo.State.CANCELLED,
+            attempt = info.runAttemptCount,
         )
     }
 }

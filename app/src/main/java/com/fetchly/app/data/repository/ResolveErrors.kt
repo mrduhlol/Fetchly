@@ -45,10 +45,10 @@ object ResolveErrors {
             hasAny(
                 text,
                 "unable to extract", "player response", "nsig", "signature",
-                "precondition", "failed to parse",
+                "precondition", "failed to parse", "javascript runtime", "challenge solving",
             ) ->
                 "The source changed how it serves this media and Fetchly's engine couldn't " +
-                    "read it. Updating Fetchly usually fixes this."
+                    "read it. Check for an engine update in Settings, then try again."
 
             hasAny(
                 text,

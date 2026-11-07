@@ -78,7 +78,7 @@ class ResolveErrorsTest {
     fun `engine broke on a source change`() {
         assertEquals(
             "The source changed how it serves this media and Fetchly's engine couldn't read it. " +
-                "Updating Fetchly usually fixes this.",
+                "Check for an engine update in Settings, then try again.",
             ResolveErrors.messageFor(
                 "ERROR: [youtube] x: Unable to extract player response; please report this issue",
             ),

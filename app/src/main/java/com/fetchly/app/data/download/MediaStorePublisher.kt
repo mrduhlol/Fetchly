@@ -9,7 +9,7 @@ import java.io.File
 import java.io.IOException
 
 sealed interface PublishResult {
-    data class Ok(val uri: String) : PublishResult
+    data class Ok(val uri: String, val displayName: String) : PublishResult
     data class Failed(val raw: String) : PublishResult
 }
 
@@ -50,11 +50,20 @@ object MediaStorePublisher {
                 null,
             )
             if (updated <= 0) throw IOException("the media library could not finalize the file")
-            PublishResult.Ok(uri.toString())
+            val actualName = runCatching { resolver.query(uri, arrayOf(MediaStore.MediaColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) cursor.getString(0) else null
+            } }.getOrNull() ?: displayName
+            PublishResult.Ok(uri.toString(), actualName)
         } catch (exc: Exception) {
             runCatching { resolver.delete(uri, null, null) }
             PublishResult.Failed(exc.message ?: "the media library rejected the file")
         }
+    }
+
+    fun exists(context: Context, uri: String?): Boolean {
+        if (uri == null) return false
+        return runCatching { context.contentResolver.openFileDescriptor(Uri.parse(uri), "r")?.use { true } ?: false }
+            .getOrDefault(false)
     }
 
     /** Removes a previously published file; false when it was already gone. */

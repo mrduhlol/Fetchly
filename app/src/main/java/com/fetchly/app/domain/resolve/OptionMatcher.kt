@@ -17,15 +17,27 @@ object OptionMatcher {
     fun match(signature: List<StreamRef>, options: List<QualityOption>): QualityOption? {
         if (signature.isEmpty()) return null
 
-        val primary = signature.map { it.primaryKey() }.sorted()
-        options.firstOrNull { option ->
-            option.streams.map { it.primaryKey() }.sorted() == primary
-        }?.let { return it }
+        return options.firstOrNull { matches(signature, it, primary = true) }
+            ?: options.firstOrNull { matches(signature, it, primary = false) }
+    }
 
-        val fallback = signature.map { it.fallbackKey() }.sorted()
-        return options.firstOrNull { option ->
-            option.streams.map { it.fallbackKey() }.sorted() == fallback
+    private fun matches(signature: List<StreamRef>, option: QualityOption, primary: Boolean): Boolean {
+        if (signature.size != option.streams.size) return false
+        val remaining = option.streams.toMutableList()
+        // Match explicit languages first; older rows without a language are wildcards.
+        for (expected in signature.sortedByDescending { it.language != null }) {
+            val index = remaining.indexOfFirst { fresh ->
+                val sameShape = if (primary) expected.primaryKey() == fresh.primaryKey()
+                    else expected.fallbackKey() == fresh.fallbackKey()
+                val sameLanguage = expected.language == null || expected.language.equals(fresh.language, ignoreCase = true)
+                val sameAudioQuality = option.kind != com.fetchly.app.domain.model.QualityKind.AUDIO || expected.abr == null ||
+                    (fresh.abr != null && kotlin.math.abs(expected.abr - fresh.abr) <= maxOf(1.0, expected.abr * 0.05))
+                sameShape && sameLanguage && sameAudioQuality
+            }
+            if (index < 0) return false
+            remaining.removeAt(index)
         }
+        return true
     }
 
     private fun StreamRef.primaryKey(): String = "$height|$vcodec|$acodec|$ext"

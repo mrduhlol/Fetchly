@@ -24,6 +24,25 @@
 - Downloads stream straight to disk in 64 KB buffers — never held in
   memory — and must pass magic-byte and size verification before they are
   published to MediaStore.
+- Direct-download checkpoints stay in private cache storage. A saved offset is
+  reused only after revalidating both URLs, the strong ETag and total length;
+  every resumed response must match its requested range before writing bytes.
+  Checkpoints are atomically replaced after flushing data and are removed with
+  the job on deletion/completion.
 - The download action receiver (notification cancel/retry) is not exported.
 - Out of scope by design: private accounts, login/session scraping, DRM
   bypass, paywall bypass, circumventing platform protections.
+
+## Engine maintenance
+
+The bundled runtime is Python 3.12 with yt-dlp 2026.10.26. Only an explicit user
+check/install in Settings contacts the official PyPI package service. Update
+wheels must be pure Python, runtime-compatible, hosted over HTTPS by
+files.pythonhosted.org, and match the SHA-256 published in official package
+metadata. Downloads, archive sizes and archive paths are bounded. Symlinks and
+path traversal are rejected. Code is staged in private no-backup storage; the
+active selection is replaced atomically and imported only in a fresh process.
+A broken override falls back to the bundled engine, and a newer app bundle
+supersedes an older override. No active engine is hot-swapped during a download.
+SHA verification detects a mismatch against package metadata; it is not a
+separate publisher signature independent of the package service.

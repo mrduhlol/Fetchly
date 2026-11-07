@@ -9,11 +9,12 @@ plugins {
 chaquopy {
     defaultConfig {
         // Python runtime bundled in the app; yt-dlp runs fully on-device.
-        // Pinned to the version verified against YouTube on the build machine
-        // (extraction + full-speed downloads with no JS runtime present).
-        version = "3.10"
+        // Pinned stable build; compatible official engine updates can be staged
+        // in Settings and activated on the next app process start.
+        version = "3.12"
         pip {
-            install("yt-dlp==2026.08.19")
+            install("yt-dlp==2026.10.26")
+            install("packaging==25.0")
         }
     }
 }

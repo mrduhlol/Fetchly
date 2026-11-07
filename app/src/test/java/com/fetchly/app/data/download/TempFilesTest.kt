@@ -75,6 +75,17 @@ class TempFilesTest {
         assertEquals(0, dir.listFiles()!!.size)
     }
 
+    @Test
+    fun `deleting a job removes partial data and sidecars without touching other jobs`() {
+        val dir = folder.newFolder("jobs")
+        File(dir, "fetchly_job_file.mp4").writeText("partial")
+        File(dir, "fetchly_job_file.mp4.resume.json").writeText("checkpoint")
+        File(dir, "fetchly_job_file.mp4.resume.json.tmp").writeText("checkpoint")
+        val other = File(dir, "fetchly_job2_file.mp4").apply { writeText("keep") }
+        TempFiles.deleteFor(dir, "fetchly_job")
+        assertEquals(listOf(other.name), dir.listFiles()!!.map { it.name })
+    }
+
     private fun file(dir: File, name: String, modifiedAt: Long): File =
         File(dir, name).apply {
             writeText("stale bytes")

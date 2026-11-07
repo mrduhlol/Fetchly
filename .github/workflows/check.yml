@@ -25,7 +25,7 @@ jobs:
       # The Python bridge tests exercise the packaged contract against the
       # same yt-dlp version the app ships.
       - name: Install yt-dlp for bridge tests
-        run: python3 -m pip install 'yt-dlp==2026.08.19'
+        run: python3 -m pip install 'yt-dlp==2026.10.26' 'packaging==25.0'
       - name: Test, lint and build
         run: scripts/check.sh
       - uses: actions/upload-artifact@v4

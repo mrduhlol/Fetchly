@@ -1,5 +1,12 @@
 package com.fetchly.app.ui.settings
 
+import com.fetchly.app.ui.components.ExternalLinks
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -9,6 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -43,18 +52,20 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onOpenAbout: () -> Unit,
 ) {
+    val context = LocalContext.current
+    val historyMessage by viewModel.historyMessage.collectAsStateWithLifecycle()
+    val engine by viewModel.engineState.collectAsStateWithLifecycle()
     val theme by viewModel.theme.collectAsStateWithLifecycle()
     val quality by viewModel.defaultQuality.collectAsStateWithLifecycle()
     var confirmClear by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-    ) {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+    Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
         ScreenTopBar("Settings", onBack = onBack)
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
 
         SectionHeader("Appearance")
+        Column(Modifier.selectableGroup()) {
         ThemeChoice.entries.forEach { choice ->
             ChoiceRow(
                 label = themeLabel(choice),
@@ -63,7 +74,10 @@ fun SettingsScreen(
             )
         }
 
+        }
+
         SectionHeader("Downloads")
+        Column(Modifier.selectableGroup()) {
         DefaultQuality.entries.forEach { choice ->
             ChoiceRow(
                 label = qualityLabel(choice),
@@ -71,12 +85,50 @@ fun SettingsScreen(
                 onClick = { viewModel.setDefaultQuality(choice) },
             )
         }
+        }
         Note("Choose from the formats the source provides. Separate video and audio streams are merged on this device.")
 
-        SectionHeader("History")
         ActionRow(
-            title = "Clear history",
-            subtitle = "Empties the download list. Files stay in your media library.",
+            title = "Android download settings",
+            subtitle = "Keep notifications allowed and review battery restrictions if background downloads stop.",
+            onClick = {
+                runCatching { context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    Uri.parse("package:${context.packageName}"))) }
+            },
+        )
+
+        SectionHeader("Download engine")
+        Note(engine.message)
+        Note("Updates use the official yt-dlp package. Restart Fetchly to apply an installed update. Current downloads continue with the existing version.")
+        TextButton(onClick = { viewModel.maintainEngine("check") }, enabled = !engine.busy,
+            modifier = Modifier.padding(horizontal = 16.dp)) { Text("Check for engine updates") }
+        if (engine.restart) {
+            Note("After all downloads finish, use Force stop in Android app settings, then reopen Fetchly.")
+            TextButton(onClick = {
+                runCatching { context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    Uri.parse("package:${context.packageName}"))) }
+            }) { Text("Open Android app settings") }
+        }
+        if (engine.available) {
+            TextButton(onClick = { viewModel.maintainEngine("install") }, enabled = !engine.busy,
+                modifier = Modifier.padding(horizontal = 16.dp)) { Text("Install engine update") }
+        }
+        if (engine.hasOverride) {
+            TextButton(onClick = { viewModel.maintainEngine("reset") }, enabled = !engine.busy,
+                modifier = Modifier.padding(horizontal = 16.dp)) { Text("Use bundled engine") }
+        }
+
+        ActionRow(
+            title = "Fetchly releases",
+            subtitle = "See the latest app version and release notes.",
+            onClick = { ExternalLinks.open(context, ExternalLinks.APP_RELEASES) },
+        )
+
+        SectionHeader("History")
+        historyMessage?.let { Note(it) }
+        ActionRow(
+            title = "Clear finished history",
+            subtitle = "Removes finished entries. Active downloads and saved files stay.",
             onClick = { confirmClear = true },
         )
 
@@ -89,11 +141,14 @@ fun SettingsScreen(
         Spacer(Modifier.padding(bottom = 16.dp))
     }
 
+    }
+    }
+
     if (confirmClear) {
         AlertDialog(
             onDismissRequest = { confirmClear = false },
-            title = { Text("Clear history?") },
-            text = { Text("The download list is emptied. Files already saved stay in your media library.") },
+            title = { Text("Clear finished history?") },
+            text = { Text("Finished entries are removed. Active downloads and files already saved stay.") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -118,8 +173,8 @@ private fun ChoiceRow(label: String, selected: Boolean, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .selectable(selected = selected, onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 6.dp),
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
+            .padding(horizontal = 20.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         RadioButton(selected = selected, onClick = null)
@@ -136,7 +191,7 @@ private fun ActionRow(title: String, subtitle: String, onClick: () -> Unit) {
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp),
         shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
     ) {
         Column(Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
             Text(title, style = MaterialTheme.typography.titleMedium)

@@ -24,6 +24,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.distinctUntilChanged
 import okhttp3.OkHttpClient
 
 /**
@@ -80,5 +82,12 @@ class AppGraph(context: Context) {
         DownloadNotifications.ensureChannel(appContext)
         val scratch = TempFiles.dir(appContext)
         scope.launch { TempFiles.cleanupStale(scratch) }
+        scope.launch {
+            kotlinx.coroutines.flow.combine(
+                downloadWorks.observe().map { works -> works.filterNot { it.finished }.map { it.downloadId }.toSet() },
+                history.observeAll().map { entries -> entries.filter { it.status == com.fetchly.app.domain.model.DownloadStatus.QUEUED }.map { it.id }.toSet() },
+            ) { live, queued -> live to queued }
+                .distinctUntilChanged().collect { runCatching { queue.pump() } }
+        }
     }
 }

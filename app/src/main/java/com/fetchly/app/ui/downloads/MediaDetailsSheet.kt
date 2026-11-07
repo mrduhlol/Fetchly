@@ -3,6 +3,8 @@ package com.fetchly.app.ui.downloads
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.fetchly.app.ui.components.RecoveryActions
 import com.fetchly.app.domain.model.DownloadStatus
 import com.fetchly.app.domain.model.HistoryEntry
 import com.fetchly.app.domain.model.QualityKind
@@ -33,7 +36,7 @@ import com.fetchly.app.domain.util.RelativeTime
  * and the four things a user can do with it. Opening and sharing happen in
  * the host screen, which owns the Context.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun MediaDetailsSheet(
     entry: HistoryEntry,
@@ -42,6 +45,9 @@ fun MediaDetailsSheet(
     onShare: () -> Unit,
     onRetry: () -> Unit,
     onDelete: () -> Unit,
+    fileAvailable: Boolean = entry.outputUri != null,
+    onOpenSettings: () -> Unit = {},
+    onChooseFormat: () -> Unit = {},
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
@@ -71,7 +77,7 @@ fun MediaDetailsSheet(
                     color = MaterialTheme.colorScheme.error,
                 )
             }
-            if (entry.status == DownloadStatus.COMPLETED && entry.outputUri == null) {
+            if (entry.status == DownloadStatus.COMPLETED && !fileAvailable) {
                 Spacer(Modifier.height(12.dp))
                 Text(
                     "The file is no longer in your media library.",
@@ -80,13 +86,31 @@ fun MediaDetailsSheet(
                 )
             }
 
+            if (entry.status == DownloadStatus.FAILED) {
+                Spacer(Modifier.height(12.dp))
+                RecoveryActions(entry.errorRaw ?: entry.errorMessage, entry.sourceUrl,
+                    onOpenSettings = onOpenSettings, onChooseFormat = onChooseFormat)
+            }
+            if (entry.status == DownloadStatus.COMPLETED) {
+                Spacer(Modifier.height(10.dp))
+                Text(entry.outputName ?: entry.title, style = MaterialTheme.typography.bodyMedium)
+                Text(savedFolder(entry), style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (!fileAvailable) OutlinedButton(onClick = onChooseFormat) { Text("Download again") }
+            }
+            if (entry.status == DownloadStatus.CANCELLED) {
+                Spacer(Modifier.height(10.dp))
+                Text("Retry continues eligible direct files from saved progress. Other sources may restart.",
+                    style = MaterialTheme.typography.bodyMedium)
+            }
+
             Spacer(Modifier.height(20.dp))
 
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedButton(onClick = onOpen, enabled = entry.outputUri != null) {
-                    Text("Open")
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedButton(onClick = onOpen, enabled = entry.status == DownloadStatus.COMPLETED && fileAvailable) {
+                    Text("Open file")
                 }
-                OutlinedButton(onClick = onShare, enabled = entry.outputUri != null) {
+                OutlinedButton(onClick = onShare, enabled = entry.status == DownloadStatus.COMPLETED && fileAvailable) {
                     Text("Share")
                 }
                 if (entry.status == DownloadStatus.FAILED || entry.status == DownloadStatus.CANCELLED) {
@@ -113,26 +137,9 @@ private fun detailsLine(entry: HistoryEntry): String = listOf(
     RelativeTime.format(entry.updatedAt),
 ).joinToString(" · ")
 
-/** Shared helpers for acting on an entry's published file. */
-internal object EntryFiles {
 
-    fun mimeOf(entry: HistoryEntry): String =
-        MimeTypes.forContainer(entry.container, audio = entry.kind == QualityKind.AUDIO)
-
-    fun open(context: Context, entry: HistoryEntry) {
-        val uri = entry.outputUri?.let(Uri::parse) ?: return
-        val intent = Intent(Intent.ACTION_VIEW)
-            .setDataAndType(uri, mimeOf(entry))
-            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        runCatching { context.startActivity(intent) }
-    }
-
-    fun share(context: Context, entry: HistoryEntry) {
-        val uri = entry.outputUri?.let(Uri::parse) ?: return
-        val intent = Intent(Intent.ACTION_SEND)
-            .setType(mimeOf(entry))
-            .putExtra(Intent.EXTRA_STREAM, uri)
-            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        runCatching { context.startActivity(Intent.createChooser(intent, entry.title)) }
-    }
+private fun savedFolder(entry: HistoryEntry): String = when (entry.mediaType) {
+    com.fetchly.app.domain.model.MediaType.VIDEO -> "Saved in Movies/Fetchly"
+    com.fetchly.app.domain.model.MediaType.AUDIO -> "Saved in Music/Fetchly"
+    com.fetchly.app.domain.model.MediaType.IMAGE -> "Saved in Pictures/Fetchly"
 }

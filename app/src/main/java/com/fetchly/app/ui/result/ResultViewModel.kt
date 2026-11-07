@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.fetchly.app.data.download.DownloadCommands
 import com.fetchly.app.domain.model.DefaultQuality
 import com.fetchly.app.domain.model.MediaInfo
+import com.fetchly.app.domain.model.QualityKind
 import com.fetchly.app.domain.model.QualityOption
 import com.fetchly.app.domain.session.ResolveSession
 import kotlinx.coroutines.CancellationException
@@ -19,10 +20,15 @@ import kotlinx.coroutines.launch
 data class ResultUiState(
     val media: MediaInfo? = null,
     val selectedId: String? = null,
+    val activeKind: QualityKind? = media?.options?.firstOrNull { it.kind == QualityKind.VIDEO && !it.silentVideo }?.kind
+        ?: media?.options?.firstOrNull()?.kind,
+    val outputTitle: String = media?.title.orEmpty(),
+    val queuedMessage: String? = null,
     val enqueuing: Boolean = false,
     val queued: Boolean = false,
     val error: String? = null,
 ) {
+    val visibleOptions: List<QualityOption> get() = media?.options.orEmpty().filter { it.kind == activeKind }
     val selected: QualityOption? get() = media?.options?.firstOrNull { it.id == selectedId }
 }
 
@@ -39,16 +45,35 @@ class ResultViewModel(
     private val _state = MutableStateFlow(ResultUiState(media = session.info.value))
     val state: StateFlow<ResultUiState> = _state.asStateFlow()
 
+    private var qualityPreference = DefaultQuality.ASK
+
     init {
         viewModelScope.launch {
             val choice = defaultQuality.first()
-            _state.update { it.copy(selectedId = preselect(it.media?.options.orEmpty(), choice)) }
+            qualityPreference = choice
+            _state.update { it.copy(selectedId = preselect(it.visibleOptions, choice)) }
         }
     }
 
     fun select(optionId: String) {
-        _state.update { it.copy(selectedId = optionId) }
+        _state.update {
+            if (it.enqueuing || it.visibleOptions.none { option -> option.id == optionId }) it
+            else it.copy(selectedId = optionId)
+        }
     }
+
+    fun selectKind(kind: QualityKind) {
+        _state.update { current ->
+            val options = current.media?.options.orEmpty().filter { it.kind == kind }
+            if (current.enqueuing || options.isEmpty()) current
+            else current.copy(
+                activeKind = kind,
+                selectedId = preselect(options, qualityPreference),
+            )
+        }
+    }
+
+    fun rename(value: String) { _state.update { if (it.enqueuing) it else it.copy(outputTitle = value.take(240)) } }
 
     fun download() {
         val current = _state.value
@@ -58,8 +83,8 @@ class ResultViewModel(
         _state.update { it.copy(enqueuing = true, error = null) }
         viewModelScope.launch {
             try {
-                commands.enqueue(media, option)
-                _state.update { it.copy(enqueuing = false, queued = true) }
+                val receipt = commands.enqueueWithReceipt(media.copy(title = com.fetchly.app.domain.util.Filenames.sanitize(current.outputTitle.ifBlank { media.title })), option)
+                _state.update { it.copy(enqueuing = false, queued = true, queuedMessage = receipt.disposition.message) }
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
@@ -78,6 +103,10 @@ class ResultViewModel(
     companion object {
         /** BEST → the top option (highest video); ASK → nothing preselected. */
         fun preselect(options: List<QualityOption>, choice: DefaultQuality): String? =
-            if (choice == DefaultQuality.BEST) options.firstOrNull()?.id else null
+            if (choice == DefaultQuality.BEST) options.filter { !it.silentVideo }
+                .sortedWith(compareByDescending<QualityOption> { option -> option.streams.maxOfOrNull { it.height ?: 0 } ?: 0 }
+                    .thenByDescending { option -> option.streams.maxOfOrNull { it.languagePreference ?: 0 } ?: 0 }
+                    .thenByDescending { option -> option.streams.maxOfOrNull { it.abr ?: 0 } ?: 0 })
+                .firstOrNull()?.id else null
     }
 }
