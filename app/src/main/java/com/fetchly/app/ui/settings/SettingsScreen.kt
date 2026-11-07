@@ -61,83 +61,83 @@ fun SettingsScreen(
     var confirmClear by remember { mutableStateOf(false) }
 
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-    Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
-        ScreenTopBar("Settings", onBack = onBack)
-        Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+        Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
+            ScreenTopBar("Settings", onBack = onBack)
+            Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
 
-        SectionHeader("Appearance")
-        Column(Modifier.selectableGroup()) {
-        ThemeChoice.entries.forEach { choice ->
+                SectionHeader("Appearance")
+                Column(Modifier.selectableGroup()) {
+                    ThemeChoice.entries.forEach { choice ->
                         PaletteRow(choice, selected = choice == theme, onClick = { viewModel.setTheme(choice) })
-        }
-        }
+                    }
+                }
 
-        SectionHeader("Downloads")
-        Column(Modifier.selectableGroup()) {
-        DefaultQuality.entries.forEach { choice ->
-            ChoiceRow(
-                label = qualityLabel(choice),
-                selected = choice == quality,
-                onClick = { viewModel.setDefaultQuality(choice) },
-            )
+                SectionHeader("Downloads")
+                Column(Modifier.selectableGroup()) {
+                DefaultQuality.entries.forEach { choice ->
+                    ChoiceRow(
+                        label = qualityLabel(choice),
+                        selected = choice == quality,
+                        onClick = { viewModel.setDefaultQuality(choice) },
+                    )
+                }
+                }
+                Note("Choose from the formats the source provides. Separate video and audio streams are merged on this device.")
+
+                ActionRow(
+                    title = "Android download settings",
+                    subtitle = "Keep notifications allowed and review battery restrictions if background downloads stop.",
+                    onClick = {
+                        runCatching { context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            Uri.parse("package:${context.packageName}"))) }
+                    },
+                )
+
+                SectionHeader("Download engine")
+                Note(engine.message)
+                Note("Updates use the official yt-dlp package. Restart Fetchly to apply an installed update. Current downloads continue with the existing version.")
+                TextButton(onClick = { viewModel.maintainEngine("check") }, enabled = !engine.busy,
+                    modifier = Modifier.padding(horizontal = 16.dp)) { Text("Check for engine updates") }
+                if (engine.restart) {
+                    Note("After all downloads finish, use Force stop in Android app settings, then reopen Fetchly.")
+                    TextButton(onClick = {
+                        runCatching { context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            Uri.parse("package:${context.packageName}"))) }
+                    }) { Text("Open Android app settings") }
+                }
+                if (engine.available) {
+                    TextButton(onClick = { viewModel.maintainEngine("install") }, enabled = !engine.busy,
+                        modifier = Modifier.padding(horizontal = 16.dp)) { Text("Install engine update") }
+                }
+                if (engine.hasOverride) {
+                    TextButton(onClick = { viewModel.maintainEngine("reset") }, enabled = !engine.busy,
+                        modifier = Modifier.padding(horizontal = 16.dp)) { Text("Use bundled engine") }
+                }
+
+                ActionRow(
+                    title = "Fetchly releases",
+                    subtitle = "See the latest app version and release notes.",
+                    onClick = { ExternalLinks.open(context, ExternalLinks.APP_RELEASES) },
+                )
+
+                SectionHeader("History")
+                historyMessage?.let { Note(it) }
+                ActionRow(
+                    title = "Clear finished history",
+                    subtitle = "Removes finished entries. Active downloads and saved files stay.",
+                    onClick = { confirmClear = true },
+                )
+
+                SectionHeader("About")
+                ActionRow(
+                    title = "About Fetchly",
+                    subtitle = "Version, engine, limitations and licences",
+                    onClick = onOpenAbout,
+                )
+                Spacer(Modifier.padding(bottom = 16.dp))
+            }
+
         }
-        }
-        Note("Choose from the formats the source provides. Separate video and audio streams are merged on this device.")
-
-        ActionRow(
-            title = "Android download settings",
-            subtitle = "Keep notifications allowed and review battery restrictions if background downloads stop.",
-            onClick = {
-                runCatching { context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                    Uri.parse("package:${context.packageName}"))) }
-            },
-        )
-
-        SectionHeader("Download engine")
-        Note(engine.message)
-        Note("Updates use the official yt-dlp package. Restart Fetchly to apply an installed update. Current downloads continue with the existing version.")
-        TextButton(onClick = { viewModel.maintainEngine("check") }, enabled = !engine.busy,
-            modifier = Modifier.padding(horizontal = 16.dp)) { Text("Check for engine updates") }
-        if (engine.restart) {
-            Note("After all downloads finish, use Force stop in Android app settings, then reopen Fetchly.")
-            TextButton(onClick = {
-                runCatching { context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                    Uri.parse("package:${context.packageName}"))) }
-            }) { Text("Open Android app settings") }
-        }
-        if (engine.available) {
-            TextButton(onClick = { viewModel.maintainEngine("install") }, enabled = !engine.busy,
-                modifier = Modifier.padding(horizontal = 16.dp)) { Text("Install engine update") }
-        }
-        if (engine.hasOverride) {
-            TextButton(onClick = { viewModel.maintainEngine("reset") }, enabled = !engine.busy,
-                modifier = Modifier.padding(horizontal = 16.dp)) { Text("Use bundled engine") }
-        }
-
-        ActionRow(
-            title = "Fetchly releases",
-            subtitle = "See the latest app version and release notes.",
-            onClick = { ExternalLinks.open(context, ExternalLinks.APP_RELEASES) },
-        )
-
-        SectionHeader("History")
-        historyMessage?.let { Note(it) }
-        ActionRow(
-            title = "Clear finished history",
-            subtitle = "Removes finished entries. Active downloads and saved files stay.",
-            onClick = { confirmClear = true },
-        )
-
-        SectionHeader("About")
-        ActionRow(
-            title = "About Fetchly",
-            subtitle = "Version, engine, limitations and licences",
-            onClick = onOpenAbout,
-        )
-        Spacer(Modifier.padding(bottom = 16.dp))
-    }
-
-    }
     }
 
     if (confirmClear) {

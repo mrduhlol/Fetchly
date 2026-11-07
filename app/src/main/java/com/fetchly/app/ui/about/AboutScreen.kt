@@ -35,60 +35,60 @@ fun AboutScreen(engine: YtDlpEngine, onBack: () -> Unit) {
     val ytDlp by produceState<String?>(initialValue = null) { value = engine.engineVersion() }
 
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-    Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
-        ScreenTopBar("About", onBack = onBack)
-        Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+        Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
+            ScreenTopBar("About", onBack = onBack)
+            Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
 
                 androidx.compose.foundation.Image(
                     painter = androidx.compose.ui.res.painterResource(com.fetchly.app.R.drawable.fetchly_logo),
                     contentDescription = "Fetchly Apollo logo",
                     modifier = Modifier.fillMaxWidth().height(180.dp).padding(16.dp),
                 )
-        Column(Modifier.padding(horizontal = 16.dp)) {
-            Text("Fetchly ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.titleLarge)
-            Spacer(Modifier.height(2.dp))
-            Text(
-                "Version ${BuildConfig.VERSION_CODE}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+                Column(Modifier.padding(horizontal = 16.dp)) {
+                    Text("Fetchly ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.titleLarge)
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        "Version ${BuildConfig.VERSION_CODE}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
 
-        Spacer(Modifier.height(12.dp))
-        Card {
-            Text(
-                "No account or API key is required. Link resolution, downloading and merging all " +
-                    "happen on this phone.",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }
+                Spacer(Modifier.height(12.dp))
+                Card {
+                    Text(
+                        "No account or API key is required. Link resolution, downloading and merging all " +
+                            "happen on this phone.",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
 
-        SectionHeader("Engine")
-        Card {
-            Text(
-                ytDlp?.let { "yt-dlp $it. Check for engine updates in Settings." } ?: "Checking the engine…",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }
+                SectionHeader("Engine")
+                Card {
+                    Text(
+                        ytDlp?.let { "yt-dlp $it. Check for engine updates in Settings." } ?: "Checking the engine…",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
 
-        SectionHeader("Good to know")
-        Card {
-            Bullet("Retry resumes eligible direct files when the source still provides the same file. Other media downloads may restart.")
-            Bullet("Public links from YouTube, Instagram, LinkedIn, X, Pinterest and other sites are resolved on-device. Availability depends on the post and source; sign-in and region restrictions can prevent downloads.")
-            Bullet("Merging and saving continue after the transfer finishes. Completed files offer Open file in Downloads.")
-        }
+                SectionHeader("Good to know")
+                Card {
+                    Bullet("Retry resumes eligible direct files when the source still provides the same file. Other media downloads may restart.")
+                    Bullet("Public links from YouTube, Instagram, LinkedIn, X, Pinterest and other sites are resolved on-device. Availability depends on the post and source; sign-in and region restrictions can prevent downloads.")
+                    Bullet("Merging and saving continue after the transfer finishes. Completed files offer Open file in Downloads.")
+                }
 
-        SectionHeader("Licences")
-        Card {
-            Text(
-                "Fetchly is open source under AGPL-3.0. It bundles yt-dlp (Unlicense), " +
-                    "Chaquopy, and ffmpeg-kit (LGPL-3.0).",
-                style = MaterialTheme.typography.bodyMedium,
-            )
+                SectionHeader("Licences")
+                Card {
+                    Text(
+                        "Fetchly is open source under AGPL-3.0. It bundles yt-dlp (Unlicense), " +
+                            "Chaquopy, and ffmpeg-kit (LGPL-3.0).",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+                Spacer(Modifier.height(24.dp))
+            }
         }
-        Spacer(Modifier.height(24.dp))
-    }
-    }
     }
 }
 

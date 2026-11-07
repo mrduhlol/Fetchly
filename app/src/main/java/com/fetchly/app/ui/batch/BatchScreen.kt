@@ -81,7 +81,7 @@ fun BatchScreen(viewModel: BatchViewModel, onBack: () -> Unit, onDownloads: () -
                 containerColor = com.fetchly.app.ui.components.FetchlyButtonColors.container,
                 contentColor = com.fetchly.app.ui.components.FetchlyButtonColors.content,
             ), onClick = viewModel::download, enabled = count > 0 && !state.checking && !state.adding, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
-                Text(if (state.adding) "Adding downloads…" else if (count == 1) "Download 1 file" else "Download $count files")
+                Text(if (state.adding) "Adding downloads…" else if (count == 0) "Select files to download" else if (count == 1) "Download 1 file" else "Download $count files")
             }
             TextButton(onDownloads, modifier = Modifier.fillMaxWidth()) { Text("View downloads") }
         }
