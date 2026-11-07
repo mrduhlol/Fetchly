@@ -38,6 +38,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (redirectSharedIntent(intent, finishMain = true)) return
         enableEdgeToEdge()
         handleIncoming(intent)
         requestNotificationPermissionIfNeeded()
@@ -71,11 +72,21 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        if (redirectSharedIntent(intent)) return
         setIntent(intent)
         handleIncoming(intent)
     }
 
-    /** Share sheets and VIEW links both land in the same inbox. */
+    private fun redirectSharedIntent(incoming: Intent?, finishMain: Boolean = false): Boolean {
+        if (incoming?.action != Intent.ACTION_SEND && incoming?.action != Intent.ACTION_SEND_MULTIPLE) return false
+        startActivity(Intent(incoming).setClass(this, ShareDownloadActivity::class.java)
+            .setFlags(0))
+        // A legacy explicit share can create MainActivity on top of the caller.
+        if (finishMain) finish()
+        return true
+    }
+
+    /** VIEW links continue into the full app. */
     private fun handleIncoming(intent: Intent?) {
         when (intent?.action) {
             Intent.ACTION_SEND -> {

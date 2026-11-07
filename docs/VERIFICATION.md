@@ -121,3 +121,22 @@ Final validation: `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug`
 completed successfully offline with Kotlin/KSP incremental compilation disabled.
 The final APK is `app/build/outputs/apk/debug/app-debug.apk`. Lint has no errors;
 existing warnings remain. `git diff --check` also passed. No release was published.
+
+### Floating share download dialog (2026-11-07)
+
+`testDebugUnitTest`, `lintDebug`, and `assembleDebug` succeeded offline. The
+Kotlin suite has 227 passing tests (nine new share-dialog tests), covering:
+no download during checking; available audio/video/image formats; refusal of
+invented formats; silent-video consent; duplicate taps; failed queue handoffs;
+saved-copy receipts; invalid/oversized shares; cancellation; and stale checks
+when changing the selected shared link. The merged manifest registers only
+ShareDownloadActivity for SEND/SEND_MULTIPLE; MainActivity retains launcher/VIEW.
+No Python behavior changed in this feature.
+
+On-device validation remains blocked. Two attempts to open fetchly_test through
+the device tool reported "Android emulator video needs working ffmpeg with the
+libx264 encoder." The host ffmpeg does list libx264/libx264rgb, but the device
+service still refused the retry. Device work was stopped. Dialog sizing,
+rotation, share-sheet selection, caller restoration, notification permission,
+and a real background transfer through this new entry point still need an
+on-device check; no such success is claimed by the unit/build checks.

@@ -79,3 +79,32 @@ Files may still be downloaded again in a different format. Filename stems and
 quality labels have UTF-8 byte limits and cannot contain path separators; the
 actual name assigned by the media provider is retained in history. History has
 text search and media/failure filters, while active work remains visible.
+
+## Share without opening the full app
+
+The Android Share sheet routes public text links to a dedicated floating
+`ShareDownloadActivity`. Its translucent dialog stays over the caller, is
+excluded from Recents, and does not read or change the full app's analysis
+session. The launcher and ordinary Open link actions retain their existing
+behavior. No display-over-other-apps permission is used.
+
+The dialog checks the link, shows the resolved title, and offers only source
+formats: Video, Audio, or Original file where available. Quality includes the
+source's container and audio availability. Confirmed silent video requires
+explicit consent. When a share includes several distinct links, a link picker
+avoids silently discarding the others; the dialog queues one selected format
+at a time. Existing extractor support determines which media within a post can
+be resolved; this does not add carousel extraction or bypass source restrictions.
+
+Download persists the job through the existing durable queue before dismissing
+the dialog. The worker continues independently and uses existing progress
+notifications. Android 13+ notification permission is requested on the first
+Download tap if needed; denial does not cancel the download. Queue errors stay
+in the dialog with a retry opportunity. Cancel, Back, and outside-tap dismissal
+before queueing do not create a download, and stale analysis results are ignored.
+Back and outside dismissal are blocked during the brief queue handoff.
+
+Text extras and text/HTTP(S) items in ClipData are bounded and validated. No
+local content URI is opened. A share without a public link explains how to use
+Share link or Copy link; local attachment imports and format conversion are not
+advertised. Only this activity is registered for SEND/SEND_MULTIPLE text shares.

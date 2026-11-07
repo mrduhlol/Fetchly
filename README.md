@@ -22,6 +22,7 @@ Paste a public media link, pick a quality, save it to your device.
 
 No backend, no accounts, no API keys, no configuration — resolution, downloading and merging all run on-device.
 
+- Share a public post link to Fetchly for a compact format/quality dialog over the source app; queue the download and return immediately.
 - Review up to 50 links together, choose per-file formats and names, and queue downloads two at a time.
 - Accidental duplicate downloads reuse active or saved copies; history supports search and media filters.
 - Eligible direct files resume on Retry; individual failed segments retry without repeating completed parts.
