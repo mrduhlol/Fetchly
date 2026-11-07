@@ -1,7 +1,5 @@
 <div align="center">
 
-<img src="docs/fetchly-mark.svg" width="120" alt="Fetchly logo" />
-
 # Fetchly
 
 **Paste. Choose. Fetch.**
@@ -9,6 +7,8 @@
 ![version](https://img.shields.io/github/v/release/mrduhlol/Fetchly) — Latest: **v2.0**
 
 Paste a public media link, pick a quality, save it to your device.
+
+<p><img src="app/src/main/res/drawable-nodpi/fetchly_logo.png" width="140" alt="Fetchly Apollo app icon" /></p>
 
 [![Download APK](https://img.shields.io/badge/Download-APK-D4AF37?style=for-the-badge&logo=android&logoColor=211C16&labelColor=211C16)](https://github.com/mrduhlol/Fetchly/releases/latest/download/fetchly_v2.0.apk)
 
