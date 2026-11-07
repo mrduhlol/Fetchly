@@ -39,6 +39,11 @@ fun AboutScreen(engine: YtDlpEngine, onBack: () -> Unit) {
         ScreenTopBar("About", onBack = onBack)
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
 
+                androidx.compose.foundation.Image(
+                    painter = androidx.compose.ui.res.painterResource(com.fetchly.app.R.drawable.fetchly_logo),
+                    contentDescription = "Fetchly Apollo logo",
+                    modifier = Modifier.fillMaxWidth().height(180.dp).padding(16.dp),
+                )
         Column(Modifier.padding(horizontal = 16.dp)) {
             Text("Fetchly ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.height(2.dp))

@@ -1,5 +1,6 @@
 package com.fetchly.app.ui.home
 
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -37,26 +38,23 @@ internal fun SupportedApps(enabled: Boolean) {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            platformShortcuts.forEach { shortcut ->
-                val name = if (shortcut.platform == Platform.TWITTER) "X" else PlatformDetector.label(shortcut.platform)
-                OutlinedButton(
-                    onClick = {
-                        failedPlatform = if (ExternalLinks.open(context, shortcut.url)) null else name
-                    },
-                    enabled = enabled,
-                    modifier = Modifier.heightIn(min = 48.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
-                ) {
-                    PlatformIcon(shortcut.platform)
-                    Spacer(Modifier.width(8.dp))
-                    Text(name, style = MaterialTheme.typography.labelMedium)
+        // Four equal columns keep all eight shortcuts directly below the link panel.
+        platformShortcuts.chunked(4).forEach { shortcuts ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                shortcuts.forEach { shortcut ->
+                    val name = if (shortcut.platform == Platform.TWITTER) "X" else PlatformDetector.label(shortcut.platform)
+                    Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                        OutlinedButton(
+                            onClick = { failedPlatform = if (ExternalLinks.open(context, shortcut.url)) null else name },
+                            enabled = enabled,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                            contentPadding = PaddingValues(8.dp),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                        ) { PlatformIcon(shortcut.platform) }
+                        Text(name, style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier.padding(top = 4.dp, bottom = 6.dp))
+                    }
                 }
             }
         }

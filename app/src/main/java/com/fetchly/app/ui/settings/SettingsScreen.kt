@@ -6,6 +6,7 @@ import android.net.Uri
 import android.provider.Settings
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -67,13 +68,8 @@ fun SettingsScreen(
         SectionHeader("Appearance")
         Column(Modifier.selectableGroup()) {
         ThemeChoice.entries.forEach { choice ->
-            ChoiceRow(
-                label = themeLabel(choice),
-                selected = choice == theme,
-                onClick = { viewModel.setTheme(choice) },
-            )
+                        PaletteRow(choice, selected = choice == theme, onClick = { viewModel.setTheme(choice) })
         }
-
         }
 
         SectionHeader("Downloads")
@@ -169,6 +165,49 @@ fun SettingsScreen(
 }
 
 @Composable
+private fun PaletteRow(choice: ThemeChoice, selected: Boolean, onClick: () -> Unit) {
+    val dark = choice == ThemeChoice.DARK
+    val previewBackground = if (dark) com.fetchly.app.ui.theme.DarkBackground else com.fetchly.app.ui.theme.LightBackground
+    val previewText = if (dark) com.fetchly.app.ui.theme.DarkOnBackground else com.fetchly.app.ui.theme.LightOnBackground
+    Surface(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        border = androidx.compose.foundation.BorderStroke(1.dp,
+            if (selected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Surface(shape = MaterialTheme.shapes.small, color = previewBackground,
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
+                Column(Modifier.width(72.dp).padding(10.dp)) {
+                    Text("Aa", color = previewText, style = MaterialTheme.typography.titleLarge)
+                    Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp)) {
+                        listOf(previewText, com.fetchly.app.ui.theme.DarkSecondary, com.fetchly.app.ui.theme.DarkOutline).forEach {
+                            Surface(color = it, shape = androidx.compose.foundation.shape.CircleShape,
+                                modifier = Modifier.width(12.dp).then(Modifier.height(12.dp))) { }
+                        }
+                    }
+                }
+            }
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f)) {
+                Text(themeLabel(choice), style = MaterialTheme.typography.titleMedium)
+                Text(when (choice) {
+                    ThemeChoice.SYSTEM -> "Match your device appearance"
+                    ThemeChoice.DARK -> "Obsidian, ivory & antique gold"
+                    ThemeChoice.LIGHT -> "Warm ivory & muted bronze"
+                }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            RadioButton(selected = selected, onClick = null)
+        }
+    }
+}
+
+@Composable
 private fun ChoiceRow(label: String, selected: Boolean, onClick: () -> Unit) {
     Row(
         modifier = Modifier
@@ -216,8 +255,8 @@ private fun Note(text: String) {
 
 private fun themeLabel(choice: ThemeChoice): String = when (choice) {
     ThemeChoice.SYSTEM -> "Follow system"
-    ThemeChoice.LIGHT -> "Light"
-    ThemeChoice.DARK -> "Dark"
+    ThemeChoice.LIGHT -> "White (Light)"
+    ThemeChoice.DARK -> "Gold (Dark)"
 }
 
 private fun qualityLabel(choice: DefaultQuality): String = when (choice) {

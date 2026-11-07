@@ -1,5 +1,9 @@
 package com.fetchly.app.ui.home
 
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
+import com.fetchly.app.R
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -61,15 +65,17 @@ fun HomeScreen(
                 .imePadding().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 12.dp),
         ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("fetchly", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                Image(painterResource(R.drawable.fetchly_logo), null, Modifier.size(36.dp))
+                Spacer(Modifier.width(10.dp))
+                Text("Fetchly", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
                 TextButton(onClick = onOpenDownloads) { Text("Downloads") }
                 IconButton(onClick = onOpenSettings) {
                     Icon(Icons.Filled.Settings, contentDescription = "Settings")
                 }
             }
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(20.dp))
             Text("Download a link", style = MaterialTheme.typography.headlineMedium)
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(8.dp))
             Text(
                 "Paste a link, choose a format, and save it.",
                 style = MaterialTheme.typography.bodyMedium,
@@ -117,6 +123,11 @@ fun HomeScreen(
             }
             Spacer(Modifier.height(24.dp))
             SupportedApps(enabled = !state.analyzing)
+            Spacer(Modifier.height(24.dp))
+            Image(
+                painterResource(R.drawable.fetchly_temple), contentDescription = null,
+                modifier = Modifier.fillMaxWidth().height(130.dp), contentScale = ContentScale.Crop,
+            )
             Spacer(Modifier.height(16.dp))
         }
     }

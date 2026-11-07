@@ -77,7 +77,10 @@ fun BatchScreen(viewModel: BatchViewModel, onBack: () -> Unit, onDownloads: () -
         }
         Column(Modifier.fillMaxWidth().padding(16.dp)) {
             val count = state.rows.count { it.selected && !it.added && it.media != null && it.option != null }
-            Button(viewModel::download, enabled = count > 0 && !state.checking && !state.adding, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
+            Button(colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                containerColor = com.fetchly.app.ui.components.FetchlyButtonColors.container,
+                contentColor = com.fetchly.app.ui.components.FetchlyButtonColors.content,
+            ), onClick = viewModel::download, enabled = count > 0 && !state.checking && !state.adding, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
                 Text(if (state.adding) "Adding downloads…" else if (count == 1) "Download 1 file" else "Download $count files")
             }
             TextButton(onDownloads, modifier = Modifier.fillMaxWidth()) { Text("View downloads") }

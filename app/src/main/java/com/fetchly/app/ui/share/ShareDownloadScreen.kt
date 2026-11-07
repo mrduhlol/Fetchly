@@ -82,7 +82,10 @@ fun ShareDownloadScreen(state: ShareDownloadState, onKind: (QualityKind) -> Unit
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = onCancel, enabled = !state.adding) { Text("Cancel") }
-                Button(onClick = onDownload, enabled = state.canDownload) {
+                Button(colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                containerColor = com.fetchly.app.ui.components.FetchlyButtonColors.container,
+                contentColor = com.fetchly.app.ui.components.FetchlyButtonColors.content,
+            ), onClick = onDownload, enabled = state.canDownload) {
                     if (state.adding) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
                     else Text("Download")
                 }

@@ -5,6 +5,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.ui.res.painterResource
+import com.fetchly.app.R
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -23,6 +29,8 @@ fun FetchButton(
 ) {
     Button(
         onClick = onClick,
+        shape = CircleShape,
+        colors = ButtonDefaults.buttonColors(containerColor = FetchlyButtonColors.container, contentColor = FetchlyButtonColors.content),
         enabled = enabled && !loading,
         modifier = modifier
             .fillMaxWidth()
@@ -37,7 +45,9 @@ fun FetchButton(
             Spacer(Modifier.width(10.dp))
             Text("Fetching…")
         } else {
-            Text("Fetch link")
+            Icon(painterResource(R.drawable.ic_stat_download), null, Modifier.size(22.dp))
+            Spacer(Modifier.width(10.dp))
+            Text("FETCH MEDIA")
         }
     }
 }

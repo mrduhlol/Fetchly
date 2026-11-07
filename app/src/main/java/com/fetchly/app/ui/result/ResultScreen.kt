@@ -55,7 +55,7 @@ fun ResultScreen(
     }
     Box(Modifier.fillMaxSize().imePadding(), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
-            ScreenTopBar(title = "Preview & download", onBack = onBack)
+            ScreenTopBar(title = "Fetch options", onBack = onBack)
             if (media == null) {
                 EmptyState(Icons.Filled.PlayArrow, "No preview yet", "Go back and fetch a link to see its available formats.", Modifier.weight(1f))
             } else {
@@ -126,6 +126,10 @@ fun ResultScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Button(
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = com.fetchly.app.ui.components.FetchlyButtonColors.container,
+                                contentColor = com.fetchly.app.ui.components.FetchlyButtonColors.content,
+                            ),
                             onClick = { if (state.selected?.silentVideo == true) confirmSilent = true else viewModel.download() },
                             enabled = state.selected != null && !state.enqueuing,
                             modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
@@ -136,7 +140,7 @@ fun ResultScreen(
                                 Icon(Icons.Filled.KeyboardArrowDown, null, Modifier.size(20.dp))
                             }
                             Spacer(Modifier.width(10.dp))
-                            Text(if (state.enqueuing) "Adding to downloads…" else "Download")
+                            Text(if (state.enqueuing) "Adding to downloads…" else "DOWNLOAD")
                         }
                     }
                 }

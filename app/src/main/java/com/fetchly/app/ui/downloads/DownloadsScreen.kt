@@ -17,6 +17,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.ui.res.painterResource
+import com.fetchly.app.R
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
@@ -109,7 +111,7 @@ fun DownloadsScreen(viewModel: DownloadsViewModel, onBack: () -> Unit, initialNo
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
         ) {
             if (state.active.isNotEmpty()) {
-                item { SectionHeader("Active", horizontalPadding = 0.dp) }
+                item { SectionHeader("Downloading (${state.active.size})", horizontalPadding = 0.dp) }
                 items(state.active, key = { it.entry.id }) { active ->
                     ActiveCard(active = active, enabled = active.entry.id !in busy, onCancel = { viewModel.cancel(active.entry.id) })
                     Spacer(Modifier.height(8.dp))
@@ -117,7 +119,9 @@ fun DownloadsScreen(viewModel: DownloadsViewModel, onBack: () -> Unit, initialNo
             }
             if (state.history.isNotEmpty()) {
                 item {
-                    SectionHeader("History", horizontalPadding = 0.dp)
+                    SectionHeader("Library & history", horizontalPadding = 0.dp)
+                    LibraryCategories(state.history, LibraryFilter.valueOf(filterName)) { filterName = it.name }
+                    Spacer(Modifier.height(12.dp))
                     androidx.compose.material3.OutlinedTextField(query, { query = it }, label = { Text("Search downloads") }, singleLine = true, modifier = Modifier.fillMaxWidth())
                     androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
                         items(LibraryFilter.entries) { filter ->
@@ -188,6 +192,40 @@ fun DownloadsScreen(viewModel: DownloadsViewModel, onBack: () -> Unit, initialNo
                 }
             },
         )
+    }
+}
+
+/** Reuses the existing history filters; counts come exclusively from stored entries. */
+@Composable
+private fun LibraryCategories(history: List<HistoryEntry>, selected: LibraryFilter, onSelect: (LibraryFilter) -> Unit) {
+    val categories = listOf(LibraryFilter.VIDEO, LibraryFilter.AUDIO, LibraryFilter.IMAGES, LibraryFilter.ALL)
+    Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+        categories.chunked(2).forEach { pair ->
+            Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+                pair.forEach { category ->
+                    val count = DownloadLibrary.filter(history, "", category).size
+                    Surface(
+                        onClick = { onSelect(category) },
+                        modifier = Modifier.weight(1f),
+                        shape = MaterialTheme.shapes.medium,
+                        color = if (selected == category) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    ) {
+                        Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(painterResource(when (category) {
+                                LibraryFilter.VIDEO -> R.drawable.ic_library_video
+                                LibraryFilter.AUDIO -> R.drawable.ic_library_audio
+                                LibraryFilter.IMAGES -> R.drawable.ic_library_image
+                                else -> R.drawable.ic_library_folder
+                            }), null, modifier = Modifier.padding(bottom = 8.dp))
+                            Text(if (category == LibraryFilter.ALL) "All files" else category.label, style = MaterialTheme.typography.titleMedium)
+                            Text("$count ${if (count == 1) "entry" else "entries"}", style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -264,7 +302,7 @@ private fun HistoryRow(
                 Text(
                     entry.title,
                     style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(

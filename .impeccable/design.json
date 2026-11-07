@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "platform": "android",
+  "mode": "operate",
+  "authority": "Owner-supplied Fetchly design board and implementation manual",
+  "tokens": {
+    "dark": {"background":"#101010", "surfaceLow":"#191817", "foreground":"#F4EEE5", "accent":"#D6BB92"},
+    "light": {"background":"#F7F2EA", "surfaceLow":"#F1EAE0", "foreground":"#24211D", "accent":"#675035"},
+    "action": {"background":"#F3E5D0", "foreground":"#211C16", "minimumHeightDp":56},
+    "radiiDp":[8,12,16,24,32],
+    "contentMaxWidthDp":640,
+    "minimumTouchTargetDp":48
+  }
+}
