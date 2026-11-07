@@ -13,7 +13,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import com.fetchly.app.R
 
-/** The supplied architectural vignette blends into the current palette. */
+/** Fade every edge into the page so the artwork reads as a vignette, never an inset image. */
 @Composable
 fun TempleArtwork(modifier: Modifier = Modifier) {
     val surface = MaterialTheme.colorScheme.background
@@ -22,7 +22,20 @@ fun TempleArtwork(modifier: Modifier = Modifier) {
         Image(painterResource(artwork), null,
             Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(
-            0f to surface, 0.28f to surface.copy(alpha = 0.12f), 0.86f to surface.copy(alpha = 0.05f), 1f to surface,
+            0f to surface,
+            0.02f to surface,
+            0.30f to surface.copy(alpha = 0f),
+            0.68f to surface.copy(alpha = 0f),
+            0.98f to surface,
+            1f to surface,
+        )))
+        Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(
+            0f to surface,
+            0.015f to surface,
+            0.10f to surface.copy(alpha = 0f),
+            0.90f to surface.copy(alpha = 0f),
+            0.985f to surface,
+            1f to surface,
         )))
     }
 }

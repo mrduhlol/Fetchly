@@ -27,3 +27,5 @@ Home uses a compact 30 dp brand mark, 28 sp serif heading, 14 dp horizontal and 
 The real Android 14 phone emulator was used to resolve the owner's public Apollo PNG, select the available PNG format, transfer ~2.2 MB with real bytes/speed/progress, save it, view the completed entry and Library count, and open it in Android's image viewer. Both Home palettes, Appearance, Settings, Fetch Options, active and completed Downloads, and Library were captured. White persisted through reinstall/relaunch. Enlarged text remained readable with scrolling; the emulator's agent keyboard helper hides the visible IME, so visible-keyboard layout was not captured.
 
 Warm inverse Material roles theme transient snackbars in both palettes. Downloads and Library show a loading state until the combined database/work observation arrives; empty-state copy is reserved for loaded empty data. A regression test covers delayed work observation, the initial queued entry, and a later genuinely empty history.
+
+Architectural artwork fades to the exact theme background along all four edges, with opaque outer stops so inset image boundaries disappear in Gold and White.
