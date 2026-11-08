@@ -57,7 +57,6 @@ class SettingsStore(context: Context) : WelcomePreferences {
 
     private companion object {
         val KEY_WELCOME_COMPLETED = booleanPreferencesKey("welcome_completed")
-import androidx.datastore.preferences.core.intPreferencesKey
         val KEY_THEME = stringPreferencesKey("theme")
         val KEY_DEFAULT_QUALITY = stringPreferencesKey("default_quality")
         val KEY_UI_SCALE = intPreferencesKey("ui_scale_percent")
