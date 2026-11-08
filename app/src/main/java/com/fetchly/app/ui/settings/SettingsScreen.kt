@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fetchly.app.domain.model.DefaultQuality
 import com.fetchly.app.domain.model.ThemeChoice
+import com.fetchly.app.ui.theme.UiScale
 import com.fetchly.app.ui.components.ScreenTopBar
 import com.fetchly.app.ui.components.SectionHeader
 
@@ -60,6 +61,7 @@ fun SettingsScreen(
     val engine by viewModel.engineState.collectAsStateWithLifecycle()
     val theme by viewModel.theme.collectAsStateWithLifecycle()
     val quality by viewModel.defaultQuality.collectAsStateWithLifecycle()
+    val uiScale by viewModel.uiScale.collectAsStateWithLifecycle()
     var confirmClear by remember { mutableStateOf(false) }
 
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
@@ -68,6 +70,18 @@ fun SettingsScreen(
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
 
                 ActionRow("Appearance", themeLabel(theme), onOpenAppearance)
+
+                SectionHeader("App size")
+                Column(Modifier.selectableGroup()) {
+                    UiScale.entries.forEach { choice ->
+                        ChoiceRow(
+                            label = "${choice.percent}%",
+                            selected = choice == uiScale,
+                            onClick = { viewModel.setUiScale(choice) },
+                        )
+                    }
+                }
+                Note("Changes the size of Fetchly screens and controls. Android system bars stay the same size.")
 
                 SectionHeader("Downloads")
                 Column(Modifier.selectableGroup()) {
