@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.fetchly.app.R
 import com.fetchly.app.domain.model.Platform
 
-/** Brand marks share a neutral background so they work in both themes. */
+/** Transparent brand marks; monochrome marks follow the palette for contrast. */
 @Composable
 fun PlatformIcon(platform: Platform, modifier: Modifier = Modifier, compact: Boolean = false, music: Boolean = false, large: Boolean = false) {
     val brand = when (platform) {
@@ -35,15 +35,11 @@ fun PlatformIcon(platform: Platform, modifier: Modifier = Modifier, compact: Boo
         Icon(Icons.Filled.Info, contentDescription = null, modifier = modifier.size(28.dp),
             tint = MaterialTheme.colorScheme.onSurfaceVariant)
     } else {
-        val backing = when (platform) {
-            Platform.TIKTOK, Platform.TWITTER -> if (compact) MaterialTheme.colorScheme.onSurface else Color.White
-            else -> if (compact) brand.second else Color.White
+        val tint = when (platform) {
+            Platform.TIKTOK, Platform.TWITTER -> MaterialTheme.colorScheme.onSurface
+            else -> brand.second
         }
-        Box(modifier.size(if (large) 64.dp else if (compact) 24.dp else 28.dp).background(backing, RoundedCornerShape(if (compact) 6.dp else 14.dp)), contentAlignment = Alignment.Center) {
-            Icon(painterResource(brand.first), contentDescription = null,
-                tint = if (compact) {
-                    if (platform == Platform.TIKTOK || platform == Platform.TWITTER) MaterialTheme.colorScheme.surface else Color.White
-                } else brand.second, modifier = Modifier.size(if (large) 40.dp else 18.dp))
-        }
+        Icon(painterResource(brand.first), contentDescription = null,
+            tint = tint, modifier = modifier.size(if (large) 40.dp else if (compact) 24.dp else 28.dp))
     }
 }
