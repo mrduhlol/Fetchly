@@ -46,6 +46,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
@@ -129,7 +130,7 @@ fun DownloadsScreen(viewModel: DownloadsViewModel, onBack: () -> Unit, initialNo
             if (!libraryOnly && state.active.isNotEmpty()) {
                 item { SectionHeader("Downloading (${state.active.size})", horizontalPadding = 0.dp) }
                 items(state.active, key = { it.entry.id }) { active ->
-                    ActiveCard(active = active, enabled = active.entry.id !in busy, onCancel = { viewModel.cancel(active.entry.id) }, onPause = { viewModel.pause(active.entry.id) })
+                    ActiveCard(active = active, enabled = active.entry.id !in busy, onCancel = { viewModel.cancel(active.entry.id) }, onPause = { if (active.entry.status == DownloadStatus.PAUSED) viewModel.retry(active.entry.id) else viewModel.pause(active.entry.id) })
                     Spacer(Modifier.height(8.dp))
                 }
             }
@@ -248,6 +249,7 @@ private fun LibraryCategories(history: List<HistoryEntry>, selected: LibraryFilt
 
 @Composable
 private fun ActiveCard(active: ActiveDownload, enabled: Boolean, onCancel: () -> Unit, onPause: () -> Unit) {
+    val paused = active.entry.status == DownloadStatus.PAUSED
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
@@ -256,7 +258,7 @@ private fun ActiveCard(active: ActiveDownload, enabled: Boolean, onCancel: () ->
     ) {
         Column(Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
+                Column(Modifier.weight(1f).alpha(if (paused) 0.45f else 1f)) {
                     Text(
                         active.entry.title,
                         style = MaterialTheme.typography.titleMedium,
@@ -269,22 +271,28 @@ private fun ActiveCard(active: ActiveDownload, enabled: Boolean, onCancel: () ->
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                TextButton(onClick = onPause, enabled = enabled) { Text("Pause") }
+                IconButton(onClick = onPause, enabled = enabled) {
+                    Icon(painterResource(if (paused) R.drawable.ic_play_outline else R.drawable.ic_pause_outline),
+                        contentDescription = if (paused) "Resume download" else "Pause download",
+                        tint = if (paused) androidx.compose.ui.graphics.Color(0xFF239B56) else MaterialTheme.colorScheme.onSurface)
+                }
                 IconButton(onClick = onCancel, enabled = enabled) {
-                    Icon(Icons.Filled.Close, contentDescription = "Cancel this download")
+                    Icon(Icons.Filled.Close, contentDescription = "Cancel this download",
+                        modifier = Modifier.alpha(if (paused) 0.35f else 1f))
                 }
             }
             Spacer(Modifier.height(10.dp))
             val percent = active.percent
             if (percent != null) {
-                Text("$percent% transferred · ${FormatSize.format(active.work?.bytes).orEmpty()} of ${FormatSize.format(active.work?.total).orEmpty()}",
-                    style = MaterialTheme.typography.bodySmall)
+                Text("$percent% transferred · ${FormatSize.format(active.bytes).orEmpty()} of ${FormatSize.format(active.total).orEmpty()}",
+                    style = MaterialTheme.typography.bodySmall, modifier = Modifier.alpha(if (paused) 0.45f else 1f))
                 Spacer(Modifier.height(6.dp))
             }
             if (percent != null) {
                 LinearProgressIndicator(
                     progress = { percent / 100f },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().alpha(if (paused) 0.4f else 1f),
+                    color = if (paused) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
                 )
             } else {
                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
