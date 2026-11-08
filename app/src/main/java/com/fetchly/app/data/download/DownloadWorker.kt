@@ -262,23 +262,7 @@ class DownloadWorker(
         withContext(Dispatchers.IO) {
             val output = File(scratch, "${prefix}_bulk.zip")
             try {
-                ZipOutputStream(output.outputStream().buffered()).use { zip ->
-                    files.forEachIndexed { index, file ->
-                        ensureActive()
-                        val ext = file.extension.lowercase().takeIf { it.matches(Regex("[a-z0-9]{1,10}")) } ?: "bin"
-                        zip.putNextEntry(ZipEntry("media-${(index + 1).toString().padStart(2, '0')}.$ext"))
-                        file.inputStream().buffered().use { input ->
-                            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-                            while (true) {
-                                ensureActive()
-                                val count = input.read(buffer)
-                                if (count < 0) break
-                                zip.write(buffer, 0, count)
-                            }
-                        }
-                        zip.closeEntry()
-                    }
-                }
+                BulkArchive.write(files, output) { ensureActive() }
                 AssembleOutcome.Ok(output)
             } catch (cancelled: CancellationException) {
                 output.delete()
