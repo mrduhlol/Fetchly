@@ -13,6 +13,9 @@ import com.fetchly.app.domain.model.QualityOption
 import com.fetchly.app.domain.model.StreamRef
 import com.fetchly.app.domain.platform.PlatformDetector
 import com.fetchly.app.domain.util.MimeTypes
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CancellationException
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Routing: YouTube and known social hosts go straight to the engine; DIRECT
@@ -26,6 +29,9 @@ class OnDeviceMediaRepository(
     private val probe: DirectProbe,
     private val engine: LinkExtractor,
 ) : MediaRepository {
+
+    /** Share only overlapping extraction work; extracted stream URLs can expire. */
+    private val extractions = ConcurrentHashMap<String, CompletableDeferred<String>>()
 
     override suspend fun analyze(url: String, onStage: (String) -> Unit): ResolveOutcome {
         val platform = PlatformDetector.detect(url)
@@ -45,12 +51,32 @@ class OnDeviceMediaRepository(
         onStage: (String) -> Unit,
     ): ResolveOutcome {
         onStage("Finding the good stuff…")
-        return when (val mapped = YtDlpMapper.map(engine.extract(url), url, platform)) {
+        return when (val mapped = YtDlpMapper.map(extractCoalesced(url), url, platform)) {
             is MapResult.Ok -> ResolveOutcome.Success(mapped.info)
             is MapResult.Fail -> ResolveOutcome.Failed(
                 message = ResolveErrors.messageFor(mapped.rawError),
                 raw = mapped.rawError,
             )
+        }
+    }
+
+    private suspend fun extractCoalesced(url: String): String {
+        val candidate = CompletableDeferred<String>()
+        val existing = extractions.putIfAbsent(url, candidate)
+        if (existing != null) return existing.await()
+
+        try {
+            val raw = engine.extract(url)
+            candidate.complete(raw)
+            return raw
+        } catch (cancelled: CancellationException) {
+            candidate.cancel(cancelled)
+            throw cancelled
+        } catch (failure: Throwable) {
+            candidate.completeExceptionally(failure)
+            throw failure
+        } finally {
+            extractions.remove(url, candidate)
         }
     }
 
