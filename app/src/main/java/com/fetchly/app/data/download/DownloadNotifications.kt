@@ -63,6 +63,7 @@ object DownloadNotifications {
             .apply { thumbnail?.let { setLargeIcon(it) } }
             .setSmallIcon(R.drawable.ic_stat_moai_emoji)
             .setOngoing(true)
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .addAction(0, "Pause", broadcast(context, downloadId, DownloadActionReceiver.ACTION_PAUSE, salt = 3))
             .setOnlyAlertOnce(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
