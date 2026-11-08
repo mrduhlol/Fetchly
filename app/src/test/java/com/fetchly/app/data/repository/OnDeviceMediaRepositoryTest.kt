@@ -5,6 +5,8 @@ import com.fetchly.app.data.direct.DirectResult
 import com.fetchly.app.data.engine.LinkExtractor
 import com.fetchly.app.domain.model.MediaType
 import com.fetchly.app.domain.model.QualityKind
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -20,10 +22,16 @@ class OnDeviceMediaRepositoryTest {
         }
     }
 
-    private class FakeEngine(private val json: String) : LinkExtractor {
+    private class FakeEngine(
+        private val json: String,
+        private val entered: CompletableDeferred<Unit>? = null,
+        private val release: CompletableDeferred<Unit>? = null,
+    ) : LinkExtractor {
         var calls = 0
         override suspend fun extract(url: String): String {
             calls++
+            entered?.complete(Unit)
+            release?.await()
             return json
         }
     }
@@ -96,6 +104,23 @@ class OnDeviceMediaRepositoryTest {
 
         assertEquals("The source says this media doesn't exist or has been removed.", outcome.message)
         assertEquals("ERROR: [youtube] x: Video unavailable", outcome.raw)
+    }
+
+    @Test
+    fun `overlapping analysis of the same URL shares metadata extraction`() = runBlocking {
+        val entered = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        val engine = FakeEngine(engineOk, entered, release)
+        val repository = OnDeviceMediaRepository(FakeProbe(DirectResult.NotDirect), engine)
+
+        val first = async { repository.analyze("https://www.youtube.com/watch?v=same123") }
+        entered.await()
+        val second = async { repository.analyze("https://www.youtube.com/watch?v=same123") }
+        release.complete(Unit)
+
+        assertTrue(first.await() is ResolveOutcome.Success)
+        assertTrue(second.await() is ResolveOutcome.Success)
+        assertEquals(1, engine.calls)
     }
     @Test
     fun `media endpoint extension does not override its real container`() = runBlocking {
