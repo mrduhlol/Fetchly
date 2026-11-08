@@ -29,6 +29,13 @@ class DownloadPlanTest {
         ))
     }
 
+    @Test fun `pause and immediate resume retain engine data but deletion and explicit cancellation do not`() {
+        assertEquals(true, DownloadPlan.retainPartial(com.fetchly.app.domain.model.DownloadStatus.PAUSED, false))
+        assertEquals(true, DownloadPlan.retainPartial(com.fetchly.app.domain.model.DownloadStatus.QUEUED, false))
+        assertEquals(false, DownloadPlan.retainPartial(com.fetchly.app.domain.model.DownloadStatus.CANCELLED, false))
+        assertEquals(false, DownloadPlan.retainPartial(null, true))
+    }
+
     private fun option(kind: QualityKind, streams: List<StreamRef>) =
         QualityOption("id", "quality", kind, "mp4", streams, streams.size > 1, null)
 
