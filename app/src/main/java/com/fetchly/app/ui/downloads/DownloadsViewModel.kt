@@ -70,6 +70,7 @@ class DownloadsViewModel(
             map(entries, joinWorks(running))
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DownloadsUiState(loading = true))
 
+    fun pause(id: String) = perform(id, "pause") { commands.pause(id) }
     fun cancel(id: String) = perform(id, "stop") { commands.cancel(id) }
     fun retry(id: String) = perform(id, "retry") { commands.retry(id) }
     fun delete(id: String, deleteFile: Boolean = true) = perform(id, "delete") { commands.delete(id, deleteFile) }
