@@ -14,6 +14,7 @@ object DownloadQueuePolicy {
     fun sameDownload(entry: HistoryEntry, media: MediaInfo, option: QualityOption): Boolean =
         sourceKey(entry.sourceUrl) == sourceKey(media.sourceUrl) && entry.kind == option.kind &&
             entry.container.equals(option.container, true) &&
+            (option.kind != QualityKind.AUDIO || option.container != "mp3" || entry.optionLabel == option.label) &&
             signature(entry.signature, option.kind) == signature(option.streams, option.kind)
 
     private fun signature(streams: List<StreamRef>, kind: QualityKind) = streams.map {
