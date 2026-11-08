@@ -33,6 +33,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fetchly.app.data.AppGraph
 import com.fetchly.app.domain.model.ThemeChoice
 import com.fetchly.app.ui.navigation.FetchlyNav
+import com.fetchly.app.ui.theme.FetchlyAppTheme
 import com.fetchly.app.ui.theme.FetchlyTheme
 
 class MainActivity : ComponentActivity() {
