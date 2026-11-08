@@ -399,7 +399,7 @@ class DownloadWorker(
             return AssembleOutcome.Failed("The download produced no files.", null)
         }
         val single = files.singleOrNull()
-        if (single != null && sameContainer(single, option.container) && !option.id.startsWith("audio-mp3-")) {
+        if (single != null && sameContainer(single, option.container) && !(option.kind == QualityKind.AUDIO && option.container == "mp3")) {
             return AssembleOutcome.Ok(single)
         }
 
@@ -408,7 +408,7 @@ class DownloadWorker(
         files.forEach { args += listOf("-i", it.absolutePath) }
         args += DownloadPlan.streamMaps(option)
         if (option.kind == QualityKind.AUDIO && option.container == "mp3") {
-            val bitrate = option.id.removePrefix("audio-mp3-").toIntOrNull()
+            val bitrate = option.label.substringBefore(" ").toIntOrNull()
                 ?.takeIf { it in listOf(96, 128, 256, 320) } ?: 128
             args += listOf("-c:a", "libmp3lame", "-b:a", "${bitrate}k")
         } else {
@@ -687,7 +687,10 @@ class DownloadWorker(
             ?: return Refresh.ResolveFailed(
                 "The link couldn't be opened again.", null, network = false,
             )
-        val fresh = OptionMatcher.match(entry.signature, info.options)
+        val fresh = OptionMatcher.match(entry.signature, info.options.filter {
+            it.container.equals(entry.container, true) &&
+                (entry.kind != QualityKind.AUDIO || it.label == entry.optionLabel)
+        })
             ?: return Refresh.NoMatch
         return Refresh.Fresh(fresh)
     }
