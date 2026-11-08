@@ -32,6 +32,8 @@ import com.fetchly.app.domain.util.MediaSniffer
 import com.fetchly.app.domain.util.MimeTypes
 import java.io.File
 import java.io.IOException
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CancellationException
@@ -195,11 +197,13 @@ class DownloadWorker(
 
         // "Merging…" only when a merge will really run; a single stream in the
         // right container is simply kept as it arrived.
-        val willMerge = files.size > 1 ||
+        val willMerge = option.container != "zip" && (files.size > 1 ||
             (files.size == 1 && !sameContainer(files.first(), option.container))
+        )
         setStage(if (willMerge) "Merging…" else "Checking file…")
         val artifact = when (
-            val assembled = assemble(option, files, scratch, Filenames.tempPrefix(entry.id))
+            val assembled = if (option.container == "zip") assembleZip(option, files, scratch, Filenames.tempPrefix(entry.id))
+                else assemble(option, files, scratch, Filenames.tempPrefix(entry.id))
         ) {
             is AssembleOutcome.Ok -> assembled.file
             AssembleOutcome.Cancelled -> return PipelineOutcome.Cancelled
@@ -225,7 +229,7 @@ class DownloadWorker(
             when (
                 val published = MediaStorePublisher.publish(
                     applicationContext, artifact, name, mime,
-                    DownloadPlan.mediaType(option.kind, entry.mediaType),
+                DownloadPlan.mediaType(option.kind, entry.mediaType),
                 )
             ) {
                 is PublishResult.Ok -> {
@@ -253,6 +257,37 @@ class DownloadWorker(
             }
         }
     }
+
+    private suspend fun assembleZip(option: QualityOption, files: List<File>, scratch: File, prefix: String): AssembleOutcome =
+        withContext(Dispatchers.IO) {
+            val output = File(scratch, "${prefix}_bulk.zip")
+            try {
+                ZipOutputStream(output.outputStream().buffered()).use { zip ->
+                    files.forEachIndexed { index, file ->
+                        ensureActive()
+                        val ext = file.extension.lowercase().takeIf { it.matches(Regex("[a-z0-9]{1,10}")) } ?: "bin"
+                        zip.putNextEntry(ZipEntry("media-${(index + 1).toString().padStart(2, '0')}.$ext"))
+                        file.inputStream().buffered().use { input ->
+                            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                            while (true) {
+                                ensureActive()
+                                val count = input.read(buffer)
+                                if (count < 0) break
+                                zip.write(buffer, 0, count)
+                            }
+                        }
+                        zip.closeEntry()
+                    }
+                }
+                AssembleOutcome.Ok(output)
+            } catch (cancelled: CancellationException) {
+                output.delete()
+                throw cancelled
+            } catch (exc: Exception) {
+                output.delete()
+                AssembleOutcome.Failed("The media was downloaded but couldn't be assembled (ZIP creation failed).", exc.message)
+            }
+        }
 
     // ------------------------------------------------------------ streams
 
@@ -415,6 +450,16 @@ class DownloadWorker(
             args += listOf("-c", "copy")
         }
         if (option.container.equals("mp4", ignoreCase = true)) {
+            val audioCodec = option.streams.firstOrNull { it.acodec != "none" }?.acodec.orEmpty()
+            if (audioCodec.isNotEmpty() && audioCodec != "unknown" &&
+                !audioCodec.startsWith("aac") && !audioCodec.startsWith("mp4a")) {
+                val copyCodec = args.indexOfLast { it == "-c" }
+                if (copyCodec >= 0 && args.getOrNull(copyCodec + 1) == "copy") {
+                    args.removeAt(copyCodec + 1)
+                    args.removeAt(copyCodec)
+                }
+                args += listOf("-c:v", "copy", "-c:a", "aac")
+            }
             args += listOf("-movflags", "+faststart")
         }
         args += output.absolutePath
