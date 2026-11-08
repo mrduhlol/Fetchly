@@ -23,7 +23,9 @@ interface DownloadCommands {
     /** Stops a queued or running download. */
     suspend fun cancel(id: String): Boolean
 
-    /** Restarts a FAILED or CANCELLED download. */
+    suspend fun pause(id: String): Boolean = false
+
+    /** Resumes a PAUSED download, or retries a failed or cancelled one. */
     suspend fun retry(id: String): Boolean
 
     /** Removes a history row, optionally deleting its published file. */
