@@ -29,15 +29,21 @@ data class ActiveDownload(
     /** Honest fallback when WorkManager hasn't reported a stage yet. */
     val stageText: String
         get() = when {
+            entry.status == DownloadStatus.PAUSED -> "Paused"
             entry.status == DownloadStatus.QUEUED && work?.running != true ->
                 if ((work?.attempt ?: 0) > 0) "Waiting to retry when connected…" else "Waiting…"
             else -> work?.takeUnless { it.finished }?.stage ?: "Starting…"
         }
 
     /** Transfer percentages never describe merging, verification, or saving. */
+    val bytes: Long get() = if (entry.status == DownloadStatus.PAUSED || work?.finished != false)
+        entry.progressBytes else maxOf(entry.progressBytes, work.bytes)
+    val total: Long get() = work?.total?.takeIf { it > 0 } ?: entry.progressTotal
     val percent: Int?
-        get() = work?.takeIf { !it.finished && DownloadStages.isTransfer(stageText) && it.total > 0L }
-            ?.let { (it.bytes.toDouble() / it.total * 100).toInt().coerceIn(0, 100) }
+        get() = if (total > 0 && (entry.status == DownloadStatus.PAUSED ||
+            entry.status == DownloadStatus.QUEUED || DownloadStages.isTransfer(stageText))) {
+            (bytes.toDouble() / total * 100).toInt().coerceIn(0, 100)
+        } else null
 
 }
 
@@ -117,7 +123,7 @@ class DownloadsViewModel(
                     errorMessage = "The download was interrupted. Retry to continue.",
                     errorRaw = "Download worker interrupted") else stored
                 when (entry.status) {
-                    DownloadStatus.QUEUED, DownloadStatus.RUNNING ->
+                    DownloadStatus.QUEUED, DownloadStatus.RUNNING, DownloadStatus.PAUSED ->
                         active += ActiveDownload(entry, works[entry.id])
                     else -> done += entry
                 }
