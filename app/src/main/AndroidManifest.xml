@@ -17,8 +17,8 @@
     <application
         android:name=".FetchlyApp"
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:icon="@drawable/fetchly_logo"
+        android:roundIcon="@drawable/fetchly_logo"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.Fetchly"
