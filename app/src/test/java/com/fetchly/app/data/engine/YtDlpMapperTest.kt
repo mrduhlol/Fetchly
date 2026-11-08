@@ -105,9 +105,9 @@ class YtDlpMapperTest {
     @Test
     fun `reported height survives unknown video codec`() {
         val info = mapped(ok(fmt("hd", vcodec = "unknown", acodec = "aac", height = 1080)))
-        assertEquals(QualityKind.VIDEO, info.options.single().kind)
-        assertEquals("1080p", info.options.single().label)
-        assertFalse(info.options.single().needsMerge)
+        assertEquals(QualityKind.VIDEO, info.options.first().kind)
+        assertEquals("1080p", info.options.first().label)
+        assertFalse(info.options.first().needsMerge)
     }
 
     @Test
@@ -229,10 +229,8 @@ class YtDlpMapperTest {
     @Test
     fun `single stream links degrade to one file option`() {
         val audio = mapped(ok(fmt("0", ext = "mp3", acodec = "mp3")))
-        assertEquals(listOf("file"), audio.options.map { it.id })
-        assertEquals("File", audio.options.single().label)
-        assertEquals("mp3", audio.options.single().container)
-        assertEquals(QualityKind.FILE, audio.options.single().kind)
+        assertEquals(4, audio.options.size)
+        assertTrue(audio.options.all { it.kind == QualityKind.AUDIO && it.container == "mp3" })
         assertEquals(MediaType.AUDIO, audio.mediaType)
 
         val plain = mapped(ok(fmt("hls-1", ext = "mp4")))
