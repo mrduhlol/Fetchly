@@ -18,5 +18,6 @@ class FetchlyApp : Application() {
     override fun onCreate() {
         super.onCreate()
         graph.init()
+        LauncherAppearance(this).register()
     }
 }
