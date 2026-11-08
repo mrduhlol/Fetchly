@@ -271,6 +271,21 @@ class YtDlpMapperTest {
     }
 
     @Test
+    fun `portrait dimensions and all four MP3 output estimates survive mapping`() {
+        val json = ok(
+            fmt("v", vcodec = "avc1", height = 1920),
+            fmt("a", ext = "m4a", acodec = "aac", abr = 128.0),
+        ).replace("\"ok\":true", "\"ok\":true,\"width\":1080,\"height\":1920")
+        val info = mapped(json)
+        assertEquals(1080, info.width)
+        assertEquals(1920, info.height)
+        val audio = info.options.filter { it.kind == QualityKind.AUDIO }
+        assertEquals(listOf("96 kb/s", "128 kb/s", "256 kb/s", "320 kb/s"), audio.map { it.label })
+        assertTrue(audio.all { it.container == "mp3" && it.needsMerge })
+        assertEquals(listOf(2_556_000L, 3_408_000L, 6_816_000L, 8_520_000L), audio.map { it.sizeBytes })
+    }
+
+    @Test
     fun `signin failure keeps the raw yt dlp message`() {
         val raw = "ERROR: [youtube] test123: Sign in to confirm you're not a bot."
         val result = YtDlpMapper.map(fail(raw), sourceUrl, platform)
