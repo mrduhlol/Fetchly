@@ -58,6 +58,9 @@ interface HistoryDao {
     )
     suspend fun cancelIfActive(id: String, updatedAt: Long): Int
 
+    @Query("UPDATE downloads SET status = 'PAUSED', errorMessage = NULL, errorRaw = NULL, updatedAt = :updatedAt WHERE id = :id AND status IN ('QUEUED', 'RUNNING')")
+    suspend fun pauseIfActive(id: String, updatedAt: Long): Int
+
     @Query("DELETE FROM downloads WHERE id = :id")
     suspend fun delete(id: String)
 
