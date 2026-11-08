@@ -52,7 +52,6 @@ class AppGraph(context: Context) {
         .dns(PublicOnlyDns)
         .build()
 
-    val notificationImages by lazy { coil.ImageLoader.Builder(appContext).okHttpClient(http).build() }
     val engine = YtDlpEngine(appContext)
     val probe = DirectMediaResolver(http)
     val repository: MediaRepository = OnDeviceMediaRepository(probe, engine)
