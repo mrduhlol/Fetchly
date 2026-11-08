@@ -22,7 +22,8 @@ import com.fetchly.app.domain.util.FormatSize
 @Composable
 fun ShareDownloadScreen(state: ShareDownloadState, onKind: (QualityKind) -> Unit,
     onQuality: (String) -> Unit, onSource: (String) -> Unit, onSilent: (Boolean) -> Unit,
-    onRetry: () -> Unit, onDownload: () -> Unit, onCancel: () -> Unit) {
+    onRetry: () -> Unit, onDownload: () -> Unit, onCancel: () -> Unit,
+    onContainer: (String) -> Unit = {}) {
     val maxHeight = (LocalConfiguration.current.screenHeightDp * .8f).dp
     Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surface) {
         Column(Modifier.fillMaxWidth().heightIn(max = maxHeight).padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -50,14 +51,23 @@ fun ShareDownloadScreen(state: ShareDownloadState, onKind: (QualityKind) -> Unit
                     FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         media.options.map { it.kind }.distinct().forEach { kind ->
                             FilterChip(state.kind == kind, { onKind(kind) }, enabled = !state.adding,
-                                label = { Text(when (kind) { QualityKind.VIDEO -> "Video"; QualityKind.AUDIO -> "Audio"; QualityKind.FILE -> "Original file" }) })
+                                label = { Text(when (kind) { QualityKind.VIDEO -> "Video"; QualityKind.AUDIO -> "Audio"; QualityKind.FILE -> if (media.options.any { it.container == "zip" }) "Bulk ZIP" else "Original file" }) })
+                        }
+                    }
+                    if (state.kind == QualityKind.VIDEO) {
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf("mp4", "mkv").forEach { container ->
+                                FilterChip(state.selected?.container == container, { onContainer(container) },
+                                    enabled = !state.adding && media.options.any { it.kind == QualityKind.VIDEO && it.container == container },
+                                    label = { Text(container.uppercase()) })
+                            }
                         }
                     }
                     if (state.options.isNotEmpty()) {
                         var qualityMenu by remember(state.kind) { mutableStateOf(false) }
                         Box {
                             PlaqueOutlinedButton(onClick = { qualityMenu = true }, enabled = !state.adding, modifier = Modifier.fillMaxWidth()) {
-                                Text(state.selected?.let { "${it.label} · ${it.container.uppercase()}" } ?: "Choose quality")
+                                Text(state.selected?.let { "${it.label} · ${it.container.uppercase()} · ${FormatSize.formatApprox(it.sizeBytes) ?: "Size unknown"}" } ?: "Choose quality")
                             }
                             DropdownMenu(qualityMenu, { qualityMenu = false }, modifier = Modifier.heightIn(max = 240.dp)) {
                                 state.options.forEach { option ->
