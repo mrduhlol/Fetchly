@@ -16,8 +16,9 @@ Contract (see YtDlpMapper.kt for the consumer):
 
 import json
 import os
+import re
 import time
-from urllib.parse import urlsplit, parse_qs
+from urllib.parse import urlsplit, parse_qs, unquote
 
 try:
     import yt_dlp
@@ -292,6 +293,9 @@ def _clean_format(f, duration=None):
     if filesize is None:
         try:
             length = parse_qs(urlsplit(f.get("url") or "").query).get("clen", [None])[0]
+            if length is None:
+                embedded = re.search(r"(?:^|[;/])clen=(\d+)(?:[;/]|$)", unquote(urlsplit(f.get("url") or "").path))
+                length = embedded.group(1) if embedded else None
             if length is not None and int(length) > 0:
                 filesize = int(length)
         except (ValueError, TypeError):
