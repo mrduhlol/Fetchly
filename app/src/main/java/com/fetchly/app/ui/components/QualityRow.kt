@@ -67,7 +67,6 @@ private fun subtitleFor(option: QualityOption): String = buildString {
     append(option.container.uppercase())
     append(" · ")
     append(FormatSize.formatApprox(option.sizeBytes) ?: "size unknown")
-    append(" · ${option.audioDescription}")
     option.streams.mapNotNull { it.language }.distinct().takeIf { it.isNotEmpty() }
         ?.let { append(" · ${it.joinToString(", ")}") }
     if (option.needsMerge) append(" · merges on this device")
