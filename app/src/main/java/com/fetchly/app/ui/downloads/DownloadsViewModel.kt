@@ -41,7 +41,8 @@ data class ActiveDownload(
     val total: Long get() = work?.total?.takeIf { it > 0 } ?: entry.progressTotal
     val percent: Int?
         get() = if (total > 0 && (entry.status == DownloadStatus.PAUSED ||
-            entry.status == DownloadStatus.QUEUED || DownloadStages.isTransfer(stageText))) {
+            entry.status == DownloadStatus.QUEUED || DownloadStages.isTransfer(stageText) ||
+            (stageText == "Starting…" && entry.progressBytes > 0))) {
             (bytes.toDouble() / total * 100).toInt().coerceIn(0, 100)
         } else null
 
