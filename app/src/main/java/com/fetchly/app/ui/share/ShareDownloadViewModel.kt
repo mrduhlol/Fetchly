@@ -21,6 +21,7 @@ data class ShareDownloadState(
     val media: MediaInfo? = null,
     val kind: QualityKind? = null,
     val selectedId: String? = null,
+    val videoContainer: String = "mp4",
     val checking: Boolean = false,
     val stage: String = "Checking the link…",
     val adding: Boolean = false,
@@ -28,7 +29,10 @@ data class ShareDownloadState(
     val silentConfirmed: Boolean = false,
     val receipt: EnqueueReceipt? = null,
 ) {
-    val options: List<QualityOption> get() = media?.options.orEmpty().filter { it.kind == kind }
+    val options: List<QualityOption> get() {
+        val all = media?.options.orEmpty().filter { it.kind == kind }
+        return if (kind == QualityKind.VIDEO) all.filter { it.container == videoContainer }.ifEmpty { all } else all
+    }
     val selected: QualityOption? get() = options.firstOrNull { it.id == selectedId }
     val canDownload: Boolean get() = !checking && !adding && receipt == null && selected != null &&
         (selected?.silentVideo != true || silentConfirmed)
@@ -76,7 +80,9 @@ class ShareDownloadViewModel(
                     val kind = media.options.firstOrNull { it.kind == QualityKind.VIDEO && !it.silentVideo }?.kind
                         ?: media.options.firstOrNull { it.kind == QualityKind.AUDIO }?.kind
                         ?: media.options.firstOrNull()?.kind
-                    val options = media.options.filter { it.kind == kind }
+                    val options = media.options.filter { it.kind == kind }.let { all ->
+                        if (kind == QualityKind.VIDEO) all.filter { it.container == "mp4" }.ifEmpty { all } else all
+                    }
                     mutable.update { it.copy(checking = false, media = media, kind = kind,
                         selectedId = ResultViewModel.preselect(options, DefaultQuality.BEST),
                         error = if (options.isEmpty()) "The source returned no downloadable formats." else null) }
@@ -88,10 +94,21 @@ class ShareDownloadViewModel(
     fun selectKind(kind: QualityKind) {
         val current = state.value
         if (current.adding || current.receipt != null) return
-        val options = current.media?.options.orEmpty().filter { it.kind == kind }
+        val options = current.media?.options.orEmpty().filter { it.kind == kind }.let { all ->
+            if (kind == QualityKind.VIDEO) all.filter { it.container == "mp4" }.ifEmpty { all } else all
+        }
         if (options.isEmpty()) return
-        mutable.update { it.copy(kind = kind, selectedId = ResultViewModel.preselect(options, DefaultQuality.BEST), silentConfirmed = false, error = null) }
+        mutable.update { it.copy(kind = kind, videoContainer = "mp4", selectedId = ResultViewModel.preselect(options, DefaultQuality.BEST), silentConfirmed = false, error = null) }
     }
+    fun selectContainer(container: String) {
+        val current = state.value
+        if (current.adding || current.receipt != null || container !in listOf("mp4", "mkv")) return
+        val options = current.media?.options.orEmpty().filter { it.kind == QualityKind.VIDEO && it.container == container }
+        if (options.isEmpty()) return
+        val selected = options.firstOrNull { it.label == current.selected?.label } ?: options.first()
+        mutable.update { it.copy(videoContainer = container, selectedId = selected.id, silentConfirmed = false) }
+    }
+
     fun select(id: String) {
         if (state.value.adding || state.value.receipt != null || state.value.options.none { it.id == id }) return
         mutable.update { it.copy(selectedId = id, silentConfirmed = false, error = null) }
