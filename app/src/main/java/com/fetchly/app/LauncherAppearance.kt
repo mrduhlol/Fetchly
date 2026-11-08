@@ -37,8 +37,8 @@ internal class LauncherAppearance(private val app: FetchlyApp) : Application.Act
             ThemeChoice.SYSTEM -> app.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK != Configuration.UI_MODE_NIGHT_YES
         }
         val manager = app.packageManager
-        val selected = ComponentName(app, "${app.packageName}.MainActivity${if (light) "Light" else "Dark"}")
-        val other = ComponentName(app, "${app.packageName}.MainActivity${if (light) "Dark" else "Light"}")
+        val selected = ComponentName(app, "${MainActivity::class.java.name}${if (light) "Light" else "Dark"}")
+        val other = ComponentName(app, "${MainActivity::class.java.name}${if (light) "Dark" else "Light"}")
         // Enable first so there is always a launcher entry. Never kill the process or downloads.
         if (manager.getComponentEnabledSetting(selected) != PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
             manager.setComponentEnabledSetting(selected, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP)
