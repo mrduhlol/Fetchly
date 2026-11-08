@@ -59,8 +59,8 @@ object YtDlpMapper {
         if (platform == Platform.TWITTER) {
             val entries = root.optJSONArray("entries")
             if (entries != null && entries.length() > 1) {
-                val chosen = entries.mapIndexedNotNull { index, item ->
-                    val entry = item as? JSONObject ?: return@mapNotNull null
+                val chosen = (0 until entries.length()).mapNotNull { index ->
+                    val entry = entries.optJSONObject(index) ?: return@mapNotNull null
                     val entryFormats = readFormats(entry)
                     val image = entryFormats.filter { it.ext in IMAGE_EXTS && it.vcodec == "none" && it.acodec == "none" }
                         .sortedWith(compareByDescending<StreamRef> { it.sizeBytes ?: 0L }).firstOrNull()
