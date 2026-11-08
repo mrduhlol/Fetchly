@@ -109,6 +109,25 @@ fun ResultScreen(
                     }
                     if (media.options.isNotEmpty()) {
                         item {
+                            FlowRow(
+                                modifier = Modifier.fillMaxWidth().selectableGroup(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                media.options.map { it.kind }.distinct().forEach { kind ->
+                                    FilterChip(
+                                        selected = state.activeKind == kind,
+                                        onClick = { if (state.activeKind != kind) viewModel.selectKind(kind) },
+                                        enabled = !state.enqueuing,
+                                        label = {
+                                            Text(when (kind) {
+                                                QualityKind.VIDEO -> "Video"
+                                                QualityKind.AUDIO -> "Audio"
+                                                QualityKind.FILE -> if (media.options.any { it.container == "zip" }) "Bulk ZIP" else "File"
+                                            })
+                                        },
+                                    )
+                                }
+                            }
                             if (state.activeKind == QualityKind.VIDEO) {
                                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     availableVideoFormats.forEach { format ->
@@ -125,25 +144,7 @@ fun ResultScreen(
                                     }
                                 }
                             }
-                            FlowRow(
-                                modifier = Modifier.fillMaxWidth().selectableGroup(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                media.options.map { it.kind }.distinct().forEach { kind ->
-                                    FilterChip(
-                                        selected = state.activeKind == kind,
-                                        onClick = { if (state.activeKind != kind) viewModel.selectKind(kind) },
-                                        enabled = !state.enqueuing,
-                                        label = {
-                                            Text(when (kind) {
-                                                QualityKind.VIDEO -> "Video"
-                                                QualityKind.AUDIO -> "Audio"
-                                                QualityKind.FILE -> "File"
-                                            })
-                                        },
-                                    )
-                                }
-                            }
+
                         }
                         items(if (state.activeKind == QualityKind.VIDEO && selectedVideoFormat != null) {
                             state.visibleOptions.filter { it.container.equals(selectedVideoFormat, true) }
