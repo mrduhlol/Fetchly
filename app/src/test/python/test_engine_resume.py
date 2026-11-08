@@ -62,6 +62,8 @@ class EngineResumeTest(unittest.TestCase):
         try:
             with tempfile.TemporaryDirectory() as directory:
                 url = f'http://127.0.0.1:{server.server_port}/video.mp4'
+                preview = json.loads(bridge.extract(url))
+                self.assertTrue(preview['ok'], preview)
                 paused = json.loads(bridge.download(url, 'best', directory, 'media', Hook(True)))
                 self.assertTrue(paused.get('cancelled', False), paused)
                 parts = list(pathlib.Path(directory).glob('media*.part'))
