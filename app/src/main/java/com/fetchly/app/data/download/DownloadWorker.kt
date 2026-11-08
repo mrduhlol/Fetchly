@@ -78,7 +78,12 @@ class DownloadWorker(
 
     private val activeHooks = ConcurrentHashMap.newKeySet<DownloadHook>()
 
-    override suspend fun doWork(): Result = withDownloadCancellation(::cancelActiveWork) {
+    override suspend fun doWork(): Result {
+        val id = inputData.getString(KEY_DOWNLOAD_ID) ?: return Result.failure()
+        return DownloadRunGate.serial(id) { runDownload() }
+    }
+
+    private suspend fun runDownload(): Result = withDownloadCancellation(::cancelActiveWork) {
         try {
             executeWork()
         } catch (cancelled: CancellationException) {
