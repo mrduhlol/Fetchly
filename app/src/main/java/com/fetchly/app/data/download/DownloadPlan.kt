@@ -6,6 +6,10 @@ import com.fetchly.app.domain.model.QualityOption
 
 /** Choices shared by queueing and publishing must describe the selected output. */
 internal object DownloadPlan {
+    fun retainPartial(status: com.fetchly.app.domain.model.DownloadStatus?, directResume: Boolean): Boolean =
+        status != null && (directResume || status == com.fetchly.app.domain.model.DownloadStatus.PAUSED ||
+            status == com.fetchly.app.domain.model.DownloadStatus.QUEUED)
+
     fun mediaType(kind: QualityKind, source: MediaType): MediaType = when (kind) {
         QualityKind.AUDIO -> MediaType.AUDIO
         QualityKind.VIDEO -> MediaType.VIDEO
