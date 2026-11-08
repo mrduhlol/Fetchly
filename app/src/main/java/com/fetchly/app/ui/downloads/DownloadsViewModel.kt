@@ -37,7 +37,7 @@ data class ActiveDownload(
 
     /** Transfer percentages never describe merging, verification, or saving. */
     val bytes: Long get() = if (entry.status == DownloadStatus.PAUSED || work?.finished != false)
-        entry.progressBytes else maxOf(entry.progressBytes, work.bytes)
+        entry.progressBytes else work.bytes.takeIf { it > 0 } ?: entry.progressBytes
     val total: Long get() = work?.total?.takeIf { it > 0 } ?: entry.progressTotal
     val percent: Int?
         get() = if (total > 0 && (entry.status == DownloadStatus.PAUSED ||
