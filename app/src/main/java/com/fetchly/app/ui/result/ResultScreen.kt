@@ -10,6 +10,7 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -45,7 +46,18 @@ fun ResultScreen(
         }
     }
     var confirmSilent by remember { mutableStateOf(false) }
+    var formatMenuExpanded by remember { mutableStateOf(false) }
     val media = state.media
+    val availableVideoFormats = state.visibleOptions.map { it.container.lowercase() }.distinct()
+    val defaultVideoFormat = listOf("mp4", "mkv").firstOrNull { it in availableVideoFormats }
+    var selectedVideoFormat by remember(media, defaultVideoFormat) { mutableStateOf(defaultVideoFormat) }
+    LaunchedEffect(media, state.activeKind, defaultVideoFormat) {
+        if (state.activeKind == QualityKind.VIDEO && defaultVideoFormat != null &&
+            state.selected?.container?.equals(selectedVideoFormat, ignoreCase = true) != true) {
+            state.visibleOptions.firstOrNull { it.container.equals(defaultVideoFormat, ignoreCase = true) }
+                ?.let { viewModel.select(it.id) }
+        }
+    }
     if (confirmSilent) {
         AlertDialog(
             onDismissRequest = { confirmSilent = false },
@@ -69,19 +81,14 @@ fun ResultScreen(
                     item {
                         Text("Fetch media", style = MaterialTheme.typography.headlineMedium)
                         Spacer(Modifier.height(16.dp))
-                        Surface(shape = MaterialTheme.shapes.medium,
-                            border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline),
-                            color = MaterialTheme.colorScheme.surfaceContainerLow) {
-                            Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Thumbnail(media, Modifier.width(96.dp).height(80.dp))
-                                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Text(media.title, style = MaterialTheme.typography.titleMedium, maxLines = 3,
-                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-                                    PlatformBadge(media.platform)
-                                    if (factsFor(media).isNotBlank()) Text(factsFor(media),
-                                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Thumbnail(media, Modifier.fillMaxWidth().aspectRatio(16f / 9f))
+                            Text(media.title, style = MaterialTheme.typography.titleLarge, maxLines = 3,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                PlatformBadge(media.platform)
+                                if (factsFor(media).isNotBlank()) Text(factsFor(media),
+                                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                         Spacer(Modifier.height(24.dp))
@@ -103,6 +110,27 @@ fun ResultScreen(
                     }
                     if (media.options.isNotEmpty()) {
                         item {
+                            if (state.activeKind == QualityKind.VIDEO) {
+                                val formatOptions = availableVideoFormats
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                                    Box {
+                                        TextButton(onClick = { formatMenuExpanded = true }, enabled = !state.enqueuing) {
+                                            Text((selectedVideoFormat ?: "Available format").uppercase())
+                                            Icon(Icons.Filled.ExpandMore, null)
+                                        }
+                                        DropdownMenu(expanded = formatMenuExpanded, onDismissRequest = { formatMenuExpanded = false }) {
+                                            formatOptions.forEach { format ->
+                                                DropdownMenuItem(text = { Text(format.uppercase()) }, onClick = {
+                                                    selectedVideoFormat = format
+                                                    formatMenuExpanded = false
+                                                    state.visibleOptions.firstOrNull { it.container.equals(format, ignoreCase = true) }
+                                                        ?.let { viewModel.select(it.id) }
+                                                })
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                             FlowRow(
                                 modifier = Modifier.fillMaxWidth().selectableGroup(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -123,7 +151,9 @@ fun ResultScreen(
                                 }
                             }
                         }
-                        items(state.visibleOptions, key = { it.id }) { option ->
+                        items(if (state.activeKind == QualityKind.VIDEO && selectedVideoFormat != null) {
+                            state.visibleOptions.filter { it.container.equals(selectedVideoFormat, true) }
+                        } else state.visibleOptions, key = { it.id }) { option ->
                             QualityRow(option, option.id == state.selectedId, { viewModel.select(option.id) }, enabled = !state.enqueuing)
                         }
                     }
@@ -132,7 +162,7 @@ fun ResultScreen(
                     Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         state.error?.let { StatusCard(it, isError = true) }
                         Text(
-                            state.selected?.let { "${it.label} · ${it.container.uppercase()} · ${it.audioDescription} · ${FormatSize.formatApprox(it.sizeBytes) ?: "Size unknown"}" }
+                            state.selected?.let { "${it.label} · ${it.container.uppercase()} · ${FormatSize.formatApprox(it.sizeBytes) ?: "Size unknown"}" }
                                 ?: "Select a format to continue",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
