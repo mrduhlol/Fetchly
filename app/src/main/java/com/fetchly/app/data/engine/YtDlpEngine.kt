@@ -42,6 +42,11 @@ class YtDlpEngine(
         runCatching { module().callAttr("version").toString() }.getOrDefault("missing")
     }
 
+    suspend fun warmUp() = withContext(io) {
+        runCatching { module().callAttr("warmup") }
+        Unit
+    }
+
     override suspend fun extract(url: String): String = withContext(io) {
         runCatching {
             module().callAttr("extract", url).toString()
