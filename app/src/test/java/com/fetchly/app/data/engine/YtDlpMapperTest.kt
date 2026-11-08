@@ -57,12 +57,12 @@ class YtDlpMapperTest {
             fmt("aac", ext = "m4a", acodec = "aac", abr = 128.0),
             fmt("opus", ext = "webm", acodec = "opus", abr = 160.0),
         ))
-        assertEquals(listOf("v720", "v720-webm", "audio", "audio-webm"), info.options.map { it.id })
+        assertEquals(listOf("v720", "v720-webm", "audio-mp3-96", "audio-mp3-128", "audio-mp3-256", "audio-mp3-320"), info.options.map { it.id })
         val webm = info.options.first { it.id == "v720-webm" }
         assertEquals("webm", webm.container)
         assertFalse(webm.needsMerge)
         assertEquals(listOf("webm"), webm.streams.map { it.formatId })
-        assertEquals("opus", info.options.first { it.id == "audio-webm" }.streams.single().formatId)
+        assertEquals("aac", info.options.first { it.id == "audio-mp3-128" }.streams.single().formatId)
     }
 
     @Test
@@ -121,7 +121,7 @@ class YtDlpMapperTest {
             )
         )
         assertEquals(MediaType.VIDEO, info.mediaType)
-        assertEquals(listOf("v1080", "v1080-mkv", "audio", "audio-webm"), info.options.map { it.id })
+        assertEquals(listOf("v1080", "v1080-mkv", "audio-mp3-96", "audio-mp3-128", "audio-mp3-256", "audio-mp3-320"), info.options.map { it.id })
 
         val video = info.options[0]
         assertEquals("1080p", video.label)
@@ -131,13 +131,13 @@ class YtDlpMapperTest {
         assertEquals(listOf("137", "140"), video.streams.map { it.formatId })
         assertEquals(80_911_999L + 3_449_447L, video.sizeBytes)
 
-        val audio = info.options.first { it.id == "audio" }
-        assertEquals("Audio", audio.label)
+        val audio = info.options.first { it.id == "audio-mp3-128" }
+        assertEquals("128 kb/s", audio.label)
         assertEquals(QualityKind.AUDIO, audio.kind)
-        assertEquals("m4a", audio.container)
-        assertFalse(audio.needsMerge)
+        assertEquals("mp3", audio.container)
+        assertTrue(audio.needsMerge)
         assertEquals("140", audio.streams.single().formatId)
-        assertEquals(3_449_447L, audio.sizeBytes)
+        assertEquals(3_408_000L, audio.sizeBytes)
     }
 
     @Test
@@ -151,8 +151,8 @@ class YtDlpMapperTest {
         val video = info.options.first { it.id == "v1080" }
         assertEquals("mkv", video.container)
         assertEquals(listOf("248", "251"), video.streams.map { it.formatId })
-        val audio = info.options.first { it.id == "audio" }
-        assertEquals("webm", audio.container)
+        val audio = info.options.first { it.id == "audio-mp3-128" }
+        assertEquals("mp3", audio.container)
     }
 
     @Test
@@ -267,7 +267,7 @@ class YtDlpMapperTest {
         assertTrue(video.needsMerge)
         assertEquals(80_000_000L + 3_400_000L, video.sizeBytes)
         // the standalone audio option rides along, as with heighted videos
-        assertTrue(info.options.any { it.id == "audio" })
+        assertTrue(info.options.any { it.id == "audio-mp3-128" })
     }
 
     @Test
@@ -306,7 +306,7 @@ class YtDlpMapperTest {
             listOf("v2160", "v1440", "v1080", "v1080-mkv", "v720", "v720-mkv", "v480", "v480-mkv", "v360", "v360-mkv", "v240", "v240-mkv", "v144", "v144-mkv"),
             videoIds,
         )
-        assertEquals(16, info.options.size) // 14 real video/container choices + 2 audio containers
+        assertEquals(18, info.options.size) // 14 video choices + four MP3 bitrates
 
         val v2160 = info.options.first { it.id == "v2160" }
         assertEquals("2160p", v2160.label)
@@ -320,9 +320,9 @@ class YtDlpMapperTest {
         assertEquals("137", v1080.streams.first().formatId)
         assertEquals(80_911_999L + 3_449_447L, v1080.sizeBytes)
 
-        val audio = info.options.first { it.id == "audio" }
-        assertEquals("m4a", audio.container)
+        val audio = info.options.first { it.id == "audio-mp3-128" }
+        assertEquals("mp3", audio.container)
         assertEquals("140", audio.streams.single().formatId)
-        assertEquals(3_449_447L, audio.sizeBytes)
+        assertEquals(3_408_000L, audio.sizeBytes)
     }
 }
