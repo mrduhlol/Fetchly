@@ -20,6 +20,44 @@ class BridgeTests(unittest.TestCase):
             params = engine.YoutubeDL.call_args.args[0]
         return result, params
 
+    def test_size_estimate_uses_reported_bitrate_and_duration(self):
+        result = bridge._clean_format({'ext': 'mp4', 'tbr': 1200}, 60)
+        self.assertEqual(9_000_000, result['filesize_approx'])
+        result = bridge._clean_format({'ext': 'mp4', 'tbr': 1200, 'filesize': 1234}, 60)
+        self.assertEqual(1234, result['filesize'])
+        self.assertIsNone(result['filesize_approx'])
+
+    def test_x_photo_attachments_use_original_urls_and_ignore_other_hosts(self):
+        photos = bridge._x_photos({'full_text': 'Photos', 'extended_entities': {'media': [
+            {'type': 'photo', 'media_url_https': 'https://pbs.twimg.com/media/a.jpg'},
+            {'type': 'photo', 'media_url_https': 'https://example.com/a.jpg'},
+            {'type': 'video', 'media_url_https': 'https://pbs.twimg.com/media/b.jpg'},
+        ]}})
+        self.assertEqual(1, len(photos))
+        self.assertEqual('https://pbs.twimg.com/media/a.jpg?name=orig', photos[0]['formats'][0]['url'])
+        self.assertEqual('direct', photos[0]['formats'][0]['format_id'])
+
+    def test_x_photo_only_post_still_provides_bulk_entries(self):
+        with patch.object(bridge, 'yt_dlp') as engine:
+            downloader = engine.YoutubeDL.return_value.__enter__.return_value
+            downloader.extract_info.side_effect = Exception('No video could be found in this tweet')
+            downloader._fetchly_x_status = {'extended_entities': {'media': [
+                {'type': 'photo', 'media_url_https': 'https://pbs.twimg.com/media/a.jpg'},
+                {'type': 'photo', 'media_url_https': 'https://pbs.twimg.com/media/b.png'},
+            ]}}
+            result = json.loads(bridge.extract('https://x.com/person/status/123'))
+        self.assertTrue(result['ok'])
+        self.assertEqual(2, len(result['entries']))
+        self.assertEqual('jpg', result['formats'][0]['ext'])
+
+    def test_x_bulk_video_download_selects_its_own_playlist_item(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(bridge, 'yt_dlp') as engine:
+            bridge.download('https://x.com/person/status/123', 'x-entry-2::hd', directory, 'item', None)
+            params = engine.YoutubeDL.call_args.args[0]
+        self.assertEqual('2', params['playlist_items'])
+        self.assertEqual('hd', params['format'])
+        self.assertFalse(params['noplaylist'])
+
     def test_single_url_extractor_produces_a_download_option(self):
         result, _ = self.extract({'title': 'A pin', 'url': 'https://cdn.example/a.jpg', 'ext': 'jpg'})
         self.assertTrue(result['ok'])
