@@ -1,5 +1,8 @@
 package com.fetchly.app.data.db
 
+import androidx.room.ColumnInfo
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.room.Database
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -36,10 +39,21 @@ data class DownloadEntity(
     val outputPath: String?,
     val createdAt: Long,
     val updatedAt: Long,
+    @ColumnInfo(defaultValue = "0") val progressBytes: Long = 0L,
+    @ColumnInfo(defaultValue = "0") val progressTotal: Long = 0L,
 )
 
 /** Fresh installs only — history never migrates from the old app. */
-@Database(entities = [DownloadEntity::class], version = 1, exportSchema = false)
+@Database(entities = [DownloadEntity::class], version = 2, exportSchema = false)
 abstract class FetchlyDatabase : RoomDatabase() {
     abstract fun historyDao(): HistoryDao
+
+    companion object {
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE downloads ADD COLUMN progressBytes INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE downloads ADD COLUMN progressTotal INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+    }
 }
