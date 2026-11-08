@@ -129,7 +129,7 @@ fun DownloadsScreen(viewModel: DownloadsViewModel, onBack: () -> Unit, initialNo
             if (!libraryOnly && state.active.isNotEmpty()) {
                 item { SectionHeader("Downloading (${state.active.size})", horizontalPadding = 0.dp) }
                 items(state.active, key = { it.entry.id }) { active ->
-                    ActiveCard(active = active, enabled = active.entry.id !in busy, onCancel = { viewModel.cancel(active.entry.id) })
+                    ActiveCard(active = active, enabled = active.entry.id !in busy, onCancel = { viewModel.cancel(active.entry.id) }, onPause = { viewModel.pause(active.entry.id) })
                     Spacer(Modifier.height(8.dp))
                 }
             }
@@ -247,7 +247,7 @@ private fun LibraryCategories(history: List<HistoryEntry>, selected: LibraryFilt
 }
 
 @Composable
-private fun ActiveCard(active: ActiveDownload, enabled: Boolean, onCancel: () -> Unit) {
+private fun ActiveCard(active: ActiveDownload, enabled: Boolean, onCancel: () -> Unit, onPause: () -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
@@ -269,6 +269,7 @@ private fun ActiveCard(active: ActiveDownload, enabled: Boolean, onCancel: () ->
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+                TextButton(onClick = onPause, enabled = enabled) { Text("Pause") }
                 IconButton(onClick = onCancel, enabled = enabled) {
                     Icon(Icons.Filled.Close, contentDescription = "Cancel this download")
                 }
@@ -334,8 +335,8 @@ private fun HistoryRow(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            if (entry.status == DownloadStatus.FAILED || entry.status == DownloadStatus.CANCELLED) {
-                TextButton(onClick = onRetry, enabled = enabled) { Text("Retry") }
+            if (entry.status == DownloadStatus.FAILED || entry.status == DownloadStatus.CANCELLED || entry.status == DownloadStatus.PAUSED) {
+                TextButton(onClick = onRetry, enabled = enabled) { Text(if (entry.status == DownloadStatus.PAUSED) "Resume" else "Retry") }
             } else if (entry.status == DownloadStatus.COMPLETED) {
                 TextButton(onClick = onOpen) { Text("Open file") }
             }
@@ -371,6 +372,7 @@ private fun subtitleFor(entry: HistoryEntry): String {
         ).joinToString(" · ")
 
         DownloadStatus.CANCELLED -> "Cancelled · $whenText"
+        DownloadStatus.PAUSED -> "Paused · $whenText"
 
         else -> whenText
     }
