@@ -73,7 +73,7 @@ fun HomeScreen(
             modifier = Modifier.matchParentSize(),
             contentScale = ContentScale.FillBounds,
         )
-        Box(Modifier.matchParentSize().background(MaterialTheme.colorScheme.background.copy(alpha = 0.38f)))
+        Box(Modifier.matchParentSize().background(MaterialTheme.colorScheme.background.copy(alpha = 0.304f)))
         Box(Modifier.fillMaxWidth().height(160.dp).align(Alignment.BottomCenter)
             .background(Brush.verticalGradient(listOf(footerColor.copy(alpha = 0f), footerColor))))
         Column(
