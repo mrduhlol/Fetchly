@@ -10,7 +10,6 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -117,7 +116,7 @@ fun ResultScreen(
                                     Box {
                                         TextButton(onClick = { formatMenuExpanded = true }, enabled = !state.enqueuing) {
                                             Text((selectedVideoFormat ?: "Available format").uppercase())
-                                            Icon(Icons.Filled.ExpandMore, null)
+                                            Icon(Icons.Filled.KeyboardArrowDown, null)
                                         }
                                         DropdownMenu(expanded = formatMenuExpanded, onDismissRequest = { formatMenuExpanded = false }) {
                                             formatOptions.forEach { format ->
