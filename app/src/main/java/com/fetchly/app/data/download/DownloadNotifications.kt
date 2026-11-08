@@ -125,6 +125,19 @@ object DownloadNotifications {
             (progress.downloadedBytes.toDouble() / progress.totalBytes * 100).toInt().coerceIn(0, 100)
         }
 
+    // Render Android's actual emoji once, rather than allocating it for every progress update.
+    private val moaiIcon: android.graphics.Bitmap by lazy {
+        android.graphics.Bitmap.createBitmap(128, 128, android.graphics.Bitmap.Config.ARGB_8888).also { bitmap ->
+            val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                textSize = 104f
+                textAlign = android.graphics.Paint.Align.CENTER
+                typeface = android.graphics.Typeface.DEFAULT
+            }
+            val baseline = 64f - (paint.ascent() + paint.descent()) / 2f
+            android.graphics.Canvas(bitmap).drawText("🗿", 64f, baseline, paint)
+        }
+    }
+
     private fun builder(context: Context, title: String, text: String, largeIcon: Boolean = false): NotificationCompat.Builder =
         NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_download)
@@ -133,14 +146,7 @@ object DownloadNotifications {
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
             .apply {
                 if (largeIcon) {
-                    setLargeIcon(run {
-                        val d = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.ic_large_moai)
-                        val b = android.graphics.Bitmap.createBitmap(d!!.intrinsicWidth, d.intrinsicHeight, android.graphics.Bitmap.Config.ARGB_8888)
-                        val c = android.graphics.Canvas(b)
-                        d.setBounds(0, 0, c.width, c.height)
-                        d.draw(c)
-                        b
-                    })
+                    setLargeIcon(moaiIcon)
                 }
             }
 
