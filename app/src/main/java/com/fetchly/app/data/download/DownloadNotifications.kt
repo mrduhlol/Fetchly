@@ -55,12 +55,10 @@ object DownloadNotifications {
         title: String,
         stage: String,
         progress: DownloadProgress,
-        thumbnail: android.graphics.Bitmap? = null,
     ): Notification {
         val display = DownloadStages.progressFor(stage, progress)
         val knownTotal = display.totalBytes > 0
-        return builder(context, title, progressText(stage, display), largeIcon = false)
-            .apply { thumbnail?.let { setLargeIcon(it) } }
+        return builder(context, title, progressText(stage, display))
             .setSmallIcon(R.drawable.ic_stat_moai_emoji)
             .setOngoing(true)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
@@ -84,11 +82,9 @@ object DownloadNotifications {
         text: String,
         uri: String?,
         mime: String?,
-        thumbnail: android.graphics.Bitmap? = null,
     ): Notification =
-        builder(context, title, text, largeIcon = false)
+        builder(context, title, text)
             .setSmallIcon(R.drawable.ic_stat_moai_emoji_done)
-            .apply { thumbnail?.let { setLargeIcon(it) } }
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .setAutoCancel(true)
             .setContentIntent(openFile(context, uri, mime))
@@ -102,7 +98,7 @@ object DownloadNotifications {
         message: String,
         retryAction: Boolean = true,
     ): Notification =
-        builder(context, title, message, largeIcon = false)
+        builder(context, title, message)
             .setCategory(NotificationCompat.CATEGORY_ERROR)
             .setAutoCancel(true)
             .setContentIntent(openApp(context))
@@ -137,41 +133,12 @@ object DownloadNotifications {
             (progress.downloadedBytes.toDouble() / progress.totalBytes * 100).toInt().coerceIn(0, 100)
         }
 
-    // Render Android's actual emoji once, rather than allocating it for every progress update.
-    private val moaiIcon: android.graphics.Bitmap by lazy {
-        android.graphics.Bitmap.createBitmap(128, 128, android.graphics.Bitmap.Config.ARGB_8888).also { bitmap ->
-            val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                textSize = 104f
-                textAlign = android.graphics.Paint.Align.CENTER
-                typeface = android.graphics.Typeface.DEFAULT
-            }
-            val baseline = 64f - (paint.ascent() + paint.descent()) / 2f
-            android.graphics.Canvas(bitmap).drawText("🗿", 64f, baseline, paint)
-        }
-    }
-
-    private val moaiDoneIcon: android.graphics.Bitmap by lazy {
-        moaiIcon.copy(android.graphics.Bitmap.Config.ARGB_8888, true).also { bitmap ->
-            val canvas = android.graphics.Canvas(bitmap)
-            val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.BLACK }
-            canvas.drawRoundRect(27f, 41f, 57f, 61f, 5f, 5f, paint)
-            canvas.drawRoundRect(64f, 41f, 94f, 61f, 5f, 5f, paint)
-            paint.strokeWidth = 5f
-            canvas.drawLine(25f, 43f, 98f, 43f, paint)
-        }
-    }
-
-    private fun builder(context: Context, title: String, text: String, largeIcon: Boolean = false): NotificationCompat.Builder =
+    private fun builder(context: Context, title: String, text: String): NotificationCompat.Builder =
         NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_download)
             .setContentTitle(title)
             .setContentText(text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
-            .apply {
-                if (largeIcon) {
-                    setLargeIcon(moaiIcon)
-                }
-            }
 
     private fun broadcast(
         context: Context,
