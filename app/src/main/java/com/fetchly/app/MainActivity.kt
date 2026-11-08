@@ -11,11 +11,6 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.res.painterResource
-import androidx.compose.foundation.layout.size
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.fetchly.app.ui.welcome.WelcomeViewModel
 import com.fetchly.app.ui.welcome.WelcomeScreen
@@ -27,6 +22,10 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.fetchly.app.ui.splash.FetchlySplash
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
@@ -53,12 +52,15 @@ class MainActivity : ComponentActivity() {
             val welcomeViewModel: WelcomeViewModel = viewModel { WelcomeViewModel(graph.settings) }
             val welcome by welcomeViewModel.state.collectAsStateWithLifecycle()
             val choice by graph.settings.theme
-                .collectAsStateWithLifecycle(initialValue = ThemeChoice.SYSTEM)
+                .collectAsStateWithLifecycle(initialValue = null)
+            var splashVisible by remember { mutableStateOf(savedInstanceState == null) }
+            val startupReady = welcome.completed != null && choice != null
             // The welcome page uses the dark Apollo presentation from the design board.
             val dark = if (welcome.completed != true) true else when (choice) {
                 ThemeChoice.SYSTEM -> isSystemInDarkTheme()
                 ThemeChoice.LIGHT -> false
                 ThemeChoice.DARK -> true
+                null -> true
             }
             // Status-bar icon lightness follows the in-app theme, not just
             // the system one.
@@ -68,20 +70,21 @@ class MainActivity : ComponentActivity() {
                     navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT) { dark },
                 )
             }
-            LaunchedEffect(welcome.completed) {
-                if (welcome.completed == true) requestNotificationPermissionIfNeeded()
+            LaunchedEffect(welcome.completed, splashVisible) {
+                if (welcome.completed == true && !splashVisible) requestNotificationPermissionIfNeeded()
             }
             FetchlyTheme(darkTheme = dark) {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    // Edge-to-edge: keep every screen clear of the status bar,
-                    // cutouts and the gesture bar.
-                    Box(modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing)) {
-                        when (welcome.completed) {
-                            null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                Image(painterResource(R.drawable.fetchly_logo), null, Modifier.size(72.dp))
+                    Box(Modifier.fillMaxSize()) {
+                        Box(modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing)) {
+                            when (welcome.completed) {
+                                null -> Unit
+                                false -> WelcomeScreen(welcome, welcomeViewModel::getStarted)
+                                true -> FetchlyNav(graph)
                             }
-                            false -> WelcomeScreen(welcome, welcomeViewModel::getStarted)
-                            true -> FetchlyNav(graph)
+                        }
+                        if (splashVisible) {
+                            FetchlySplash(ready = startupReady, onFinished = { splashVisible = false })
                         }
                     }
                 }

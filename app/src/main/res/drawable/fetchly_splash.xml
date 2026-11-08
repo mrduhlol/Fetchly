@@ -1,7 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item><shape><solid android:color="#101010" /></shape></item>
-    <item android:width="180dp" android:height="180dp" android:gravity="center">
-        <bitmap android:src="@drawable/fetchly_logo" android:gravity="fill" android:filter="true" />
-    </item>
-</layer-list>
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="#000000" />
+</shape>

@@ -1,6 +1,6 @@
 <resources>
     <style name="Theme.Fetchly" parent="Theme.Fetchly.Base">
-        <item name="android:windowSplashScreenBackground">#101010</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="android:windowSplashScreenBackground">#000000</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_empty</item>
     </style>
 </resources>
