@@ -280,7 +280,7 @@ private fun ActiveCard(active: ActiveDownload, enabled: Boolean, onCancel: () ->
                         contentDescription = if (paused) "Resume download" else "Pause download",
                         tint = if (paused) androidx.compose.ui.graphics.Color(0xFF239B56) else MaterialTheme.colorScheme.onSurface)
                 }
-                IconButton(onClick = onCancel, enabled = enabled) {
+                IconButton(onClick = onCancel, enabled = enabled && !paused) {
                     Icon(Icons.Filled.Close, contentDescription = "Cancel this download",
                         modifier = Modifier.alpha(if (paused) 0.35f else 1f))
                 }
