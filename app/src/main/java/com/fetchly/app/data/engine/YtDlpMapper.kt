@@ -117,6 +117,8 @@ object YtDlpMapper {
                 thumbnailUrl = root.str("thumbnail"),
                 mediaType = mediaType,
                 options = options,
+                width = root.intOrNull("width"),
+                height = root.intOrNull("height"),
             )
         )
     }
