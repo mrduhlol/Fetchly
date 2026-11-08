@@ -87,30 +87,13 @@ object YtDlpMapper {
         val hasDegradedFile = options.any { it.kind != QualityKind.VIDEO }
         if (bestAudio != null && (isYoutubeMusic || platform != Platform.PINTEREST) &&
             (isYoutubeMusic || videos.isNotEmpty() || !hasDegradedFile)) {
-            if (isYoutubeMusic) {
-                options += audios.filter { (it.abr ?: 0) >= 128 }
-                    .sortedWith(compareBy<StreamRef> { it.abr }.then(AUDIO_RANK))
-                    .distinctBy { it.abr }
-                    .map { audio -> audioOption(audio).copy(id = "audio-${audio.abr}kbps", label = "${audio.abr} kb/s") }
-            } else {
-                options += audios.sortedWith(AUDIO_RANK)
-                    .distinctBy { audioContainer(it.ext) to it.language }
-                    .mapIndexed { index, audio ->
-                        audioOption(audio).copy(id = if (index == 0) "audio" else "audio-${audioContainer(audio.ext)}" + (audio.language?.let { "-$it" } ?: ""))
-                    }
-                val duration = root.intOrNull("duration")?.takeIf { it > 0 }
-                for (kbps in listOf(96, 128, 256, 320)) {
-                    val size = duration?.let { (kbps * 1000L / 8) * it }
-                    options += QualityOption(
-                        id = "audio-mp3-$kbps",
-                        label = "MP3 $kbps kbps",
-                        kind = QualityKind.AUDIO,
-                        container = "mp3",
-                        streams = listOf(bestAudio),
-                        needsMerge = true,
-                        sizeBytes = size,
-                    )
-                }
+            val duration = root.intOrNull("duration")?.takeIf { it > 0 }
+            for (kbps in listOf(96, 128, 256, 320)) {
+                options += QualityOption(
+                    id = "audio-mp3-$kbps", label = "$kbps kb/s", kind = QualityKind.AUDIO,
+                    container = "mp3", streams = listOf(bestAudio), needsMerge = true,
+                    sizeBytes = duration?.let { kbps * 1000L / 8 * it },
+                )
             }
         } else if (options.isEmpty()) {
             return MapResult.Fail("yt-dlp returned no usable streams for this link.")
