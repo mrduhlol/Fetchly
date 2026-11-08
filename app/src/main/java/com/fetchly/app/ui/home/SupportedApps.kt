@@ -47,14 +47,14 @@ internal fun SupportedApps() {
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Box(
-                        modifier = Modifier.size(62.dp).scale(scale.value).rotate(tilt.value)
-                            .background(MaterialTheme.colorScheme.surfaceContainerLow, RoundedCornerShape(18.dp)),
+                        modifier = Modifier.size(62.dp).scale(scale.value).rotate(tilt.value),
                         contentAlignment = Alignment.Center,
                     ) {
                         PlatformIcon(app.platform, large = true, music = app == SupportedApp.YOUTUBE_MUSIC,
-                            modifier = Modifier.size(38.dp))
+                            modifier = Modifier.size(44.dp))
                     }
-                    Text(app.label, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+                    Text(app.label, style = MaterialTheme.typography.labelSmall, maxLines = 2,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 }
             }
         }
