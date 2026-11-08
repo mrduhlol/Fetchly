@@ -61,7 +61,7 @@ class AppGraph(context: Context) {
         appContext,
         FetchlyDatabase::class.java,
         "fetchly.db",
-    ).build()
+    ).addMigrations(FetchlyDatabase.MIGRATION_1_2).build()
 
     val history = HistoryRepository(database.historyDao())
 
