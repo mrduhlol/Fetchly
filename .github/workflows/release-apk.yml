@@ -41,15 +41,27 @@ jobs:
           FETCHLY_KEYSTORE: ${{ secrets.FETCHLY_DEBUG_KEYSTORE_BASE64 }}
         run: |
           test -n "$FETCHLY_KEYSTORE" || { echo "Missing persistent signing key" >&2; exit 1; }
-          mkdir -p ~/.android
-          printf '%s' "$FETCHLY_KEYSTORE" | base64 --decode > ~/.android/debug.keystore
-          chmod 600 ~/.android/debug.keystore
+          printf '%s' "$FETCHLY_KEYSTORE" | base64 --decode > "$RUNNER_TEMP/fetchly-signing.jks"
+          chmod 600 "$RUNNER_TEMP/fetchly-signing.jks"
+          printf 'FETCHLY_SIGNING_STORE=%s\n' "$RUNNER_TEMP/fetchly-signing.jks" >> "$GITHUB_ENV"
 
       - name: Build debug APK
         run: gradle :app:assembleDebug
 
       - name: Run unit tests
         run: gradle :app:testDebugUnitTest
+
+      - name: Verify pinned APK signing certificate
+        run: |
+          fetchly_apksigner="$ANDROID_SDK_ROOT/build-tools/35.0.0/apksigner"
+          fetchly_actual_cert=$("$fetchly_apksigner" verify --print-certs app/build/outputs/apk/debug/app-debug.apk | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+          fetchly_expected_cert=$(tr -d '[:space:]' < docs/SIGNING_CERT_SHA256)
+          test -n "$fetchly_actual_cert"
+          if [ "$fetchly_actual_cert" != "$fetchly_expected_cert" ]; then
+            echo "APK certificate does not match the pinned release identity." >&2
+            exit 1
+          fi
+          printf 'FETCHLY_SIGNING_CERT_SHA256=%s\n' "$fetchly_actual_cert" >> "$GITHUB_ENV"
 
       - name: Prepare verified release assets
         run: |
@@ -63,7 +75,7 @@ jobs:
           cp app/build/outputs/apk/debug/app-debug.apk "fetchly_${TAG}.apk"
           cp "fetchly_${TAG}.apk" fetchly.apk
           sha256sum "fetchly_${TAG}.apk" fetchly.apk > SHA256SUMS
-          printf 'Commit: %s\nVersion: %s\n' "$GITHUB_SHA" "$VER" > BUILD.txt
+          printf 'Commit: %s\nVersion: %s\nSigning certificate SHA-256: %s\n' "$GITHUB_SHA" "$VER" "$FETCHLY_SIGNING_CERT_SHA256" > BUILD.txt
 
       - name: Publish to release
         env:
