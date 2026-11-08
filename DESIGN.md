@@ -63,3 +63,8 @@ The extraction runtime caches its module handle, warms off the UI thread, and co
 ## Full-page Home wallpaper correction
 
 The owner's 2.3 feedback supersedes the vignette guidance: Home uses one full-height portrait wallpaper behind its content, with no separate footer image. Both themes have purpose-generated continuous portrait compositions. Supported platform marks have transparent backgrounds and no filled pebble tiles; monochrome brands adapt to the palette. Both launcher variants and the inherited share-sheet icon have zero artificial inset, leaving Android's launcher mask to define the outside shape.
+
+
+## Download controls in 2.3
+
+Both full and compact pickers place Video/Audio first and MP4/MKV beneath, defaulting to MP4. Output choices retain actual source streams; MP4 converts non-AAC audio while copying video. Sizes use source byte counts or clearly marked bitrate/duration estimates. X multi-media posts expose a Bulk ZIP file choice, with original photo attachments and available video entries, stored in Downloads/Fetchly. Paused rows persist and remain outside automatic queue admission until Resume. Ongoing notifications expose Pause and a monochrome Moai small icon; successful notifications switch to the sunglasses version.
