@@ -1,6 +1,7 @@
 package com.fetchly.app.ui.home
 
 import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.layout.ContentScale
 import com.fetchly.app.R
@@ -59,6 +60,13 @@ fun HomeScreen(
         if (state.batchReady) { viewModel.consumeBatchReady(); onOpenBatch() }
     }
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+        Image(
+            painterResource(if (MaterialTheme.colorScheme.background.luminance() < 0.5f)
+                R.drawable.fetchly_home_dark else R.drawable.fetchly_home_light),
+            contentDescription = null,
+            modifier = Modifier.matchParentSize(),
+            contentScale = ContentScale.FillBounds,
+        )
         Column(
             modifier = Modifier.widthIn(max = 640.dp).fillMaxSize()
                 .imePadding().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 4.dp),
@@ -123,7 +131,6 @@ fun HomeScreen(
             Spacer(Modifier.height(16.dp))
             SupportedApps()
             Spacer(Modifier.height(16.dp))
-            com.fetchly.app.ui.components.TempleArtwork(Modifier.fillMaxWidth().height(112.dp))
             Text(
                 "© mrduhlol",
                 style = MaterialTheme.typography.labelSmall,
