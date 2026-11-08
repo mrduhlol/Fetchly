@@ -15,25 +15,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.fetchly.app.BuildConfig
-import com.fetchly.app.data.engine.YtDlpEngine
 import com.fetchly.app.ui.components.ScreenTopBar
 import com.fetchly.app.ui.components.SectionHeader
 
 /**
- * Version, engine, the promises Fetchly makes, and what it honestly does not
- * do yet. The yt-dlp version is asked live so a stale bundled engine is
- * visible on-screen instead of guessed at.
+ * Version, the promises Fetchly makes, and what it honestly does not do yet.
  */
 @Composable
-fun AboutScreen(engine: YtDlpEngine, onBack: () -> Unit) {
-    val ytDlp by produceState<String?>(initialValue = null) { value = engine.engineVersion() }
-
+fun AboutScreen(engine: com.fetchly.app.data.engine.YtDlpEngine, onBack: () -> Unit) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
             ScreenTopBar("About", onBack = onBack)
@@ -52,6 +45,12 @@ fun AboutScreen(engine: YtDlpEngine, onBack: () -> Unit) {
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "© mrduhlol",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
 
                 Spacer(Modifier.height(12.dp))
@@ -59,14 +58,6 @@ fun AboutScreen(engine: YtDlpEngine, onBack: () -> Unit) {
                     Text(
                         "No account or API key is required. Link resolution, downloading and merging all " +
                             "happen on this phone.",
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
-
-                SectionHeader("Engine")
-                Card {
-                    Text(
-                        ytDlp?.let { "yt-dlp $it. Check for engine updates in Settings." } ?: "Checking the engine…",
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
