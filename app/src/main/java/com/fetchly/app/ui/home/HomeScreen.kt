@@ -71,6 +71,8 @@ fun HomeScreen(
             contentScale = ContentScale.FillBounds,
         )
         Box(Modifier.matchParentSize().background(MaterialTheme.colorScheme.background.copy(alpha = 0.38f)))
+        Box(Modifier.fillMaxWidth().height(160.dp).align(Alignment.BottomCenter)
+            .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black))))
         Column(
             modifier = Modifier.widthIn(max = 640.dp).fillMaxSize()
                 .imePadding().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 4.dp),
