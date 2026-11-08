@@ -56,6 +56,27 @@ object YtDlpMapper {
             ?: formats.filter { it.acodec != "none" && it.acodec != "unknown" }.sortedWith(AUDIO_RANK).firstOrNull()
 
         val options = mutableListOf<QualityOption>()
+        if (platform == Platform.TWITTER) {
+            val entries = root.optJSONArray("entries")
+            if (entries != null && entries.length() > 1) {
+                val chosen = entries.mapIndexedNotNull { index, item ->
+                    val entry = item as? JSONObject ?: return@mapNotNull null
+                    val entryFormats = readFormats(entry)
+                    val image = entryFormats.filter { it.ext in IMAGE_EXTS && it.vcodec == "none" && it.acodec == "none" }
+                        .sortedWith(compareByDescending<StreamRef> { it.sizeBytes ?: 0L }).firstOrNull()
+                    val video = entryFormats.filter { it.vcodec != "none" }
+                        .sortedWith(VIDEO_RANK).firstOrNull()
+                    (image ?: video)?.let { it.copy(formatId = "x-entry-${index + 1}::${it.formatId}") }
+                }
+                if (chosen.size > 1) {
+                    val size = chosen.mapNotNull { it.sizeBytes }.takeIf { it.size == chosen.size }?.sum()
+                    options += QualityOption(
+                        id = "bulk-zip", label = "Bulk ZIP", kind = QualityKind.FILE,
+                        container = "zip", streams = chosen, needsMerge = false, sizeBytes = size,
+                    )
+                }
+            }
+        }
         val bestByHeight = if (isYoutubeMusic) emptyMap() else videos.groupBy { it.height!! }
         for ((height, group) in bestByHeight.entries.sortedByDescending { it.key }) {
             options += videoOptions(group, bestAudio, "v$height", "${height}p")
