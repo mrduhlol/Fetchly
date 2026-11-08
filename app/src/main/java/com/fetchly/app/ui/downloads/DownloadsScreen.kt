@@ -47,6 +47,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.foundation.Image
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
@@ -119,7 +121,9 @@ fun DownloadsScreen(viewModel: DownloadsViewModel, onBack: () -> Unit, initialNo
                 subtitle = if (libraryOnly) "Saved videos, audio and images appear here after a download completes." else "Download a link to see its progress and saved file here.",
                 modifier = Modifier.weight(1f),
             )
-            com.fetchly.app.ui.components.TempleArtwork(Modifier.fillMaxWidth().height(140.dp))
+            if (libraryOnly) Image(painterResource(R.drawable.fetchly_library), contentDescription = null,
+                modifier = Modifier.fillMaxWidth().height(180.dp), contentScale = ContentScale.Fit)
+            else com.fetchly.app.ui.components.TempleArtwork(Modifier.fillMaxWidth().height(140.dp))
             return@Column
         }
 
