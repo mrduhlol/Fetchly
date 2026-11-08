@@ -10,9 +10,9 @@ Paste a public media link, pick a quality, save it to your device.
 
 <p><a href="https://github.com/mrduhlol/Fetchly/releases/latest/download/fetchly.apk"><img src="docs/download-apk.svg" width="220" alt="Download APK for Android" /></a></p>
 
-<sub>v2.4.1 · Android 10 (API 29)+</sub>
+<sub>v2.4.2 · Android 10 (API 29)+</sub>
 
-**One-time reinstall for v2.4.1:** the published v2.3 APK used a different signing certificate. Uninstall it before installing v2.4.1. Uninstalling clears settings and in-app history; back up anything needed first. Version 2.4 pins and verifies the persistent signing key for future updates. [Release notes](docs/release-notes/v2.4.1.md) explain the correction.
+**One-time reinstall from v2.3:** the published v2.3 APK used a different signing certificate. Uninstall it before installing the latest version. Uninstalling clears settings and in-app history; back up anything needed first. Version 2.4 pins and verifies the persistent signing key for future updates. [Release notes](docs/release-notes/v2.4.2.md) explain the correction.
 
 </div>
 
