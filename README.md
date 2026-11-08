@@ -10,9 +10,9 @@ Paste a public media link, pick a quality, save it to your device.
 
 <p><a href="https://github.com/mrduhlol/Fetchly/releases/latest/download/fetchly.apk"><img src="docs/download-apk.svg" width="220" alt="Download APK for Android" /></a></p>
 
-<sub>v2.2 · Android 10 (API 29)+</sub>
+<sub>v2.3 · Android 10 (API 29)+</sub>
 
-Upgrading from the old 2.0 APK requires uninstalling it first because its signing key differs. This clears app settings and in-app history. Updates from the published 2.1 APK keep its signing key and install in place. [Release notes](docs/release-notes/v2.2.md) cover this update.
+Upgrading from the old 2.0 APK requires uninstalling it first because its signing key differs. This clears app settings and in-app history. Updates from the published 2.1 APK keep its signing key and install in place. [Release notes](docs/release-notes/v2.3.md) cover this update.
 
 </div>
 
