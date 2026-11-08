@@ -20,7 +20,7 @@ fun TempleArtwork(modifier: Modifier = Modifier) {
     val artwork = if (surface.luminance() < 0.5f) R.drawable.fetchly_temple_dark else R.drawable.fetchly_temple_light
     Box(modifier) {
         Image(painterResource(artwork), null,
-            Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+            Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(
             0f to surface,
             0.02f to surface,
