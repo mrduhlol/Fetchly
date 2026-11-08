@@ -1,0 +1,21 @@
+name: Audit APK signer
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Report persistent signing certificate fingerprint
+        env:
+          FETCHLY_KEYSTORE: ${{ secrets.FETCHLY_DEBUG_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$FETCHLY_KEYSTORE"
+          printf '%s' "$FETCHLY_KEYSTORE" | base64 --decode > "$RUNNER_TEMP/fetchly-signing.jks"
+          chmod 600 "$RUNNER_TEMP/fetchly-signing.jks"
+          keytool -exportcert -alias androiddebugkey -keystore "$RUNNER_TEMP/fetchly-signing.jks" -storepass android | sha256sum
