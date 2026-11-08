@@ -296,6 +296,18 @@ class YtDlpMapperTest {
     }
 
     @Test
+    fun `unranked unknown HLS audio does not hide sizes of known original audio`() {
+        val video = fmt("v", vcodec = "avc1", height = 1080, filesize = 9000000)
+        val unknown = fmt("hls", ext = "mp4", acodec = "unknown")
+        val known = fmt("aac", ext = "m4a", acodec = "mp4a", filesize = 1000000)
+            .dropLast(1) + ",\"language_preference\":-1}"
+        val info = mapped(ok(video, unknown, known))
+        val selectedVideo = info.options.first { it.kind == QualityKind.VIDEO }
+        assertEquals("aac", selectedVideo.streams.last().formatId)
+        assertEquals(10000000L, selectedVideo.sizeBytes)
+    }
+
+    @Test
     fun `signin failure keeps the raw yt dlp message`() {
         val raw = "ERROR: [youtube] test123: Sign in to confirm you're not a bot."
         val result = YtDlpMapper.map(fail(raw), sourceUrl, platform)
