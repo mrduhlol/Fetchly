@@ -41,9 +41,8 @@ def _base_params(**overrides):
         "quiet": True,
         "no_warnings": True,
         "noplaylist": True,
-        # A shared post may contain several videos. Preview and download the
-        # same first item, rather than fetching every item into one filename.
-        "playlist_items": "1",
+        # X shared posts may contain several independently downloadable items.
+        # Other extractors keep the established first-item behavior.
         "noprogress": True,
         "socket_timeout": 20,
         "retries": 3,
@@ -68,9 +67,16 @@ def extract(url):
     if yt_dlp is None:
         return json.dumps({"ok": False, "error": "yt-dlp is not installed in this build."})
     try:
-        with yt_dlp.YoutubeDL(_base_params(skip_download=True)) as ydl:
+        params = _base_params(skip_download=True)
+        if _is_x_url(url):
+            params["noplaylist"] = False
+        else:
+            params["playlist_items"] = "1"
+        with yt_dlp.YoutubeDL(params) as ydl:
             _register_extractors(ydl)
             info = ydl.extract_info(url, download=False)
+        multi_entries = _entries(info) if _is_x_url(url) else None
+        is_multi = bool(multi_entries)
         info = _first_entry(info)
         if not info:
             return json.dumps({"ok": False, "error": "No media found at this link."})
@@ -82,7 +88,8 @@ def extract(url):
             "thumbnail": _thumbnail(info),
             "width": info.get("width"),
             "height": info.get("height"),
-            "formats": [_clean_format(f) for f in _formats(info)],
+            "formats": [_clean_format(f, info.get("duration")) for f in _formats(info)],
+            **({"entries": [_clean_entry(entry) for entry in multi_entries]} if is_multi else {}),
         })
     except Exception as exc:
         return json.dumps({"ok": False, "error": _error_text(exc)})
@@ -128,8 +135,16 @@ def download(url, format_id, dest_dir, prefix, hook):
                     float(d.get("speed") or 0.0),
                 )
 
+    playlist_item = None
+    selected_format = format_id or "best"
+    if selected_format.startswith("x-entry-") and "::" in selected_format:
+        selector, selected_format = selected_format.split("::", 1)
+        try:
+            playlist_item = int(selector[len("x-entry-"):])
+        except ValueError:
+            playlist_item = None
     params = _base_params(
-        format=format_id or "best",
+        format=selected_format,
         outtmpl=os.path.join(dest_dir, prefix + ".%(ext)s"),
         progress_hooks=[progress],
         # Native HLS/DASH fragments only; plain HTTP is unaffected. Bound
@@ -137,6 +152,9 @@ def download(url, format_id, dest_dir, prefix, hook):
         concurrent_fragment_downloads=4,
         skip_unavailable_fragments=False,
     )
+    if playlist_item is not None and _is_x_url(url):
+        params["noplaylist"] = False
+        params["playlist_items"] = str(playlist_item)
     try:
         with yt_dlp.YoutubeDL(params) as ydl:
             _register_extractors(ydl)
@@ -190,6 +208,21 @@ def _first_entry(info):
     return info
 
 
+def _is_x_url(url):
+    host = (urlsplit(url).hostname or "").lower()
+    return host == "x.com" or host.endswith(".x.com") or host == "twitter.com" or host.endswith(".twitter.com")
+
+
+def _entries(info):
+    if isinstance(info, dict) and info.get("_type") in ("playlist", "multi_video"):
+        return [entry for entry in info.get("entries") or [] if entry]
+    return []
+
+
+def _clean_entry(info):
+    return {"formats": [_clean_format(f, info.get("duration")) for f in _formats(info)]}
+
+
 def _formats(info):
     """Single-media extractors can return a URL directly, without formats."""
     formats = info.get("formats") or []
@@ -198,7 +231,7 @@ def _formats(info):
     return formats
 
 
-def _clean_format(f):
+def _clean_format(f, duration=None):
     ext = str(f.get("ext") or "").lower()
     is_image = ext in ("jpg", "jpeg", "png", "webp", "gif")
     is_audio = ext in ("mp3", "m4a", "aac", "ogg", "opus", "wav", "flac")
@@ -208,6 +241,18 @@ def _clean_format(f):
     video_codec = f.get("vcodec") or (
         "none" if is_image or is_audio else "unknown" if is_video or f.get("height") else "none")
     audio_codec = f.get("acodec") or ("none" if is_image else "unknown")
+    filesize = f.get("filesize")
+    filesize_approx = f.get("filesize_approx")
+    if filesize is None and filesize_approx is None and duration:
+        bitrate = f.get("tbr")
+        if bitrate is None:
+            parts = [f.get("vbr"), f.get("abr")]
+            bitrate = sum(x for x in parts if x is not None) if any(x is not None for x in parts) else None
+        try:
+            if bitrate is not None and float(bitrate) > 0:
+                filesize_approx = int(float(duration) * float(bitrate) * 1000 / 8)
+        except (TypeError, ValueError, OverflowError):
+            pass
     return {
         "id": str(f.get("format_id") or ""),
         "url": str(f.get("url") or ""),
@@ -216,8 +261,8 @@ def _clean_format(f):
         "acodec": str(audio_codec),
         "height": f.get("height"),
         "abr": f.get("abr"),
-        "filesize": f.get("filesize"),
-        "filesize_approx": f.get("filesize_approx"),
+        "filesize": filesize,
+        "filesize_approx": filesize_approx,
         "protocol": str(f.get("protocol") or ""),
         "language": f.get("language"),
         "language_preference": f.get("language_preference"),
