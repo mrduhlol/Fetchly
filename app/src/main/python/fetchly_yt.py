@@ -222,7 +222,17 @@ def download(url, format_id, dest_dir, prefix, hook):
                 selected = entries[item_index] if entries and 0 <= item_index < len(entries) else _first_entry(raw)
                 # Let yt-dlp choose the exact format using already-resolved URLs,
                 # headers and fragment metadata, rather than resolving the page again.
-                ydl.process_ie_result(copy.deepcopy(selected), download=True)
+                try:
+                    ydl.process_ie_result(copy.deepcopy(selected), download=True)
+                except FetchlyCancelled:
+                    raise
+                except Exception:
+                    if hook is not None and hook.shouldCancel():
+                        raise FetchlyCancelled()
+                    # Expired signed URLs or guest cookies require a fresh source
+                    # resolution. Successful cached transfers never take this path.
+                    _forget_media(url)
+                    ydl.download([url])
             else:
                 ydl.download([url])
         path = finished["path"] or _find_output(dest_dir, prefix)
