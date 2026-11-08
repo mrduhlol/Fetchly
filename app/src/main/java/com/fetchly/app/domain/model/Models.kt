@@ -57,6 +57,8 @@ data class MediaInfo(
     val thumbnailUrl: String?,
     val mediaType: MediaType,
     val options: List<QualityOption>,
+    val width: Int? = null,
+    val height: Int? = null,
 )
 
 enum class DownloadStatus { QUEUED, RUNNING, COMPLETED, FAILED, CANCELLED }
