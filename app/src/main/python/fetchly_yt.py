@@ -17,7 +17,7 @@ Contract (see YtDlpMapper.kt for the consumer):
 import json
 import os
 import time
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, parse_qs
 
 try:
     import yt_dlp
@@ -160,6 +160,8 @@ def download(url, format_id, dest_dir, prefix, hook):
         # concurrency for mobile memory, sockets, and CDN rate limits.
         concurrent_fragment_downloads=4,
         skip_unavailable_fragments=False,
+        continuedl=True,
+        nopart=False,
     )
     if playlist_item is not None and _is_x_url(url):
         params["noplaylist"] = False
@@ -178,9 +180,11 @@ def download(url, format_id, dest_dir, prefix, hook):
         return json.dumps({"ok": True, "path": os.path.abspath(path),
                            "filename": os.path.basename(path)})
     except FetchlyCancelled:
-        _cleanup_partials(dest_dir, prefix)
+        # Pause keeps .part and .ytdl checkpoints; explicit Cancel cleans them in Kotlin.
         return json.dumps({"ok": False, "cancelled": True, "error": "Cancelled."})
     except Exception as exc:
+        if hook is not None and hook.shouldCancel():
+            return json.dumps({"ok": False, "cancelled": True, "error": "Paused or cancelled."})
         _cleanup_partials(dest_dir, prefix)
         return json.dumps({"ok": False, "cancelled": False, "error": _error_text(exc)})
 
@@ -285,6 +289,13 @@ def _clean_format(f, duration=None):
         "none" if is_image or is_audio else "unknown" if is_video or f.get("height") else "none")
     audio_codec = f.get("acodec") or ("none" if is_image else "unknown")
     filesize = f.get("filesize")
+    if filesize is None:
+        try:
+            length = parse_qs(urlsplit(f.get("url") or "").query).get("clen", [None])[0]
+            if length is not None and int(length) > 0:
+                filesize = int(length)
+        except (ValueError, TypeError):
+            pass
     filesize_approx = f.get("filesize_approx")
     if filesize is None and filesize_approx is None and duration:
         bitrate = f.get("tbr")
