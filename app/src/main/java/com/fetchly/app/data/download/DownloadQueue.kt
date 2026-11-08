@@ -89,10 +89,17 @@ class DownloadQueue(
         return true
     }
 
+    override suspend fun pause(id: String): Boolean {
+        if (!history.pauseIfActive(id, System.currentTimeMillis())) return false
+        withContext(Dispatchers.IO) { workManager.cancelUniqueWork(HistoryRepository.workNameOf(id)).result.get() }
+        pump()
+        return true
+    }
+
     /** FAILED and CANCELLED rows can resume validated direct files; anything else is ignored. */
     override suspend fun retry(id: String): Boolean {
         val entry = history.getById(id) ?: return false
-        if (entry.status != DownloadStatus.FAILED && entry.status != DownloadStatus.CANCELLED) {
+        if (entry.status != DownloadStatus.FAILED && entry.status != DownloadStatus.CANCELLED && entry.status != DownloadStatus.PAUSED) {
             if (entry.status == DownloadStatus.COMPLETED) return false
             val terminal = withContext(Dispatchers.IO) {
                 val infos = workManager.getWorkInfosForUniqueWork(HistoryRepository.workNameOf(id)).get()
