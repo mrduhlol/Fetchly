@@ -19,7 +19,8 @@ data class BatchState(val input: String = "", val rows: List<BatchRow> = emptyLi
     val adding: Boolean = false, val message: String? = null)
 class BatchViewModel(private val resolver: ResolveUrlUseCase, session: ResolveSession,
     private val commands: DownloadCommands) : ViewModel() {
-    private val mutable = MutableStateFlow(BatchState(input = session.batchInput.value.orEmpty()))
+    private val requestedKind = session.batchKind
+    private val mutable = MutableStateFlow(BatchState(input = session.batchInput.value.orEmpty(), quality = if (requestedKind == QualityKind.AUDIO) BatchQuality.AUDIO else BatchQuality.BEST))
     val state = mutable.asStateFlow()
     private var job: Job? = null
     private var generation = 0
@@ -52,7 +53,8 @@ class BatchViewModel(private val resolver: ResolveUrlUseCase, session: ResolveSe
                     if (token != generation) return@launch
                     row(url) { r -> when (result) {
                         is ResolveOutcome.Success -> r.copy(media = result.info, name = result.info.title,
-                            option = state.value.quality.choose(result.info), message = "Ready")
+                            option = state.value.quality.choose(result.info),
+                            message = if (state.value.quality.choose(result.info) == null) "No matching media available" else "Ready")
                         is ResolveOutcome.Failed -> r.copy(message = result.message)
                     } }
                 }

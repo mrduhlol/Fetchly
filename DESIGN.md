@@ -43,3 +43,9 @@ Architectural artwork fades to the exact theme background along all four edges, 
 The shared Fetchly theme applies an 80% visual scale across the main app and compact share UI. Density changes are app-local; Android system chrome is unaffected. Android font preferences and its nonlinear font conversion are retained, and physical minimum touch targets and gesture thresholds are preserved. Logical design token sizes remain unchanged; their displayed size follows this scale.
 
 Primary plaque actions are implemented once in `ui/components/PlaqueButton.kt`, including native button semantics, ripple feedback, enabled/disabled colors, inset geometry, and serif labels. Outlined and tonal secondary actions share its clipped-corner silhouette without a competing gold fill. Existing action icons and factual labels remain unchanged.
+
+## Platform selection
+
+Home now places a three-column app selector below the brand header, with all eight existing apps and YouTube Music. Selecting an app stays inside Fetchly and reveals a large app logo, its name, and media-mode chips above the link form. Instagram offers reels/post audio, reels, and single/bulk posts; X offers video and its audio; YouTube offers video/audio; Pinterest offers video; YouTube Music offers audio. Other existing apps retain video/audio choices with the existing availability caveat. Selection uses native radio semantics and chips expose their selected state. The existing gold and white palettes apply throughout.
+
+The chosen kind opens the corresponding Fetch Options tab; unavailable kinds produce an error rather than silently using another media type. Batch review retains the requested kind. Post bulk means multiple post URLs through the existing batch flow; carousel expansion from one URL is not added by this change.

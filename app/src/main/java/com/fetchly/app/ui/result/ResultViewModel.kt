@@ -42,7 +42,10 @@ class ResultViewModel(
     private val commands: DownloadCommands,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(ResultUiState(media = session.info.value))
+    private val _state = MutableStateFlow(ResultUiState(media = session.info.value).let { initial ->
+        session.preferredKind?.takeIf { kind -> initial.media?.options.orEmpty().any { it.kind == kind } }
+            ?.let { initial.copy(activeKind = it) } ?: initial
+    })
     val state: StateFlow<ResultUiState> = _state.asStateFlow()
 
     private var qualityPreference = DefaultQuality.ASK

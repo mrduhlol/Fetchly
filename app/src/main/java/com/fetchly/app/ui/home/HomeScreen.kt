@@ -74,7 +74,28 @@ fun HomeScreen(
                 }
             }
             Spacer(Modifier.height(4.dp))
-            Text("Download a link", style = MaterialTheme.typography.headlineMedium)
+            SupportedApps(enabled = !state.analyzing, selected = state.selectedApp, onSelect = viewModel::selectApp)
+            Spacer(Modifier.height(16.dp))
+            state.selectedApp?.let { app ->
+                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    com.fetchly.app.ui.components.PlatformIcon(app.platform, music = app == SupportedApp.YOUTUBE_MUSIC, large = true)
+                    Spacer(Modifier.height(8.dp))
+                    Text(app.label, style = MaterialTheme.typography.headlineSmall)
+                }
+                Spacer(Modifier.height(8.dp))
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    app.modes.forEach { mode ->
+                        FilterChip(selected = state.mode == mode, onClick = { viewModel.selectMode(mode) },
+                            enabled = !state.analyzing, label = { Text(mode.label) })
+                    }
+                }
+                if (state.mode == FetchMode.POST) {
+                    Text("Paste one post link, or add multiple post links for bulk download.",
+                        style = MaterialTheme.typography.bodySmall)
+                }
+                Spacer(Modifier.height(8.dp))
+            }
+            Text(if (state.selectedApp == null) "Download a link" else "Fetch media", style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.height(8.dp))
             Text(
                 "Paste a link, choose a format, and save it.",
@@ -122,8 +143,6 @@ fun HomeScreen(
                 }
             }
             Spacer(Modifier.height(16.dp))
-            SupportedApps(enabled = !state.analyzing)
-            Spacer(Modifier.height(12.dp))
             com.fetchly.app.ui.components.TempleArtwork(Modifier.fillMaxWidth().height(112.dp))
         }
     }

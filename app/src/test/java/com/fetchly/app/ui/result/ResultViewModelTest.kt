@@ -224,4 +224,18 @@ class ResultViewModelTest {
         assertEquals(1, commands.enqueued.size)
     }
 
+    @Test fun `home audio choice opens audio options and queues audio`() = runTest(mainDispatcher.dispatcher) {
+        val session = ResolveSession().apply { hold(media, QualityKind.AUDIO) }
+        val commands = FakeCommands()
+        val vm = ResultViewModel(session, flowOf(DefaultQuality.BEST), commands)
+        advanceUntilIdle()
+        assertEquals(QualityKind.AUDIO, vm.state.value.activeKind)
+        assertEquals("audio", vm.state.value.selectedId)
+        vm.download()
+        advanceUntilIdle()
+        assertEquals(QualityKind.AUDIO, commands.enqueued.single().second.kind)
+        session.clear()
+        assertNull(session.preferredKind)
+    }
+
 }

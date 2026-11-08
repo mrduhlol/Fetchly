@@ -14,17 +14,27 @@ class ResolveSession {
 
     private val _batchInput = MutableStateFlow<String?>(null)
     val batchInput = _batchInput.asStateFlow()
-    fun holdBatchInput(text: String) { _batchInput.value = text.take(128 * 1024 + 1) }
+    var batchKind: com.fetchly.app.domain.model.QualityKind? = null
+        private set
+    fun holdBatchInput(text: String, kind: com.fetchly.app.domain.model.QualityKind? = null) {
+        batchKind = kind
+        _batchInput.value = text.take(128 * 1024 + 1)
+    }
     fun consumeBatchInput() { _batchInput.value = null }
 
     private val _info = MutableStateFlow<MediaInfo?>(null)
     val info: StateFlow<MediaInfo?> = _info.asStateFlow()
 
-    fun hold(info: MediaInfo) {
+    var preferredKind: com.fetchly.app.domain.model.QualityKind? = null
+        private set
+
+    fun hold(info: MediaInfo, kind: com.fetchly.app.domain.model.QualityKind? = null) {
+        preferredKind = kind
         _info.value = info
     }
 
     fun clear() {
+        preferredKind = null
         _info.value = null
     }
 }

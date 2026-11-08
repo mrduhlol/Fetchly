@@ -288,4 +288,51 @@ class HomeViewModelTest {
         assertNull(session.info.value)
     }
 
+    @Test fun `platform selection changes modes and rejects a different platform link`() = runTest(mainDispatcher.dispatcher) {
+        val repo = FakeRepository(ResolveOutcome.Success(info))
+        val (vm, _) = viewModel(repo)
+        vm.selectApp(SupportedApp.INSTAGRAM)
+        assertEquals(FetchMode.INSTAGRAM_AUDIO, vm.state.value.mode)
+        vm.selectMode(FetchMode.POST)
+        assertEquals(FetchMode.POST, vm.state.value.mode)
+        vm.onInputChange(info.sourceUrl)
+        vm.fetch()
+        advanceUntilIdle()
+        assertEquals(0, repo.calls)
+        assertTrue(vm.state.value.error!!.contains("Instagram"))
+        vm.selectApp(SupportedApp.YOUTUBE_MUSIC)
+        assertEquals(FetchMode.AUDIO, vm.state.value.mode)
+        vm.selectMode(FetchMode.VIDEO)
+        assertEquals(FetchMode.AUDIO, vm.state.value.mode)
+    }
+
+    @Test fun `audio choice carries into result and unavailable audio stays on home`() = runTest(mainDispatcher.dispatcher) {
+        val audio = com.fetchly.app.domain.model.QualityOption("audio", "Audio", com.fetchly.app.domain.model.QualityKind.AUDIO, "m4a", emptyList(), false, null)
+        val (vm, session) = viewModel(FakeRepository(ResolveOutcome.Success(info.copy(options = listOf(audio)))))
+        vm.selectApp(SupportedApp.YOUTUBE_MUSIC)
+        vm.onInputChange("https://music.youtube.com/watch?v=abc")
+        vm.fetch()
+        advanceUntilIdle()
+        assertTrue(vm.state.value.success)
+        assertEquals(com.fetchly.app.domain.model.QualityKind.AUDIO, session.preferredKind)
+        val (unavailable, emptySession) = viewModel(FakeRepository(ResolveOutcome.Success(info)))
+        unavailable.selectApp(SupportedApp.YOUTUBE_MUSIC)
+        unavailable.onInputChange(info.sourceUrl)
+        unavailable.fetch()
+        advanceUntilIdle()
+        assertFalse(unavailable.state.value.success)
+        assertNull(emptySession.info.value)
+        assertTrue(unavailable.state.value.error!!.contains("No audio"))
+    }
+
+    @Test fun `bulk audio retains requested kind`() = runTest(mainDispatcher.dispatcher) {
+        val (vm, session) = viewModel(FakeRepository(ResolveOutcome.Success(info)))
+        vm.selectApp(SupportedApp.X)
+        vm.selectMode(FetchMode.VIDEO_AUDIO)
+        vm.onInputChange("https://x.com/a/status/1\nhttps://x.com/a/status/2")
+        vm.fetch()
+        assertTrue(vm.state.value.batchReady)
+        assertEquals(com.fetchly.app.domain.model.QualityKind.AUDIO, session.batchKind)
+    }
+
 }

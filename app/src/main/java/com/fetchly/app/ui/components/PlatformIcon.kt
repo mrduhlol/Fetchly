@@ -19,9 +19,9 @@ import com.fetchly.app.domain.model.Platform
 
 /** Brand marks share a neutral background so they work in both themes. */
 @Composable
-fun PlatformIcon(platform: Platform, modifier: Modifier = Modifier, compact: Boolean = false) {
+fun PlatformIcon(platform: Platform, modifier: Modifier = Modifier, compact: Boolean = false, music: Boolean = false, large: Boolean = false) {
     val brand = when (platform) {
-        Platform.YOUTUBE -> R.drawable.ic_platform_youtube to Color(0xFFFF0033)
+        Platform.YOUTUBE -> (if (music) R.drawable.ic_platform_youtube_music else R.drawable.ic_platform_youtube) to Color(0xFFFF0033)
         Platform.INSTAGRAM -> R.drawable.ic_platform_instagram to Color(0xFFC13584)
         Platform.TIKTOK -> R.drawable.ic_platform_tiktok to Color(0xFF161823)
         Platform.TWITTER -> R.drawable.ic_platform_x to Color(0xFF111111)
@@ -39,11 +39,11 @@ fun PlatformIcon(platform: Platform, modifier: Modifier = Modifier, compact: Boo
             Platform.TIKTOK, Platform.TWITTER -> if (compact) MaterialTheme.colorScheme.onSurface else Color.White
             else -> if (compact) brand.second else Color.White
         }
-        Box(modifier.size(if (compact) 24.dp else 28.dp).background(backing, RoundedCornerShape(if (compact) 6.dp else 14.dp)), contentAlignment = Alignment.Center) {
+        Box(modifier.size(if (large) 64.dp else if (compact) 24.dp else 28.dp).background(backing, RoundedCornerShape(if (compact) 6.dp else 14.dp)), contentAlignment = Alignment.Center) {
             Icon(painterResource(brand.first), contentDescription = null,
                 tint = if (compact) {
                     if (platform == Platform.TIKTOK || platform == Platform.TWITTER) MaterialTheme.colorScheme.surface else Color.White
-                } else brand.second, modifier = Modifier.size(18.dp))
+                } else brand.second, modifier = Modifier.size(if (large) 40.dp else 18.dp))
         }
     }
 }

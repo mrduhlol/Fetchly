@@ -20,6 +20,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class HomeUiState(
+    internal val selectedApp: SupportedApp? = null,
+    internal val mode: FetchMode? = null,
     val input: String = "",
     val detected: Platform? = null,
     /** The real stage while analyzing ("Checking the link…", "Finding the good stuff…"). */
@@ -79,6 +81,16 @@ class HomeViewModel(
         }
     }
 
+    internal fun selectApp(app: SupportedApp) {
+        if (state.value.analyzing) return
+        _state.update { it.copy(selectedApp = app, mode = app.modes.first(), error = null, errorRaw = null) }
+    }
+
+    internal fun selectMode(mode: FetchMode) {
+        if (!state.value.analyzing && mode in state.value.selectedApp?.modes.orEmpty())
+            _state.update { it.copy(mode = mode, error = null, errorRaw = null) }
+    }
+
     fun onInputChange(value: String) {
         val input = if (com.fetchly.app.domain.batch.BatchLinks.parse(value).urls.size > 1) value else if (value.any { it.isWhitespace() }) {
             UrlSecurity.extractFirstUrl(value) ?: value
@@ -120,6 +132,10 @@ class HomeViewModel(
             }
         }
 
+        if (requested.selectedApp != null && PlatformDetector.detect(validated) != requested.selectedApp.platform) {
+            _state.update { it.copy(error = "Paste a ${requested.selectedApp.label} link or select a different app.") }
+            return
+        }
         session.clear()
         _state.update { it.copy(analyzing = true, error = null, errorRaw = null, status = "Checking the link…") }
         val requestGeneration = ++generation
@@ -136,7 +152,12 @@ class HomeViewModel(
             if (requestGeneration != generation) return@launch
             when (outcome) {
                 is ResolveOutcome.Success -> {
-                    session.hold(outcome.info)
+                    val kind = requested.mode?.kind
+                    if (kind != null && outcome.info.options.none { it.kind == kind }) {
+                        _state.update { it.copy(analyzing = false, status = null, error = "No ${kind.name.lowercase()} is available for this link. Try another link or media option.") }
+                        return@launch
+                    }
+                    session.hold(outcome.info, kind)
                     _state.update {
                         it.copy(analyzing = false, status = null, success = true)
                     }
@@ -164,8 +185,14 @@ class HomeViewModel(
     }
 
     fun openBatch() {
+        val requested = state.value
+        val app = requested.selectedApp
+        if (app != null && com.fetchly.app.domain.batch.BatchLinks.parse(requested.input).urls.any { PlatformDetector.detect(it) != app.platform }) {
+            _state.update { it.copy(error = "Use ${app.label} links for this batch, or select a different app.") }
+            return
+        }
         cancelFetch()
-        session.holdBatchInput(state.value.input)
+        session.holdBatchInput(state.value.input, state.value.mode?.kind)
         _state.update { it.copy(batchReady = true) }
     }
     fun consumeBatchReady() { _state.update { it.copy(batchReady = false) } }
