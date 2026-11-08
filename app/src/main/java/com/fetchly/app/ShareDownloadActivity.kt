@@ -59,7 +59,7 @@ class ShareDownloadActivity : ComponentActivity() {
             }
             FetchlyAppTheme(darkTheme = dark) {
                 ShareDownloadScreen(state, vm::selectKind, vm::select, vm::check, vm::confirmSilent,
-                    vm::retry, { startDownload(vm::download) }, close)
+                    vm::retry, { startDownload(vm::download) }, close, vm::selectContainer)
             }
         }
     }
