@@ -28,6 +28,8 @@ No backend, no account, no API key, no configuration. Resolution, downloading an
 - **Media previews and MP3** — large landscape/portrait previews, video container buttons, and MP3 bitrate choices from 96 to 320 kb/s.
 
 - **Share to fetch** — send a public link from another app and get a compact format/quality dialog over the source app.
+- **X bulk ZIP** — bundle available photo and video attachments from a multi-media X post into one ZIP.
+- **Pause and resume** — pause from Downloads or its notification, then resume; eligible direct files retain partial data.
 - **Batch review** — check up to 50 links together, set format and filename per item, and queue two downloads at a time.
 - **Real quality choices** — container, reported size, sound availability and source language. Silent video needs confirmation and is never selected as best by default.
 - **Resume and retry** — eligible direct files resume from validated checkpoints; failed segments retry without re-downloading completed bytes.
@@ -43,8 +45,8 @@ No backend, no account, no API key, no configuration. Resolution, downloading an
 
 | Check | Recorded result |
 | --- | --- |
-| Kotlin unit tests | **244 passing** |
-| Python bridge tests | **21 passing** |
+| Kotlin unit tests | **250 passing** |
+| Python bridge tests | **25 passing** |
 | Android lint | Passes with warnings |
 | Debug APK | Assembles successfully |
 
