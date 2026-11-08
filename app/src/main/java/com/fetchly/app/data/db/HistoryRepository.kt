@@ -44,6 +44,8 @@ class HistoryRepository(private val dao: HistoryDao) {
     /** QUEUED/RUNNING → CANCELLED; false when nothing was running. */
     suspend fun cancelIfActive(id: String, at: Long): Boolean = dao.cancelIfActive(id, at) > 0
 
+    suspend fun saveProgress(id: String, bytes: Long, total: Long) = dao.saveProgress(id, bytes.coerceAtLeast(0), total.coerceAtLeast(0))
+
     suspend fun pauseIfActive(id: String, at: Long): Boolean = dao.pauseIfActive(id, at) > 0
 
     suspend fun delete(id: String) = dao.delete(id)
@@ -77,6 +79,8 @@ internal fun DownloadEntity.toDomain(): HistoryEntry = HistoryEntry(
     outputPath = outputPath,
     createdAt = createdAt,
     updatedAt = updatedAt,
+    progressBytes = progressBytes,
+    progressTotal = progressTotal,
 )
 
 internal fun HistoryEntry.toEntity(): DownloadEntity = DownloadEntity(
@@ -103,6 +107,8 @@ internal fun HistoryEntry.toEntity(): DownloadEntity = DownloadEntity(
     outputPath = outputPath,
     createdAt = createdAt,
     updatedAt = updatedAt,
+    progressBytes = progressBytes,
+    progressTotal = progressTotal,
 )
 
 /**
