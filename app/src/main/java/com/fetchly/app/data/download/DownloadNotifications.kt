@@ -59,7 +59,6 @@ object DownloadNotifications {
         val display = DownloadStages.progressFor(stage, progress)
         val knownTotal = display.totalBytes > 0
         return builder(context, title, progressText(stage, display))
-            .setSmallIcon(R.drawable.ic_stat_moai_emoji)
             .setOngoing(true)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .addAction(0, "Pause", broadcast(context, downloadId, DownloadActionReceiver.ACTION_PAUSE, salt = 3))
@@ -84,7 +83,6 @@ object DownloadNotifications {
         mime: String?,
     ): Notification =
         builder(context, title, text)
-            .setSmallIcon(R.drawable.ic_stat_moai_emoji_done)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .setAutoCancel(true)
             .setContentIntent(openFile(context, uri, mime))
@@ -135,7 +133,8 @@ object DownloadNotifications {
 
     private fun builder(context: Context, title: String, text: String): NotificationCompat.Builder =
         NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_stat_download)
+            // One monochrome Apollo mark for progress, completion, and failure.
+            .setSmallIcon(R.drawable.ic_stat_apollo)
             .setContentTitle(title)
             .setContentText(text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
