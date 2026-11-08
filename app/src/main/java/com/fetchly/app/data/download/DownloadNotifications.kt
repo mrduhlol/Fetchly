@@ -55,7 +55,9 @@ object DownloadNotifications {
         val display = DownloadStages.progressFor(stage, progress)
         val knownTotal = display.totalBytes > 0
         return builder(context, title, progressText(stage, display), largeIcon = true)
+            .setSmallIcon(R.drawable.ic_stat_moai)
             .setOngoing(true)
+            .addAction(0, "Pause", broadcast(context, downloadId, DownloadActionReceiver.ACTION_PAUSE, salt = 3))
             .setOnlyAlertOnce(true)
             .setSilent(true)
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
@@ -77,6 +79,8 @@ object DownloadNotifications {
         mime: String?,
     ): Notification =
         builder(context, title, text, largeIcon = false)
+            .setSmallIcon(R.drawable.ic_stat_moai_done)
+            .setLargeIcon(moaiDoneIcon)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .setAutoCancel(true)
             .setContentIntent(openFile(context, uri, mime))
@@ -135,6 +139,17 @@ object DownloadNotifications {
             }
             val baseline = 64f - (paint.ascent() + paint.descent()) / 2f
             android.graphics.Canvas(bitmap).drawText("🗿", 64f, baseline, paint)
+        }
+    }
+
+    private val moaiDoneIcon: android.graphics.Bitmap by lazy {
+        moaiIcon.copy(android.graphics.Bitmap.Config.ARGB_8888, true).also { bitmap ->
+            val canvas = android.graphics.Canvas(bitmap)
+            val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { color = android.graphics.Color.BLACK }
+            canvas.drawRoundRect(27f, 41f, 57f, 61f, 5f, 5f, paint)
+            canvas.drawRoundRect(64f, 41f, 94f, 61f, 5f, 5f, paint)
+            paint.strokeWidth = 5f
+            canvas.drawLine(25f, 43f, 98f, 43f, paint)
         }
     }
 
