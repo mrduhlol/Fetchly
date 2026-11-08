@@ -28,9 +28,9 @@ object MediaSniffer {
         return when {
             text.regionMatches(4, "ftyp", 0, 4) -> "mp4"
             text.regionMatches(0, "OggS", 0, 4) -> "ogg"
-            text.regionMatches(0, "PK\\u0003\\u0004", 0, 4) ||
-                text.regionMatches(0, "PK\\u0005\\u0006", 0, 4) ||
-                text.regionMatches(0, "PK\\u0007\\u0008", 0, 4) -> "zip"
+            text.regionMatches(0, "PK\u0003\u0004", 0, 4) ||
+                text.regionMatches(0, "PK\u0005\u0006", 0, 4) ||
+                text.regionMatches(0, "PK\u0007\u0008", 0, 4) -> "zip"
             text.regionMatches(0, "fLaC", 0, 4) -> "flac"
             text.regionMatches(0, "GIF8", 0, 4) -> "gif"
             text.regionMatches(0, "ID3", 0, 3) -> "mp3"
