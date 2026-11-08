@@ -29,6 +29,7 @@ class DownloadActionReceiver : BroadcastReceiver() {
             try {
                 when (action) {
                     ACTION_CANCEL -> queue.cancel(downloadId)
+                    ACTION_PAUSE -> queue.pause(downloadId)
                     ACTION_RETRY -> queue.retry(downloadId)
                 }
             } finally {
@@ -38,6 +39,7 @@ class DownloadActionReceiver : BroadcastReceiver() {
     }
 
     companion object {
+        const val ACTION_PAUSE = "com.fetchly.app.action.PAUSE_DOWNLOAD"
         const val ACTION_CANCEL = "com.fetchly.app.action.CANCEL_DOWNLOAD"
         const val ACTION_RETRY = "com.fetchly.app.action.RETRY_DOWNLOAD"
         const val EXTRA_DOWNLOAD_ID = "download_id"
