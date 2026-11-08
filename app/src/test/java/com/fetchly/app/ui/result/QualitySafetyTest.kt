@@ -35,9 +35,9 @@ class QualitySafetyTest {
     @Test fun approximateSourceSizesAreKeptDistinctFromExactByteCounts() {
         val json = """{"ok":true,"formats":[{"id":"video","url":"https://example.com/video","ext":"mp4","vcodec":"avc1","acodec":"mp4a","height":720,"filesize_approx":1000000}]}"""
         val estimated = (YtDlpMapper.map(json, "https://example.com", Platform.OTHER) as MapResult.Ok).info
-        assertTrue(estimated.options.single().streams.single().sizeIsEstimate)
+        assertTrue(estimated.options.first().streams.single().sizeIsEstimate)
         val exact = (YtDlpMapper.map(json.replace("filesize_approx", "filesize"), "https://example.com", Platform.OTHER) as MapResult.Ok).info
-        assertFalse(exact.options.single().streams.single().sizeIsEstimate)
+        assertFalse(exact.options.first().streams.single().sizeIsEstimate)
     }
 
 }
