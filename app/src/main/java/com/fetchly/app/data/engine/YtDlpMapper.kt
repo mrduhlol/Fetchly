@@ -89,12 +89,17 @@ object YtDlpMapper {
         if (bestAudio != null && (isYoutubeMusic || platform != Platform.PINTEREST) &&
             (isYoutubeMusic || videos.isNotEmpty() || !hasDegradedFile)) {
             val duration = root.intOrNull("duration")?.takeIf { it > 0 }
-            for (kbps in listOf(96, 128, 256, 320)) {
-                options += QualityOption(
-                    id = "audio-mp3-$kbps", label = "$kbps kb/s", kind = QualityKind.AUDIO,
-                    container = "mp3", streams = listOf(bestAudio), needsMerge = true,
-                    sizeBytes = duration?.let { kbps * 1000L / 8 * it },
-                )
+            val audioTracks = (audios.sortedWith(AUDIO_RANK).distinctBy { it.language }
+                .ifEmpty { listOf(bestAudio) })
+            audioTracks.forEachIndexed { index, audio ->
+                for (kbps in listOf(96, 128, 256, 320)) {
+                    options += QualityOption(
+                        id = "audio-mp3-$kbps" + if (index == 0) "" else "-$index",
+                        label = "$kbps kb/s", kind = QualityKind.AUDIO,
+                        container = "mp3", streams = listOf(audio), needsMerge = true,
+                        sizeBytes = duration?.let { kbps * 1000L / 8 * it },
+                    )
+                }
             }
         } else if (options.isEmpty()) {
             return MapResult.Fail("yt-dlp returned no usable streams for this link.")
