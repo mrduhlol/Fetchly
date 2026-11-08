@@ -73,7 +73,7 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(welcome.completed, splashVisible) {
                 if (welcome.completed == true && !splashVisible) requestNotificationPermissionIfNeeded()
             }
-            FetchlyTheme(darkTheme = dark) {
+            FetchlyAppTheme(darkTheme = dark) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     Box(Modifier.fillMaxSize()) {
                         Box(modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing)) {
