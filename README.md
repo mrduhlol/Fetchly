@@ -46,7 +46,7 @@ No backend, no account, no API key, no configuration. Resolution, downloading an
 | Check | Recorded result |
 | --- | --- |
 | Kotlin unit tests | **252 passing** |
-| Python bridge tests | **28 passing** |
+| Python bridge tests | **32 passing** |
 | Android lint | Passes with warnings |
 | Debug APK | Assembles successfully |
 
@@ -56,7 +56,7 @@ The full scope, including what is not device-verified, is in [`docs/VERIFICATION
 
 ### Performance
 
-Version 2.2 warms the extraction runtime off the UI thread, caches the Python module, and shares overlapping requests for the same URL. Live latency gains have not been benchmarked.
+Version 2.4 warms common extractors off the UI thread, shares overlapping requests, and reuses recent previews. Download uses the stream metadata already fetched instead of resolving the page again. Tests cover cached startup and actual HTTP byte-range continuation; source response times and Android scheduling still affect latency.
 
 Fetchly fetches direct files with up to four parallel byte ranges when the source supports ranges, has a strong ETag and a known length. YouTube video and audio streams download concurrently and are muxed on-device.
 
