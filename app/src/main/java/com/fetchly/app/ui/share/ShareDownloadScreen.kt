@@ -61,14 +61,14 @@ fun ShareDownloadScreen(state: ShareDownloadState, onKind: (QualityKind) -> Unit
                             }
                             DropdownMenu(qualityMenu, { qualityMenu = false }, modifier = Modifier.heightIn(max = 240.dp)) {
                                 state.options.forEach { option ->
-                                    DropdownMenuItem(text = { Text("${option.label} · ${option.container.uppercase()} · ${option.audioDescription}") },
+                                    DropdownMenuItem(text = { Text("${option.label} · ${option.container.uppercase()} · ${FormatSize.formatApprox(option.sizeBytes) ?: "Size unknown"}") },
                                         onClick = { qualityMenu = false; onQuality(option.id) })
                                 }
                             }
                         }
                     }
                     state.selected?.let { option ->
-                        Text(listOfNotNull(option.audioDescription, FormatSize.formatApprox(option.sizeBytes)).joinToString(" · "), style = MaterialTheme.typography.bodySmall)
+                        Text(listOfNotNull(FormatSize.formatApprox(option.sizeBytes) ?: "Size unknown").joinToString(" · "), style = MaterialTheme.typography.bodySmall)
                         if (option.silentVideo) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Checkbox(state.silentConfirmed, onSilent, enabled = !state.adding)
