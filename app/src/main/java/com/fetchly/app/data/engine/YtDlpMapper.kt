@@ -233,7 +233,7 @@ object YtDlpMapper {
         .thenBy { videoCodecRank(it.vcodec) }
         .thenByDescending { it.sizeBytes ?: 0L }
 
-    private val AUDIO_RANK = compareByDescending<StreamRef> { it.languagePreference ?: 0 }
+    private val AUDIO_RANK = compareByDescending<StreamRef> { it.languagePreference ?: -1 }
         .thenBy { audioCodecRank(it.acodec) }
         .thenByDescending { it.abr ?: 0 }
         .thenByDescending { it.sizeBytes ?: 0L }
@@ -294,5 +294,5 @@ object YtDlpMapper {
         (opt(key) as? Number)?.toDouble()
 
     private fun JSONObject.longOrNull(key: String): Long? =
-        (opt(key) as? Number)?.toLong()
+        (opt(key) as? Number)?.toLong() ?: str(key)?.toDoubleOrNull()?.takeIf { it.isFinite() && it > 0 }?.toLong()
 }
