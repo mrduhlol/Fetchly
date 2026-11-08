@@ -8,9 +8,11 @@ Paste a public media link, pick a quality, save it to your device.
 
 <p><img src="app/src/main/res/drawable-nodpi/fetchly_logo.png" width="280" alt="Fetchly Apollo app icon" /></p>
 
-<p><a href="https://github.com/mrduhlol/Fetchly/releases/latest/download/fetchly_v2.0.apk"><img src="docs/download-apk.svg" width="220" alt="Download APK for Android" /></a></p>
+<p><a href="https://github.com/mrduhlol/Fetchly/releases/latest/download/fetchly.apk"><img src="docs/download-apk.svg" width="220" alt="Download APK for Android" /></a></p>
 
-<sub>v2.0 · Android 10 (API 29)+ · Uninstall older Fetchly builds first</sub>
+<sub>v2.1 · Android 10 (API 29)+</sub>
+
+Upgrading from the old 2.0 APK requires uninstalling it first because its signing key differs. This clears app settings and in-app history. [Release notes](docs/release-notes/v2.1.md) explain the change.
 
 </div>
 
