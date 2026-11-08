@@ -284,6 +284,18 @@ class YtDlpMapperTest {
     }
 
     @Test
+    fun `X mixed media exposes a ZIP with distinct video and direct photo streams`() {
+        val video = fmt("hd", vcodec = "avc1", acodec = "aac", height = 720, filesize = 1200)
+        val image = fmt("photo", ext = "jpg", filesize = 300)
+        val json = ok(video).dropLast(1) + ",\"entries\":[{\"formats\":[$video]},{\"formats\":[$image]}]}"
+        val info = (YtDlpMapper.map(json, "https://x.com/person/status/123", Platform.TWITTER) as MapResult.Ok).info
+        val zip = info.options.first { it.container == "zip" }
+        assertEquals(QualityKind.FILE, zip.kind)
+        assertEquals(listOf("x-entry-1::hd", "direct"), zip.streams.map { it.formatId })
+        assertEquals(1500L, zip.sizeBytes)
+    }
+
+    @Test
     fun `signin failure keeps the raw yt dlp message`() {
         val raw = "ERROR: [youtube] test123: Sign in to confirm you're not a bot."
         val result = YtDlpMapper.map(fail(raw), sourceUrl, platform)
