@@ -12,7 +12,7 @@ Paste a public media link, pick a quality, save it to your device.
 
 <sub>v2.4 · Android 10 (API 29)+</sub>
 
-Upgrading from the old 2.0 APK requires uninstalling it first because its signing key differs. This clears app settings and in-app history. Updates from the published 2.1 APK keep its signing key and install in place. [Release notes](docs/release-notes/v2.4.md) cover this update.
+**One-time reinstall for v2.4:** the published v2.3 APK used a different signing certificate. Uninstall it before installing v2.4. Uninstalling clears settings and in-app history; back up anything needed first. Version 2.4 pins and verifies the persistent signing key for future updates. [Release notes](docs/release-notes/v2.4.md) explain the correction.
 
 </div>
 
