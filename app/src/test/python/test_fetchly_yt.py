@@ -13,12 +13,56 @@ spec.loader.exec_module(bridge)
 
 
 class BridgeTests(unittest.TestCase):
+    def setUp(self):
+        bridge._MEDIA_CACHE.clear()
+
     def extract(self, info):
         with patch.object(bridge, 'yt_dlp') as engine:
             engine.YoutubeDL.return_value.__enter__.return_value.extract_info.return_value = info
             result = json.loads(bridge.extract('https://example.com/post'))
             params = engine.YoutubeDL.call_args.args[0]
         return result, params
+
+    def test_repeated_preview_reuses_recent_success_instead_of_extracting_again(self):
+        with patch.object(bridge, 'yt_dlp') as engine:
+            downloader = engine.YoutubeDL.return_value.__enter__.return_value
+            downloader.extract_info.return_value = {'title': 'Clip', 'url': 'https://cdn.example/v.mp4', 'ext': 'mp4'}
+            first = bridge.extract('https://example.com/post')
+            second = bridge.extract('https://example.com/post')
+            self.assertEqual(first, second)
+            downloader.extract_info.assert_called_once()
+
+    def test_download_uses_the_fetched_stream_metadata_without_resolving_page_again(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(bridge, 'yt_dlp') as engine:
+            downloader = engine.YoutubeDL.return_value.__enter__.return_value
+            downloader.extract_info.return_value = {'title': 'Clip', 'url': 'https://cdn.example/v.mp4', 'ext': 'mp4'}
+            bridge.extract('https://example.com/post')
+            def transfer(info, download):
+                pathlib.Path(directory, 'media.mp4').write_bytes(b'actual downloaded bytes')
+            downloader.process_ie_result.side_effect = transfer
+            result = json.loads(bridge.download('https://example.com/post', 'best', directory, 'media', None))
+            self.assertTrue(result['ok'], result)
+            downloader.extract_info.assert_called_once()
+            downloader.download.assert_not_called()
+            downloader.process_ie_result.assert_called_once()
+
+    def test_failed_cached_transfer_invalidates_metadata_for_the_next_fetch(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(bridge, 'yt_dlp') as engine:
+            downloader = engine.YoutubeDL.return_value.__enter__.return_value
+            downloader.extract_info.return_value = {'title': 'Clip', 'url': 'https://cdn.example/v.mp4', 'ext': 'mp4'}
+            bridge.extract('https://example.com/post')
+            downloader.process_ie_result.side_effect = Exception('HTTP Error 403: Forbidden')
+            bridge.download('https://example.com/post', 'best', directory, 'media', None)
+            bridge.extract('https://example.com/post')
+            self.assertEqual(2, downloader.extract_info.call_count)
+
+    def test_warmup_loads_extractors_without_fetching_a_page(self):
+        with patch.object(bridge, 'yt_dlp') as engine:
+            downloader = engine.YoutubeDL.return_value.__enter__.return_value
+            bridge.warmup()
+            downloader.get_info_extractor.assert_called_once_with('Youtube')
+            downloader.extract_info.assert_not_called()
+            downloader.download.assert_not_called()
 
     def test_content_length_is_read_from_encoded_youtube_playlist_path(self):
         result = bridge._clean_format({'ext': 'mp4', 'url': 'https://manifest.googlevideo.com/api/sgoap/clen%3D3449447%3Bdur%3D213.089/playlist/index.m3u8'})
