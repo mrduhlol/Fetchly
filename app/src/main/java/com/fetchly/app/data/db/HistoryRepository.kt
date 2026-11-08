@@ -44,6 +44,8 @@ class HistoryRepository(private val dao: HistoryDao) {
     /** QUEUED/RUNNING → CANCELLED; false when nothing was running. */
     suspend fun cancelIfActive(id: String, at: Long): Boolean = dao.cancelIfActive(id, at) > 0
 
+    suspend fun pauseIfActive(id: String, at: Long): Boolean = dao.pauseIfActive(id, at) > 0
+
     suspend fun delete(id: String) = dao.delete(id)
 
     suspend fun clear() = dao.clear()
