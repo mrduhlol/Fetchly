@@ -11,6 +11,7 @@ import com.fetchly.app.data.db.HistoryRepository
 import com.fetchly.app.data.prefs.SettingsStore
 import com.fetchly.app.domain.model.DefaultQuality
 import com.fetchly.app.domain.model.ThemeChoice
+import com.fetchly.app.ui.theme.UiScale
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -72,12 +73,19 @@ class SettingsViewModel(
     val defaultQuality: StateFlow<DefaultQuality> = settings.defaultQuality
         .stateIn(viewModelScope, SharingStarted.Eagerly, DefaultQuality.ASK)
 
+    val uiScale: StateFlow<UiScale> = settings.uiScale
+        .stateIn(viewModelScope, SharingStarted.Eagerly, UiScale.COMPACT)
+
     fun setTheme(choice: ThemeChoice) {
         viewModelScope.launch { settings.setTheme(choice) }
     }
 
     fun setDefaultQuality(choice: DefaultQuality) {
         viewModelScope.launch { settings.setDefaultQuality(choice) }
+    }
+
+    fun setUiScale(choice: UiScale) {
+        viewModelScope.launch { settings.setUiScale(choice) }
     }
 
     /** Empties the list; files already published stay in the media library. */
