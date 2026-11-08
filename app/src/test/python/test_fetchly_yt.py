@@ -20,6 +20,14 @@ class BridgeTests(unittest.TestCase):
             params = engine.YoutubeDL.call_args.args[0]
         return result, params
 
+    def test_content_length_is_read_from_encoded_youtube_playlist_path(self):
+        result = bridge._clean_format({'ext': 'mp4', 'url': 'https://manifest.googlevideo.com/api/sgoap/clen%3D3449447%3Bdur%3D213.089/playlist/index.m3u8'})
+        self.assertEqual(3449447, result['filesize'])
+
+    def test_content_length_is_read_from_regular_source_query(self):
+        result = bridge._clean_format({'ext': 'm4a', 'url': 'https://example.com/audio?clen=123456'})
+        self.assertEqual(123456, result['filesize'])
+
     def test_size_estimate_uses_reported_bitrate_and_duration(self):
         result = bridge._clean_format({'ext': 'mp4', 'tbr': 1200}, 60)
         self.assertEqual(9_000_000, result['filesize_approx'])
