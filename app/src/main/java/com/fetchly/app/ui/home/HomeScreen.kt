@@ -62,9 +62,12 @@ fun HomeScreen(
     LaunchedEffect(state.batchReady) {
         if (state.batchReady) { viewModel.consumeBatchReady(); onOpenBatch() }
     }
+    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val footerColor = if (dark) Color.Black else MaterialTheme.colorScheme.background
+    val footerTextColor = MaterialTheme.colorScheme.onBackground
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         Image(
-            painterResource(if (MaterialTheme.colorScheme.background.luminance() < 0.5f)
+            painterResource(if (dark)
                 R.drawable.fetchly_home_dark else R.drawable.fetchly_home_light),
             contentDescription = null,
             modifier = Modifier.matchParentSize(),
@@ -72,7 +75,7 @@ fun HomeScreen(
         )
         Box(Modifier.matchParentSize().background(MaterialTheme.colorScheme.background.copy(alpha = 0.38f)))
         Box(Modifier.fillMaxWidth().height(160.dp).align(Alignment.BottomCenter)
-            .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black))))
+            .background(Brush.verticalGradient(listOf(footerColor.copy(alpha = 0f), footerColor))))
         Column(
             modifier = Modifier.widthIn(max = 640.dp).fillMaxSize()
                 .imePadding().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 4.dp),
@@ -140,10 +143,10 @@ fun HomeScreen(
             Spacer(Modifier.height(44.dp))
             Box(
                 Modifier.fillMaxWidth().height(160.dp)
-                    .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.92f), Color.Black))),
+                    .background(Brush.verticalGradient(listOf(footerColor.copy(alpha = 0f), footerColor.copy(alpha = 0.92f), footerColor))),
                 contentAlignment = Alignment.BottomCenter,
             ) {
-                Text("© mrduhlol", style = MaterialTheme.typography.labelSmall, color = Color(0xFFF4EEE5),
+                Text("© mrduhlol", style = MaterialTheme.typography.labelSmall, color = footerTextColor,
                     modifier = Modifier.padding(bottom = 24.dp))
             }
         }
