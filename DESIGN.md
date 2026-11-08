@@ -18,7 +18,7 @@ Native verification covered an actual VIEW URL with notification permission rese
 
 ## Assets
 
-- `fetchly_logo.png` is the exact owner-supplied Apollo image, copied byte-for-byte from `file_0000000011ac8211a5ad581011244116.png`. Preserve its proportions and face.
+- `fetchly_logo.png` is the exact owner-supplied 512×512 Apollo image from `1000026320.png`, copied byte-for-byte for version 2.4.2. Preserve its proportions and face. `fetchly_logo_light.png` is its grayscale launcher variant. The native splash also draws this complete logo.
 - `fetchly_temple_dark.png` and `fetchly_temple_light.png` are high-resolution AI-generated architectural footer assets, produced with the built-in image tool. Their exact prompts and source paths are recorded in `docs/TEMPLE_ASSETS.md`. The original small board crop was removed after visual inspection showed it was blurry at phone size.
 - Library symbols are native vector drawables. Do not replace brand artwork with generated faces.
 
