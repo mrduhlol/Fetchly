@@ -55,6 +55,7 @@ class BridgeTests(unittest.TestCase):
             bridge.download('https://example.com/post', 'best', directory, 'media', None)
             bridge.extract('https://example.com/post')
             self.assertEqual(2, downloader.extract_info.call_count)
+            downloader.download.assert_called_once_with(['https://example.com/post'])
 
     def test_warmup_loads_extractors_without_fetching_a_page(self):
         with patch.object(bridge, 'yt_dlp') as engine:
