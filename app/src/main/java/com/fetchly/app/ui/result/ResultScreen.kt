@@ -45,7 +45,6 @@ fun ResultScreen(
         }
     }
     var confirmSilent by remember { mutableStateOf(false) }
-    var formatMenuExpanded by remember { mutableStateOf(false) }
     val media = state.media
     val availableVideoFormats = state.visibleOptions.map { it.container.lowercase() }.distinct()
     val defaultVideoFormat = listOf("mp4", "mkv").firstOrNull { it in availableVideoFormats }
@@ -111,23 +110,18 @@ fun ResultScreen(
                     if (media.options.isNotEmpty()) {
                         item {
                             if (state.activeKind == QualityKind.VIDEO) {
-                                val formatOptions = availableVideoFormats
-                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                                    Box {
-                                        TextButton(onClick = { formatMenuExpanded = true }, enabled = !state.enqueuing) {
-                                            Text((selectedVideoFormat ?: "Available format").uppercase())
-                                            Icon(Icons.Filled.KeyboardArrowDown, null)
-                                        }
-                                        DropdownMenu(expanded = formatMenuExpanded, onDismissRequest = { formatMenuExpanded = false }) {
-                                            formatOptions.forEach { format ->
-                                                DropdownMenuItem(text = { Text(format.uppercase()) }, onClick = {
-                                                    selectedVideoFormat = format
-                                                    formatMenuExpanded = false
-                                                    state.visibleOptions.firstOrNull { it.container.equals(format, ignoreCase = true) }
-                                                        ?.let { viewModel.select(it.id) }
-                                                })
-                                            }
-                                        }
+                                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    availableVideoFormats.forEach { format ->
+                                        FilterChip(
+                                            selected = selectedVideoFormat == format,
+                                            onClick = {
+                                                selectedVideoFormat = format
+                                                state.visibleOptions.firstOrNull { it.container.equals(format, true) }
+                                                    ?.let { viewModel.select(it.id) }
+                                            },
+                                            enabled = !state.enqueuing,
+                                            label = { Text(format.uppercase()) },
+                                        )
                                     }
                                 }
                             }
