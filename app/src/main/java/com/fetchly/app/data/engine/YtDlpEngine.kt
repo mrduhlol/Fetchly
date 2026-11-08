@@ -34,6 +34,9 @@ class YtDlpEngine(
     private val io: CoroutineDispatcher = Dispatchers.IO,
 ) : LinkExtractor {
 
+    @Volatile
+    private var cachedModule: PyObject? = null
+
     /** e.g. "2026.08.19", or "missing" when the wheel didn't ship. */
     suspend fun engineVersion(): String = withContext(io) {
         runCatching { module().callAttr("version").toString() }.getOrDefault("missing")
@@ -84,12 +87,13 @@ class YtDlpEngine(
 
     @Synchronized
     private fun module(): PyObject {
+        cachedModule?.let { return it }
         if (!Python.isStarted()) {
             Python.start(AndroidPlatform(context.applicationContext))
         }
         val python = Python.getInstance()
         python.getModule("engine_updates").callAttr("activate", updatesDir)
-        return python.getModule(MODULE)
+        return python.getModule(MODULE).also { cachedModule = it }
     }
 
     private fun parseDownloadResult(raw: String): EngineDownload {
