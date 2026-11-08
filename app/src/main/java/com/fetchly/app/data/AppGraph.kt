@@ -84,7 +84,7 @@ class AppGraph(context: Context) {
         val scratch = TempFiles.dir(appContext)
         scope.launch { TempFiles.cleanupStale(scratch) }
         // Warm Python and extractor imports off the UI thread before the first fetch.
-        scope.launch { engine.engineVersion() }
+        scope.launch { engine.warmUp() }
         scope.launch {
             kotlinx.coroutines.flow.combine(
                 downloadWorks.observe().map { works -> works.filterNot { it.finished }.map { it.downloadId }.toSet() },
