@@ -54,7 +54,7 @@ object DownloadNotifications {
     ): Notification {
         val display = DownloadStages.progressFor(stage, progress)
         val knownTotal = display.totalBytes > 0
-        return builder(context, title, progressText(stage, display))
+        return builder(context, title, progressText(stage, display), largeIcon = true)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setSilent(true)
@@ -76,7 +76,7 @@ object DownloadNotifications {
         uri: String?,
         mime: String?,
     ): Notification =
-        builder(context, title, text)
+        builder(context, title, text, largeIcon = false)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .setAutoCancel(true)
             .setContentIntent(openFile(context, uri, mime))
@@ -90,7 +90,7 @@ object DownloadNotifications {
         message: String,
         retryAction: Boolean = true,
     ): Notification =
-        builder(context, title, message)
+        builder(context, title, message, largeIcon = false)
             .setCategory(NotificationCompat.CATEGORY_ERROR)
             .setAutoCancel(true)
             .setContentIntent(openApp(context))
@@ -125,12 +125,24 @@ object DownloadNotifications {
             (progress.downloadedBytes.toDouble() / progress.totalBytes * 100).toInt().coerceIn(0, 100)
         }
 
-    private fun builder(context: Context, title: String, text: String): NotificationCompat.Builder =
+    private fun builder(context: Context, title: String, text: String, largeIcon: Boolean = false): NotificationCompat.Builder =
         NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_download)
             .setContentTitle(title)
             .setContentText(text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .apply {
+                if (largeIcon) {
+                    setLargeIcon(run {
+                        val d = androidx.core.content.ContextCompat.getDrawable(context, R.drawable.ic_large_moai)
+                        val b = android.graphics.Bitmap.createBitmap(d!!.intrinsicWidth, d.intrinsicHeight, android.graphics.Bitmap.Config.ARGB_8888)
+                        val c = android.graphics.Canvas(b)
+                        d.setBounds(0, 0, c.width, c.height)
+                        d.draw(c)
+                        b
+                    })
+                }
+            }
 
     private fun broadcast(
         context: Context,
