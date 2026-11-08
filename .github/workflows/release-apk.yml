@@ -6,6 +6,10 @@ on:
       - "v*"
   workflow_dispatch:
 
+concurrency:
+  group: release-apk
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -66,11 +70,17 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           NOTES_FILE="docs/release-notes/${RELEASE_TAG}.md"
-          if ! gh release view "$RELEASE_TAG" > /dev/null 2>&1; then
+          if gh release view "$RELEASE_TAG" --json isDraft > release-state.json 2>/dev/null; then
+            if [ "$(python3 -c 'import json; print(json.load(open("release-state.json"))["isDraft"])')" = "False" ]; then
+              echo "Release $RELEASE_TAG is already published; keeping its assets unchanged."
+              exit 0
+            fi
+          else
             if [ -f "$NOTES_FILE" ]; then
-              gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" --title "Fetchly $RELEASE_TAG" --notes-file "$NOTES_FILE" --latest
+              gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" --title "Fetchly $RELEASE_TAG" --notes-file "$NOTES_FILE" --draft
             else
-              gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" --title "Fetchly $RELEASE_TAG" --notes "Fetchly $RELEASE_TAG, built from $GITHUB_SHA" --latest
+              gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" --title "Fetchly $RELEASE_TAG" --notes "Fetchly $RELEASE_TAG, built from $GITHUB_SHA" --draft
             fi
           fi
           gh release upload "$RELEASE_TAG" "fetchly_${RELEASE_TAG}.apk" fetchly.apk SHA256SUMS BUILD.txt --clobber
+          gh release edit "$RELEASE_TAG" --draft=false --latest
