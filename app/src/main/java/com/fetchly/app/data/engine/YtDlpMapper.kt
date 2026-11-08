@@ -98,6 +98,19 @@ object YtDlpMapper {
                     .mapIndexed { index, audio ->
                         audioOption(audio).copy(id = if (index == 0) "audio" else "audio-${audioContainer(audio.ext)}" + (audio.language?.let { "-$it" } ?: ""))
                     }
+                val duration = root.intOrNull("duration")?.takeIf { it > 0 }
+                for (kbps in listOf(96, 128, 256, 320)) {
+                    val size = duration?.let { (kbps * 1000L / 8) * it }
+                    options += QualityOption(
+                        id = "audio-mp3-$kbps",
+                        label = "MP3 $kbps kbps",
+                        kind = QualityKind.AUDIO,
+                        container = "mp3",
+                        streams = listOf(bestAudio),
+                        needsMerge = true,
+                        sizeBytes = size,
+                    )
+                }
             }
         } else if (options.isEmpty()) {
             return MapResult.Fail("yt-dlp returned no usable streams for this link.")
