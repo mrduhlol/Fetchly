@@ -80,6 +80,8 @@ def extract(url):
             "uploader": str(info.get("uploader") or info.get("channel") or ""),
             "duration": int(info.get("duration") or 0),
             "thumbnail": _thumbnail(info),
+            "width": info.get("width"),
+            "height": info.get("height"),
             "formats": [_clean_format(f) for f in _formats(info)],
         })
     except Exception as exc:
