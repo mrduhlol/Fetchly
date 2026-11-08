@@ -41,7 +41,7 @@ fun FetchlySplash(ready: Boolean, progress: Float? = null, onFinished: () -> Uni
             finished()
         }
     }
-    val apollo = ImageBitmap.imageResource(R.drawable.splash_apollo)
+    val apollo = ImageBitmap.imageResource(R.drawable.fetchly_logo)
     val word = ImageBitmap.imageResource(R.drawable.splash_wordmark)
     Box(Modifier.fillMaxSize().graphicsLayer { alpha = opacity.value }.background(Color.Black)) {
         Canvas(Modifier.fillMaxSize()) {
@@ -61,7 +61,6 @@ fun FetchlySplash(ready: Boolean, progress: Float? = null, onFinished: () -> Uni
                 val y = (760f + 240f * (1f - awakening)).toInt()
                 drawContext.canvas.saveLayer(Rect(470f, y.toFloat(), 1690f, y + 1220f), Paint())
                 drawImage(apollo, dstOffset = IntOffset(470, y), dstSize = IntSize(1220, 1220), alpha = awakening)
-                drawRect(Brush.verticalGradient(listOf(Color.White, Color.Transparent), y + 930f, y + 1220f), Offset(470f, y.toFloat()), Size(1220f, 1220f), blendMode = BlendMode.DstIn)
                 drawContext.canvas.restore()
                 for (i in 0 until 24) {
                     val x = 300f + (i * 347) % 1560
