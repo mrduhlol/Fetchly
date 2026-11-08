@@ -77,6 +77,9 @@ class DownloadsViewModelTest {
 
         override suspend fun cancelIfActive(id: String, updatedAt: Long): Int = 1
         override suspend fun pauseIfActive(id: String, updatedAt: Long): Int = 1
+        override suspend fun saveProgress(id: String, bytes: Long, total: Long) {
+            rows.value = rows.value.map { if (it.id == id) it.copy(progressBytes = bytes, progressTotal = total) else it }
+        }
 
         override suspend fun delete(id: String) {
             rows.value = rows.value.filterNot { it.id == id }
@@ -306,12 +309,15 @@ class DownloadsViewModelTest {
     }
 
     @Test fun `paused entry remains paused when its work is cancelled and is not pumped automatically`() {
-        val entry = entity("paused", "PAUSED").toDomain()
+        val entry = entity("paused", "PAUSED").toDomain().copy(progressBytes = 420L, progressTotal = 1000L)
         val state = DownloadsViewModel.map(listOf(entry), mapOf(
             "paused" to DownloadWork("paused", false, null, 0, 0, 0, finished = true, cancelled = true),
         ))
-        assertEquals(0, state.active.size)
-        assertEquals(com.fetchly.app.domain.model.DownloadStatus.PAUSED, state.history.single().status)
+        assertEquals(1, state.active.size)
+        assertEquals(0, state.history.size)
+        assertEquals(com.fetchly.app.domain.model.DownloadStatus.PAUSED, state.active.single().entry.status)
+        assertEquals(42, state.active.single().percent)
+        assertEquals("Paused", state.active.single().stageText)
         assertEquals(emptyList<com.fetchly.app.domain.model.HistoryEntry>(),
             com.fetchly.app.data.download.DownloadQueuePolicy.next(listOf(entry), emptySet()))
     }
