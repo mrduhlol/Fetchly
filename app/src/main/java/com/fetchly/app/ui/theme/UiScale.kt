@@ -13,6 +13,16 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.TextUnit
 
+enum class UiScale(val percent: Int, internal val factor: Float) {
+    COMPACT(80, 0.8f),
+    STANDARD(100, 1.0f),
+    LARGE(120, 1.2f);
+
+    companion object {
+        fun fromPercent(percent: Int?): UiScale = entries.firstOrNull { it.percent == percent } ?: COMPACT
+    }
+}
+
 internal const val DEFAULT_UI_SCALE = 0.8f
 
 /** Scale app units without replacing Android's accessibility font conversion curve. */
@@ -40,15 +50,22 @@ internal class ScaledViewConfiguration(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun DefaultUiScale(content: @Composable () -> Unit) {
+    ScaledUi( UiScale.COMPACT, content)
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun ScaledUi(scale: UiScale, content: @Composable () -> Unit) {
+    val factor = scale.factor
     val platformDensity = LocalDensity.current
     val platformConfiguration = LocalViewConfiguration.current
     val minimumInteractiveSize = LocalMinimumInteractiveComponentSize.current
-    val scaledDensity = remember(platformDensity) { ScaledDensity(platformDensity) }
-    val scaledConfiguration = remember(platformConfiguration) { ScaledViewConfiguration(platformConfiguration) }
+    val scaledDensity = remember(platformDensity, factor) { ScaledDensity(platformDensity, factor) }
+    val scaledConfiguration = remember(platformConfiguration, factor) { ScaledViewConfiguration(platformConfiguration, factor) }
     CompositionLocalProvider(
         LocalDensity provides scaledDensity,
         LocalViewConfiguration provides scaledConfiguration,
-        LocalMinimumInteractiveComponentSize provides minimumInteractiveSize / DEFAULT_UI_SCALE,
+        LocalMinimumInteractiveComponentSize provides minimumInteractiveSize / factor,
         content = content,
     )
 }
