@@ -15,6 +15,8 @@ Contract (see YtDlpMapper.kt for the consumer):
 """
 
 import json
+import copy
+import threading
 import os
 import re
 import time
@@ -31,6 +33,40 @@ except ImportError:  # pragma: no cover - only if the wheel is missing
 JS_RUNTIMES_DISABLED = {}
 
 _PROGRESS_MIN_INTERVAL = 0.2  # seconds between progress JNI calls
+
+
+_MEDIA_CACHE = {}
+_CACHE_LOCK = threading.Lock()
+_PREVIEW_TTL = 30.0
+_DOWNLOAD_TTL = 300.0
+
+
+def _cached_media(url, max_age):
+    with _CACHE_LOCK:
+        item = _MEDIA_CACHE.get(url)
+        if item is not None and time.monotonic() - item["at"] < max_age:
+            return item
+        return None
+
+
+def _forget_media(url):
+    with _CACHE_LOCK:
+        _MEDIA_CACHE.pop(url, None)
+
+
+def _remember_media(url, raw_info, preview):
+    with _CACHE_LOCK:
+        _MEDIA_CACHE[url] = {"at": time.monotonic(), "info": raw_info, "preview": preview}
+        while len(_MEDIA_CACHE) > 8:
+            _MEDIA_CACHE.pop(next(iter(_MEDIA_CACHE)))
+
+
+def warmup():
+    """Load common extractor code off the UI thread, without making a request."""
+    if yt_dlp is not None:
+        with yt_dlp.YoutubeDL(_base_params(skip_download=True)) as ydl:
+            _register_extractors(ydl)
+            ydl.get_info_extractor("Youtube")
 
 
 class FetchlyCancelled(Exception):
@@ -67,6 +103,9 @@ def extract(url):
     """Resolve a link into media metadata + every raw format yt-dlp offers."""
     if yt_dlp is None:
         return json.dumps({"ok": False, "error": "yt-dlp is not installed in this build."})
+    cached = _cached_media(url, _PREVIEW_TTL)
+    if cached is not None:
+        return cached["preview"]
     try:
         params = _base_params(skip_download=True)
         if _is_x_url(url):
@@ -85,12 +124,13 @@ def extract(url):
                 info = photos[0]
                 photo_only = True
             photos = _x_photos(getattr(ydl, "_fetchly_x_status", None)) if _is_x_url(url) else []
+        raw_info = info
         multi_entries = ([] if photo_only else (_entries(info) or [info])) + photos if _is_x_url(url) else []
         is_multi = len(multi_entries) > 1
         info = _first_entry(info)
         if not info:
             return json.dumps({"ok": False, "error": "No media found at this link."})
-        return json.dumps({
+        preview = json.dumps({
             "ok": True,
             "title": str(info.get("title") or ""),
             "uploader": str(info.get("uploader") or info.get("channel") or ""),
@@ -101,6 +141,8 @@ def extract(url):
             "formats": [_clean_format(f, info.get("duration")) for f in _formats(info)],
             **({"entries": [_clean_entry(entry) for entry in multi_entries]} if is_multi else {}),
         })
+        _remember_media(url, raw_info, preview)
+        return preview
     except Exception as exc:
         return json.dumps({"ok": False, "error": _error_text(exc)})
 
@@ -172,7 +214,17 @@ def download(url, format_id, dest_dir, prefix, hook):
     try:
         with yt_dlp.YoutubeDL(params) as ydl:
             _register_extractors(ydl)
-            ydl.download([url])
+            cached = _cached_media(url, _DOWNLOAD_TTL)
+            if cached is not None:
+                raw = cached["info"]
+                entries = _entries(raw)
+                item_index = (playlist_item or 1) - 1
+                selected = entries[item_index] if entries and 0 <= item_index < len(entries) else _first_entry(raw)
+                # Let yt-dlp choose the exact format using already-resolved URLs,
+                # headers and fragment metadata, rather than resolving the page again.
+                ydl.process_ie_result(copy.deepcopy(selected), download=True)
+            else:
+                ydl.download([url])
         path = finished["path"] or _find_output(dest_dir, prefix)
         if not path or not os.path.exists(path):
             _cleanup_partials(dest_dir, prefix)
@@ -186,6 +238,7 @@ def download(url, format_id, dest_dir, prefix, hook):
     except Exception as exc:
         if hook is not None and hook.shouldCancel():
             return json.dumps({"ok": False, "cancelled": True, "error": "Paused or cancelled."})
+        _forget_media(url)
         _cleanup_partials(dest_dir, prefix)
         return json.dumps({"ok": False, "cancelled": False, "error": _error_text(exc)})
 
