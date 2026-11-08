@@ -34,10 +34,12 @@ object MediaStorePublisher {
         val values = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, displayName)
             put(MediaStore.MediaColumns.MIME_TYPE, mime)
-            put(MediaStore.MediaColumns.RELATIVE_PATH, relativeDir(mediaType))
+            put(MediaStore.MediaColumns.RELATIVE_PATH, if (mime == "application/zip") "Download/Fetchly" else relativeDir(mediaType))
             put(MediaStore.MediaColumns.IS_PENDING, 1)
         }
-        val uri = runCatching { resolver.insert(collection(mediaType), values) }.getOrNull()
+        val uri = runCatching {
+            resolver.insert(if (mime == "application/zip") MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY) else collection(mediaType), values)
+        }.getOrNull()
             ?: return PublishResult.Failed("the media library refused to create the file")
         return try {
             resolver.openOutputStream(uri)?.use { out ->
