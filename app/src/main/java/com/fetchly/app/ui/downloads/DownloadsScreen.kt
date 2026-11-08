@@ -297,6 +297,7 @@ private fun ActiveCard(active: ActiveDownload, enabled: Boolean, onCancel: () ->
                     progress = { percent / 100f },
                     modifier = Modifier.fillMaxWidth().alpha(if (paused) 0.4f else 1f),
                     color = if (paused) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
+                    trackColor = if (paused) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant,
                 )
             } else {
                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
