@@ -162,7 +162,7 @@ class DownloadWorker(
             withContext(NonCancellable + Dispatchers.IO) {
                 // A deletion racing cancellation must not leave newly written files.
                 val stored = history.getById(id)
-                if (stored == null || (!retainPartial && stored.status != DownloadStatus.PAUSED)) cleanupTemps(scratch, prefix)
+                if (!DownloadPlan.retainPartial(stored?.status, retainPartial)) cleanupTemps(scratch, prefix)
             }
         }
     }
