@@ -59,3 +59,7 @@ Fetch Options shows a large landscape 16:9 or portrait 9:16 preview using source
 Settings persists exactly 80%, 100%, and 120% app scale. Palette changes apply immediately within the app. Launcher palette changes wait until all app activities leave the foreground, use distinct original-logo variants, and never kill the process. Android may cache launcher icon updates. Download progress uses an ongoing foreground notification with a 🗿 large icon and the required monochrome small icon.
 
 The extraction runtime caches its module handle, warms off the UI thread, and coalesces overlapping requests for the same URL. Live fetch latency remains dependent on the source and connection; no fixed speed claim is made.
+
+## Full-page Home wallpaper correction
+
+The owner's 2.3 feedback supersedes the vignette guidance: Home uses one full-height portrait wallpaper behind its content, with no separate footer image. Both themes have purpose-generated continuous portrait compositions. Supported platform marks have transparent backgrounds and no filled pebble tiles; monochrome brands adapt to the palette. Both launcher variants and the inherited share-sheet icon have zero artificial inset, leaving Android's launcher mask to define the outside shape.
