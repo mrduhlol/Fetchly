@@ -47,7 +47,8 @@ internal fun SupportedApps() {
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Box(
-                        modifier = Modifier.size(62.dp).scale(scale.value).rotate(tilt.value),
+                        modifier = Modifier.size(62.dp).scale(scale.value).rotate(tilt.value)
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.82f), RoundedCornerShape(22.dp)),
                         contentAlignment = Alignment.Center,
                     ) {
                         PlatformIcon(app.platform, large = true, music = app == SupportedApp.YOUTUBE_MUSIC,
