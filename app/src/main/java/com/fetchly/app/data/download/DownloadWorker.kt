@@ -157,7 +157,8 @@ class DownloadWorker(
         } finally {
             withContext(NonCancellable + Dispatchers.IO) {
                 // A deletion racing cancellation must not leave newly written files.
-                if (!retainPartial || history.getById(id) == null) cleanupTemps(scratch, prefix)
+                val stored = history.getById(id)
+                if (stored == null || (!retainPartial && stored.status != DownloadStatus.PAUSED)) cleanupTemps(scratch, prefix)
             }
         }
     }
@@ -633,6 +634,12 @@ class DownloadWorker(
             body()
         } finally {
             pump.cancel()
+            withContext(NonCancellable) {
+                val progress = latest.get()
+                if (DownloadStages.isTransfer(stage.get()) && progress.downloadedBytes > 0) {
+                    graph.history.saveProgress(entry.id, progress.downloadedBytes, progress.totalBytes)
+                }
+            }
             stage.set(null)
         }
     }
@@ -645,6 +652,9 @@ class DownloadWorker(
     private suspend fun pushProgress(entry: HistoryEntry) {
         val stageText = stage.get() ?: return
         val progress = DownloadStages.progressFor(stageText, latest.get())
+        if (DownloadStages.isTransfer(stageText) && progress.downloadedBytes > 0) {
+            graph.history.saveProgress(entry.id, progress.downloadedBytes, progress.totalBytes)
+        }
         setProgress(
             workDataOf(
                 KEY_STAGE to stageText,
