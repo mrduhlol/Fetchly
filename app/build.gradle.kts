@@ -19,6 +19,8 @@ chaquopy {
     }
 }
 
+val fetchlySigningStore = providers.environmentVariable("FETCHLY_SIGNING_STORE").orNull
+
 android {
     namespace = "com.fetchly.app"
     compileSdk = 35
@@ -46,6 +48,15 @@ android {
         buildConfig = true
     }
 
+    if (fetchlySigningStore != null) {
+        signingConfigs.create("persistent") {
+            storeFile = file(fetchlySigningStore)
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -57,6 +68,7 @@ android {
         }
         debug {
             applicationIdSuffix = ".debug"
+            if (fetchlySigningStore != null) signingConfig = signingConfigs.getByName("persistent")
         }
     }
 
