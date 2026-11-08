@@ -10,9 +10,9 @@ Paste a public media link, pick a quality, save it to your device.
 
 <p><a href="https://github.com/mrduhlol/Fetchly/releases/latest/download/fetchly.apk"><img src="docs/download-apk.svg" width="220" alt="Download APK for Android" /></a></p>
 
-<sub>v2.1 · Android 10 (API 29)+</sub>
+<sub>v2.2 · Android 10 (API 29)+</sub>
 
-Upgrading from the old 2.0 APK requires uninstalling it first because its signing key differs. This clears app settings and in-app history. [Release notes](docs/release-notes/v2.1.md) explain the change.
+Upgrading from the old 2.0 APK requires uninstalling it first because its signing key differs. This clears app settings and in-app history. Updates from the published 2.1 APK keep its signing key and install in place. [Release notes](docs/release-notes/v2.2.md) cover this update.
 
 </div>
 
@@ -23,6 +23,9 @@ Paste a link — YouTube, another public site, or a direct media file. Fetchly r
 No backend, no account, no API key, no configuration. Resolution, downloading and muxing all run on-device.
 
 ## Features
+
+- **Personal appearance** — gold and white palettes, deferred launcher icon updates, and 80%, 100%, or 120% app size.
+- **Media previews and MP3** — large landscape/portrait previews, video container buttons, and MP3 bitrate choices from 96 to 320 kb/s.
 
 - **Share to fetch** — send a public link from another app and get a compact format/quality dialog over the source app.
 - **Batch review** — check up to 50 links together, set format and filename per item, and queue two downloads at a time.
@@ -40,9 +43,9 @@ No backend, no account, no API key, no configuration. Resolution, downloading an
 
 | Check | Recorded result |
 | --- | --- |
-| Kotlin unit tests | **232 passing** |
+| Kotlin unit tests | **244 passing** |
 | Python bridge tests | **21 passing** |
-| Android lint | Clean |
+| Android lint | Passes with warnings |
 | Debug APK | Assembles successfully |
 
 The suites cover URL validation, extraction mapping, quality pairing, queue behavior, cancellation, storage, resume/retry, the share dialog and error classification. Live and fixture extraction checks covered YouTube, Instagram, LinkedIn, Pinterest and X; Reddit and TikTok restrictions were identified rather than hidden. Android 14 emulator checks resolved, downloaded and opened a public WebP.
@@ -50,6 +53,8 @@ The suites cover URL validation, extraction mapping, quality pairing, queue beha
 The full scope, including what is not device-verified, is in [`docs/VERIFICATION.md`](docs/VERIFICATION.md).
 
 ### Performance
+
+Version 2.2 warms the extraction runtime off the UI thread, caches the Python module, and shares overlapping requests for the same URL. Live latency gains have not been benchmarked.
 
 Fetchly fetches direct files with up to four parallel byte ranges when the source supports ranges, has a strong ETag and a known length. YouTube video and audio streams download concurrently and are muxed on-device.
 
