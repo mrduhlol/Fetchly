@@ -1,6 +1,9 @@
 package com.fetchly.app.ui.home
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.layout.ContentScale
@@ -67,6 +70,7 @@ fun HomeScreen(
             modifier = Modifier.matchParentSize(),
             contentScale = ContentScale.FillBounds,
         )
+        Box(Modifier.matchParentSize().background(MaterialTheme.colorScheme.background.copy(alpha = 0.38f)))
         Column(
             modifier = Modifier.widthIn(max = 640.dp).fillMaxSize()
                 .imePadding().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 4.dp),
@@ -94,7 +98,7 @@ fun HomeScreen(
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
             ) {
-                Column(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Column(Modifier.heightIn(min = 280.dp).padding(horizontal = 18.dp, vertical = 20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Text("Start with a link", style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
                         TextButton(
@@ -131,12 +135,15 @@ fun HomeScreen(
             Spacer(Modifier.height(16.dp))
             SupportedApps()
             Spacer(Modifier.height(16.dp))
-            Text(
-                "© mrduhlol",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp, bottom = 12.dp),
-            )
+            Spacer(Modifier.height(44.dp))
+            Box(
+                Modifier.fillMaxWidth().height(160.dp)
+                    .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.92f), Color.Black))),
+                contentAlignment = Alignment.BottomCenter,
+            ) {
+                Text("© mrduhlol", style = MaterialTheme.typography.labelSmall, color = Color(0xFFF4EEE5),
+                    modifier = Modifier.padding(bottom = 24.dp))
+            }
         }
     }
 }
