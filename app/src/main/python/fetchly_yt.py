@@ -74,9 +74,18 @@ def extract(url):
             params["playlist_items"] = "1"
         with yt_dlp.YoutubeDL(params) as ydl:
             _register_extractors(ydl)
-            info = ydl.extract_info(url, download=False)
-        multi_entries = _entries(info) if _is_x_url(url) else None
-        is_multi = bool(multi_entries)
+            photo_only = False
+            try:
+                info = ydl.extract_info(url, download=False)
+            except Exception as exc:
+                photos = _x_photos(getattr(ydl, "_fetchly_x_status", None)) if _is_x_url(url) else []
+                if not photos or "No video could be found" not in _error_text(exc):
+                    raise
+                info = photos[0]
+                photo_only = True
+            photos = _x_photos(getattr(ydl, "_fetchly_x_status", None)) if _is_x_url(url) else []
+        multi_entries = ([] if photo_only else (_entries(info) or [info])) + photos if _is_x_url(url) else []
+        is_multi = len(multi_entries) > 1
         info = _first_entry(info)
         if not info:
             return json.dumps({"ok": False, "error": "No media found at this link."})
@@ -155,6 +164,8 @@ def download(url, format_id, dest_dir, prefix, hook):
     if playlist_item is not None and _is_x_url(url):
         params["noplaylist"] = False
         params["playlist_items"] = str(playlist_item)
+    else:
+        params["playlist_items"] = "1"
     try:
         with yt_dlp.YoutubeDL(params) as ydl:
             _register_extractors(ydl)
@@ -190,6 +201,16 @@ def _register_extractors(ydl):
                 raise GeoRestrictedError("TikTok is not available in your country.")
             return response
 
+    from yt_dlp.extractor.twitter import TwitterIE as BaseTwitterIE
+
+    class TwitterIE(BaseTwitterIE):
+        def _extract_status(self, *args, **kwargs):
+            status = super()._extract_status(*args, **kwargs)
+            # Reuse the response already fetched by the extractor; no extra request.
+            self._downloader._fetchly_x_status = status
+            return status
+
+    ydl.add_info_extractor(TwitterIE())
     ydl.add_info_extractor(TikTokIE())
 
 
@@ -217,6 +238,28 @@ def _entries(info):
     if isinstance(info, dict) and info.get("_type") in ("playlist", "multi_video"):
         return [entry for entry in info.get("entries") or [] if entry]
     return []
+
+
+def _x_photos(status):
+    if not isinstance(status, dict):
+        return []
+    photos = []
+    for media in (status.get("extended_entities") or {}).get("media") or []:
+        if media.get("type") != "photo":
+            continue
+        url = media.get("media_url_https") or media.get("media_url")
+        if not isinstance(url, str) or not url.startswith("https://pbs.twimg.com/"):
+            continue
+        url += "&name=orig" if "?" in url else "?name=orig"
+        photos.append({
+            "title": status.get("full_text") or status.get("text") or "X photos",
+            "uploader": (status.get("user") or {}).get("name"),
+            "thumbnail": url,
+            "formats": [{"format_id": "direct", "url": url,
+                         "ext": urlsplit(url).path.rsplit(".", 1)[-1].lower(),
+                         "vcodec": "none", "acodec": "none"}],
+        })
+    return photos
 
 
 def _clean_entry(info):
