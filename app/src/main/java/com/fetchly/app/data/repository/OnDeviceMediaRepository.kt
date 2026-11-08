@@ -52,7 +52,7 @@ class OnDeviceMediaRepository(
     ): ResolveOutcome {
         onStage("Finding the good stuff…")
         return when (val mapped = YtDlpMapper.map(extractCoalesced(url), url, platform)) {
-            is MapResult.Ok -> ResolveOutcome.Success(mapped.info)
+            is MapResult.Ok -> ResolveOutcome.Success(com.fetchly.app.domain.resolve.VideoContainers.apply(mapped.info))
             is MapResult.Fail -> ResolveOutcome.Failed(
                 message = ResolveErrors.messageFor(mapped.rawError),
                 raw = mapped.rawError,
