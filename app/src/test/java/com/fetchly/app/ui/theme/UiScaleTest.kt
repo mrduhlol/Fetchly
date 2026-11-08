@@ -29,6 +29,24 @@ class UiScaleTest {
         }
     }
 
+    @Test fun `supported scale choices are exactly 80 100 and 120 percent`() {
+        assertEquals(listOf(80, 100, 120), UiScale.entries.map { it.percent })
+        assertEquals(UiScale.COMPACT, UiScale.fromPercent(null))
+        assertEquals(UiScale.COMPACT, UiScale.fromPercent(80))
+        assertEquals(UiScale.STANDARD, UiScale.fromPercent(100))
+        assertEquals(UiScale.LARGE, UiScale.fromPercent(120))
+        assertEquals(UiScale.COMPACT, UiScale.fromPercent(90))
+    }
+
+    @Test fun `density scaling applies each supported preset`() {
+        val platform = PlatformDensity()
+        for (choice in UiScale.entries) {
+            val app = ScaledDensity(platform, choice.factor)
+            assertEquals(with(platform) { 40.dp.toPx() } * choice.factor,
+                with(app) { 40.dp.toPx() }, 0.001f)
+        }
+    }
+
     @Test fun `body and headline text retain the platform font conversion curve`() {
         val platform = PlatformDensity()
         val app = ScaledDensity(platform)
