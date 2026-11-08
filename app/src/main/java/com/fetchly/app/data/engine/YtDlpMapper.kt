@@ -53,6 +53,7 @@ object YtDlpMapper {
             it.ext in IMAGE_EXTS && it.vcodec == "none" && it.acodec == "none"
         }
         val bestAudio = audios.sortedWith(AUDIO_RANK).firstOrNull()
+            ?: formats.filter { it.acodec != "none" && it.acodec != "unknown" }.sortedWith(AUDIO_RANK).firstOrNull()
 
         val options = mutableListOf<QualityOption>()
         val bestByHeight = if (isYoutubeMusic) emptyMap() else videos.groupBy { it.height!! }
@@ -72,7 +73,7 @@ object YtDlpMapper {
                     degradedType = MediaType.IMAGE
                     options += fileOption(images.first(), label = "Image")
                 }
-                formats.size == 1 -> {
+                formats.size == 1 && bestAudio == null -> {
                     val single = formats.first()
                     degradedType = if (single.ext in AUDIO_EXTS) MediaType.AUDIO else MediaType.VIDEO
                     options += fileOption(single, label = "File")
