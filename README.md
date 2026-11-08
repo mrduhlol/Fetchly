@@ -10,9 +10,9 @@ Paste a public media link, pick a quality, save it to your device.
 
 <p><a href="https://github.com/mrduhlol/Fetchly/releases/latest/download/fetchly.apk"><img src="docs/download-apk.svg" width="220" alt="Download APK for Android" /></a></p>
 
-<sub>v2.3 · Android 10 (API 29)+</sub>
+<sub>v2.4 · Android 10 (API 29)+</sub>
 
-Upgrading from the old 2.0 APK requires uninstalling it first because its signing key differs. This clears app settings and in-app history. Updates from the published 2.1 APK keep its signing key and install in place. [Release notes](docs/release-notes/v2.3.md) cover this update.
+Upgrading from the old 2.0 APK requires uninstalling it first because its signing key differs. This clears app settings and in-app history. Updates from the published 2.1 APK keep its signing key and install in place. [Release notes](docs/release-notes/v2.4.md) cover this update.
 
 </div>
 
@@ -29,7 +29,7 @@ No backend, no account, no API key, no configuration. Resolution, downloading an
 
 - **Share to fetch** — send a public link from another app and get a compact format/quality dialog over the source app.
 - **X bulk ZIP** — bundle available photo and video attachments from a multi-media X post into one ZIP.
-- **Pause and resume** — pause from Downloads or its notification, then resume; eligible direct files retain partial data.
+- **Pause and resume** — freeze a download in place with its byte count and resume from retained partial data when the source supports it.
 - **Batch review** — check up to 50 links together, set format and filename per item, and queue two downloads at a time.
 - **Real quality choices** — container, reported size, sound availability and source language. Silent video needs confirmation and is never selected as best by default.
 - **Resume and retry** — eligible direct files resume from validated checkpoints; failed segments retry without re-downloading completed bytes.
@@ -45,8 +45,8 @@ No backend, no account, no API key, no configuration. Resolution, downloading an
 
 | Check | Recorded result |
 | --- | --- |
-| Kotlin unit tests | **250 passing** |
-| Python bridge tests | **25 passing** |
+| Kotlin unit tests | **252 passing** |
+| Python bridge tests | **28 passing** |
 | Android lint | Passes with warnings |
 | Debug APK | Assembles successfully |
 
