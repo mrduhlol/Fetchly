@@ -66,7 +66,8 @@ object YtDlpMapper {
                         .sortedWith(compareByDescending<StreamRef> { it.sizeBytes ?: 0L }).firstOrNull()
                     val video = entryFormats.filter { it.vcodec != "none" }
                         .sortedWith(VIDEO_RANK).firstOrNull()
-                    (image ?: video)?.let { it.copy(formatId = "x-entry-${index + 1}::${it.formatId}") }
+                    image?.copy(formatId = "direct")
+                        ?: video?.let { it.copy(formatId = "x-entry-${index + 1}::${it.formatId}") }
                 }
                 if (chosen.size > 1) {
                     val size = chosen.mapNotNull { it.sizeBytes }.takeIf { it.size == chosen.size }?.sum()
