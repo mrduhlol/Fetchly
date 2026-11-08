@@ -1,0 +1,236 @@
+{
+  "source_commit": "7da9d0b0d19c4dafa644aa32c9bb95bf44b3c53b",
+  "version": "2.4.6",
+  "date": "2026-11-09",
+  "engine": "2026.10.26",
+  "environment": "Desktop Python bridge; Android 14 x86_64 emulator UI; host under load with swapping. Not a physical-phone or controlled steady-state benchmark.",
+  "tests": {
+    "tests": 254,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "python": {
+    "tests": 32,
+    "failures": 0,
+    "seconds": 31.405
+  },
+  "lint": {
+    "Warning": 68
+  },
+  "fetch": [
+    {
+      "source": "YouTube",
+      "attempt": 1,
+      "elapsed": 43.425,
+      "exit": 0,
+      "bridge": {
+        "engine": "2026.10.26",
+        "results": [
+          {
+            "phase": "cold",
+            "seconds": 32.844,
+            "ok": true,
+            "formats": 48,
+            "error": ""
+          },
+          {
+            "phase": "cached",
+            "seconds": 0.0,
+            "ok": true,
+            "formats": 48,
+            "error": ""
+          }
+        ]
+      }
+    },
+    {
+      "source": "YouTube",
+      "attempt": 2,
+      "elapsed": 5.541,
+      "exit": 0,
+      "bridge": {
+        "engine": "2026.10.26",
+        "results": [
+          {
+            "phase": "cold",
+            "seconds": 3.247,
+            "ok": true,
+            "formats": 48,
+            "error": ""
+          },
+          {
+            "phase": "cached",
+            "seconds": 0.0,
+            "ok": true,
+            "formats": 48,
+            "error": ""
+          }
+        ]
+      }
+    },
+    {
+      "source": "Vimeo",
+      "attempt": 1,
+      "elapsed": 4.785,
+      "exit": 0,
+      "bridge": {
+        "engine": "2026.10.26",
+        "results": [
+          {
+            "phase": "cold",
+            "seconds": 2.801,
+            "ok": false,
+            "formats": 0,
+            "error": "ERROR: [vimeo] 76979871: The web client only works when logged-in. Use --cookies, --cookies-from-browser, --username and --password, --netrc-cmd, or --netrc (vimeo) to provide account credentials. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies"
+          },
+          {
+            "phase": "cached",
+            "seconds": 0.371,
+            "ok": false,
+            "formats": 0,
+            "error": "ERROR: [vimeo] 76979871: The web client only works when logged-in. Use --cookies, --cookies-from-browser, --username and --password, --netrc-cmd, or --netrc (vimeo) to provide account credentials. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies"
+          }
+        ]
+      }
+    },
+    {
+      "source": "Vimeo",
+      "attempt": 2,
+      "elapsed": 2.985,
+      "exit": 0,
+      "bridge": {
+        "engine": "2026.10.26",
+        "results": [
+          {
+            "phase": "cold",
+            "seconds": 1.689,
+            "ok": false,
+            "formats": 0,
+            "error": "ERROR: [vimeo] 76979871: The web client only works when logged-in. Use --cookies, --cookies-from-browser, --username and --password, --netrc-cmd, or --netrc (vimeo) to provide account credentials. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies"
+          },
+          {
+            "phase": "cached",
+            "seconds": 0.327,
+            "ok": false,
+            "formats": 0,
+            "error": "ERROR: [vimeo] 76979871: The web client only works when logged-in. Use --cookies, --cookies-from-browser, --username and --password, --netrc-cmd, or --netrc (vimeo) to provide account credentials. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies"
+          }
+        ]
+      }
+    },
+    {
+      "source": "Direct MP4",
+      "attempt": 1,
+      "elapsed": 5.112,
+      "exit": 0,
+      "bridge": {
+        "engine": "2026.10.26",
+        "results": [
+          {
+            "phase": "cold",
+            "seconds": 3.442,
+            "ok": false,
+            "formats": 0,
+            "error": "ERROR: [generic] ForBiggerBlazes: Unable to download webpage: HTTP Error 403: Forbidden (caused by <HTTPError 403: Forbidden>)"
+          },
+          {
+            "phase": "cached",
+            "seconds": 0.566,
+            "ok": false,
+            "formats": 0,
+            "error": "ERROR: [generic] ForBiggerBlazes: Unable to download webpage: HTTP Error 403: Forbidden (caused by <HTTPError 403: Forbidden>)"
+          }
+        ]
+      }
+    },
+    {
+      "source": "Direct MP4",
+      "attempt": 2,
+      "elapsed": 6.045,
+      "exit": 0,
+      "bridge": {
+        "engine": "2026.10.26",
+        "results": [
+          {
+            "phase": "cold",
+            "seconds": 2.899,
+            "ok": false,
+            "formats": 0,
+            "error": "ERROR: [generic] ForBiggerBlazes: Unable to download webpage: HTTP Error 403: Forbidden (caused by <HTTPError 403: Forbidden>)"
+          },
+          {
+            "phase": "cached",
+            "seconds": 1.467,
+            "ok": false,
+            "formats": 0,
+            "error": "ERROR: [generic] ForBiggerBlazes: Unable to download webpage: HTTP Error 403: Forbidden (caused by <HTTPError 403: Forbidden>)"
+          }
+        ]
+      }
+    }
+  ],
+  "download": [
+    {
+      "attempt": 1,
+      "fetch_seconds": 6.255,
+      "format": "249",
+      "container": "webm",
+      "ok": true,
+      "error": null,
+      "download_seconds": 2.535,
+      "first_progress_seconds": 2.144,
+      "bytes": 1231355,
+      "average_MB_per_s": 0.486,
+      "progress_events": 3
+    },
+    {
+      "attempt": 2,
+      "fetch_seconds": 2.059,
+      "format": "249",
+      "container": "webm",
+      "ok": true,
+      "error": null,
+      "download_seconds": 2.402,
+      "first_progress_seconds": 2.042,
+      "bytes": 1231355,
+      "average_MB_per_s": 0.513,
+      "progress_events": 3
+    }
+  ],
+  "blocked_transfer_probe": [
+    {
+      "http_code": 403,
+      "size_download": 0,
+      "speed_download": 0,
+      "time_total": 0.368953,
+      "time_starttransfer": 0.368767,
+      "remote_ip": "34.144.170.27",
+      "attempt": 1,
+      "exit": 22,
+      "error": "curl: (22) The requested URL returned error: 403\n"
+    },
+    {
+      "http_code": 403,
+      "size_download": 0,
+      "speed_download": 0,
+      "time_total": 0.337135,
+      "time_starttransfer": 0.337044,
+      "remote_ip": "34.153.3.27",
+      "attempt": 2,
+      "exit": 22,
+      "error": "curl: (22) The requested URL returned error: 403\n"
+    },
+    {
+      "http_code": 403,
+      "size_download": 0,
+      "speed_download": 0,
+      "time_total": 0.344792,
+      "time_starttransfer": 0.344664,
+      "remote_ip": "104.154.125.27",
+      "attempt": 3,
+      "exit": 22,
+      "error": "curl: (22) The requested URL returned error: 403\n"
+    }
+  ]
+}
