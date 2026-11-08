@@ -41,3 +41,9 @@ started manually with `workflow_dispatch`.
    Fetchly before installing this one.
 5. History starts fresh in v2.0 — it never migrates from v1.8.
 6. No account system, no cloud sync — by design.
+
+## Pinned signing identity from 2.4
+
+The release workflow supplies `FETCHLY_SIGNING_STORE` explicitly. It does not rely on Gradle's OS-dependent default debug-keystore path. Before publishing, `apksigner` verifies the artifact and its certificate is compared against `docs/SIGNING_CERT_SHA256`; a mismatch stops the workflow. BUILD.txt records the certificate fingerprint. The manual Audit APK signer workflow prints only the persistent key's public certificate fingerprint, never private key material.
+
+The published 2.3 APK used a different certificate from the persistent key, so upgrading to corrected 2.4 requires one uninstall/reinstall. Uninstalling clears app settings and in-app history. Do not claim in-place compatibility with 2.3. Subsequent releases with the pinned certificate support in-place updates.
