@@ -68,3 +68,9 @@ The owner's 2.3 feedback supersedes the vignette guidance: Home uses one full-he
 ## Download controls in 2.3
 
 Both full and compact pickers place Video/Audio first and MP4/MKV beneath, defaulting to MP4. Output choices retain actual source streams; MP4 converts non-AAC audio while copying video. Sizes use source byte counts or clearly marked bitrate/duration estimates. X multi-media posts expose a Bulk ZIP file choice, with original photo attachments and available video entries, stored in Downloads/Fetchly. Paused rows persist and remain outside automatic queue admission until Resume. Ongoing notifications expose Pause and a monochrome Moai small icon; successful notifications switch to the sunglasses version.
+
+## 2.4 installed-app corrections
+
+Paused downloads remain in the active list with persisted bytes and total. Their card dims and freezes its progress bar; only the green outlined Resume control stays enabled. Engine partials survive Pause and immediate requeue, while completed and explicitly cancelled non-direct attempts clean their scratch files. A real local HTTP test covers Range continuation.
+
+Home keeps one wallpaper but subdues it with a theme scrim, restores translucent pebble backings behind platform marks, enlarges the fetch panel, and ends its scrollable content with a full-width black gradient and light © mrduhlol credit. Library replaces temple artwork with a generated lyre and scroll still life. Notifications show the media thumbnail rather than a large Moai; the small status icon uses a monochrome alpha adaptation of the original Noto Moai emoji. A new default-importance channel has sound and vibration disabled, allowing status-bar display without treating the transfer as a silent notification.
