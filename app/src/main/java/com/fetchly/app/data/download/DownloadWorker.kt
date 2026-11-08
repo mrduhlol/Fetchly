@@ -399,7 +399,7 @@ class DownloadWorker(
             return AssembleOutcome.Failed("The download produced no files.", null)
         }
         val single = files.singleOrNull()
-        if (single != null && sameContainer(single, option.container)) {
+        if (single != null && sameContainer(single, option.container) && !option.id.startsWith("audio-mp3-")) {
             return AssembleOutcome.Ok(single)
         }
 
@@ -407,7 +407,13 @@ class DownloadWorker(
         val args = mutableListOf("-y")
         files.forEach { args += listOf("-i", it.absolutePath) }
         args += DownloadPlan.streamMaps(option)
-        args += listOf("-c", "copy")
+        if (option.kind == QualityKind.AUDIO && option.container == "mp3") {
+            val bitrate = option.id.removePrefix("audio-mp3-").toIntOrNull()
+                ?.takeIf { it in listOf(96, 128, 256, 320) } ?: 128
+            args += listOf("-c:a", "libmp3lame", "-b:a", "${bitrate}k")
+        } else {
+            args += listOf("-c", "copy")
+        }
         if (option.container.equals("mp4", ignoreCase = true)) {
             args += listOf("-movflags", "+faststart")
         }
