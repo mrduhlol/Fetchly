@@ -16,6 +16,7 @@ object MimeTypes {
         "png" -> "image/png"
         "gif" -> "image/gif"
         "webp" -> "image/webp"
+        "zip" -> "application/zip"
         else -> "application/octet-stream"
     }
 
