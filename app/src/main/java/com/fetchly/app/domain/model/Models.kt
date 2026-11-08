@@ -61,7 +61,7 @@ data class MediaInfo(
     val height: Int? = null,
 )
 
-enum class DownloadStatus { QUEUED, RUNNING, COMPLETED, FAILED, CANCELLED }
+enum class DownloadStatus { QUEUED, RUNNING, COMPLETED, FAILED, CANCELLED, PAUSED }
 
 /**
  * One row of download history. Keeps what a retry needs: the source URL, the
