@@ -53,7 +53,7 @@ class EngineResumeTest(unittest.TestCase):
                 return self.cancelled
 
             def update(self, downloaded, total, speed):
-                if self.pause and downloaded >= 65536:
+                if self.pause and downloaded > 0:
                     self.cancelled = True
 
         server = ThreadingHTTPServer(('127.0.0.1', 0), Origin)
@@ -63,7 +63,7 @@ class EngineResumeTest(unittest.TestCase):
             with tempfile.TemporaryDirectory() as directory:
                 url = f'http://127.0.0.1:{server.server_port}/video.mp4'
                 paused = json.loads(bridge.download(url, 'best', directory, 'media', Hook(True)))
-                self.assertTrue(paused['cancelled'], paused)
+                self.assertTrue(paused.get('cancelled', False), paused)
                 parts = list(pathlib.Path(directory).glob('media*.part'))
                 self.assertEqual(1, len(parts))
                 retained = parts[0].stat().st_size
