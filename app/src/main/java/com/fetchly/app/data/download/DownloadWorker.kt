@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.content.ContextCompat
 import android.content.Context
+import androidx.core.graphics.drawable.toBitmap
 import android.content.pm.ServiceInfo
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.CoroutineWorker
@@ -76,6 +77,8 @@ class DownloadWorker(
     private val stage = AtomicReference<String?>(null)
     private val latest = AtomicReference(DownloadProgress(0L, 0L, 0.0))
 
+    @Volatile private var notificationThumbnail: android.graphics.Bitmap? = null
+
     private val activeHooks = ConcurrentHashMap.newKeySet<DownloadHook>()
 
     override suspend fun doWork(): Result {
@@ -111,6 +114,7 @@ class DownloadWorker(
         // CANCELLED is left alone.
         if (!history.claim(id, System.currentTimeMillis())) return Result.success()
         val entry = loaded
+        latest.set(DownloadProgress(entry.progressBytes, entry.progressTotal, 0.0))
 
         // A previous attempt's "retrying…" notice is stale the moment the new
         // run announces itself with a progress notification.
@@ -612,7 +616,7 @@ class DownloadWorker(
                 DownloadNotifications.completed(
                     applicationContext, entry.id, entry.title,
                     "Saved to your media library as ${done.name}",
-                    done.uri, done.mime,
+                    done.uri, done.mime, notificationThumbnail,
                 ),
             )
         }
@@ -624,6 +628,15 @@ class DownloadWorker(
         entry: HistoryEntry,
         body: suspend () -> PipelineOutcome,
     ): PipelineOutcome = coroutineScope {
+        val artwork = entry.thumbnailUrl?.let { url -> launch(Dispatchers.IO) {
+            try {
+                val request = coil.request.ImageRequest.Builder(applicationContext)
+                    .data(url).size(192).allowHardware(false).build()
+                val result = graph.notificationImages.execute(request)
+                notificationThumbnail = result.drawable?.toBitmap()
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) { /* A thumbnail failure must not affect the transfer. */ }
+        } }
         val pump = launch {
             while (isActive) {
                 pushProgress(entry)
@@ -634,6 +647,7 @@ class DownloadWorker(
             body()
         } finally {
             pump.cancel()
+            artwork?.cancel()
             withContext(NonCancellable) {
                 val progress = latest.get()
                 if (DownloadStages.isTransfer(stage.get()) && progress.downloadedBytes > 0) {
@@ -667,7 +681,7 @@ class DownloadWorker(
             notifyIfAllowed(
                 DownloadNotifications.idFor(entry.id),
                 DownloadNotifications.progress(
-                    applicationContext, entry.id, entry.title, stageText, progress,
+                    applicationContext, entry.id, entry.title, stageText, progress, notificationThumbnail,
                 ),
             )
         }
