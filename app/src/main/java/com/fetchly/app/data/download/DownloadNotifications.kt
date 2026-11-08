@@ -26,7 +26,7 @@ import com.fetchly.app.domain.util.FormatSize
  */
 object DownloadNotifications {
 
-    const val CHANNEL_ID = "fetchly_downloads"
+    const val CHANNEL_ID = "fetchly_transfers_v2"
 
     /** Progress + foreground id; WorkManager owns this one's lifetime. */
     fun idFor(downloadId: String): Int = downloadId.hashCode()
@@ -40,8 +40,12 @@ object DownloadNotifications {
         val channel = NotificationChannel(
             CHANNEL_ID,
             context.getString(R.string.notifications_channel_downloads),
-            NotificationManager.IMPORTANCE_LOW,
-        ).apply { setShowBadge(false) }
+            NotificationManager.IMPORTANCE_DEFAULT,
+        ).apply {
+            setShowBadge(false)
+            setSound(null, null)
+            enableVibration(false)
+        }
         manager.createNotificationChannel(channel)
     }
 
@@ -51,15 +55,17 @@ object DownloadNotifications {
         title: String,
         stage: String,
         progress: DownloadProgress,
+        thumbnail: android.graphics.Bitmap? = null,
     ): Notification {
         val display = DownloadStages.progressFor(stage, progress)
         val knownTotal = display.totalBytes > 0
-        return builder(context, title, progressText(stage, display), largeIcon = true)
-            .setSmallIcon(R.drawable.ic_stat_moai)
+        return builder(context, title, progressText(stage, display), largeIcon = false)
+            .apply { thumbnail?.let { setLargeIcon(it) } }
+            .setSmallIcon(R.drawable.ic_stat_moai_emoji)
             .setOngoing(true)
             .addAction(0, "Pause", broadcast(context, downloadId, DownloadActionReceiver.ACTION_PAUSE, salt = 3))
             .setOnlyAlertOnce(true)
-            .setSilent(true)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
             .setProgress(if (knownTotal) 100 else 0, percentOf(display), !knownTotal)
             .addAction(
@@ -77,10 +83,11 @@ object DownloadNotifications {
         text: String,
         uri: String?,
         mime: String?,
+        thumbnail: android.graphics.Bitmap? = null,
     ): Notification =
         builder(context, title, text, largeIcon = false)
-            .setSmallIcon(R.drawable.ic_stat_moai_done)
-            .setLargeIcon(moaiDoneIcon)
+            .setSmallIcon(R.drawable.ic_stat_moai_emoji_done)
+            .apply { thumbnail?.let { setLargeIcon(it) } }
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .setAutoCancel(true)
             .setContentIntent(openFile(context, uri, mime))
