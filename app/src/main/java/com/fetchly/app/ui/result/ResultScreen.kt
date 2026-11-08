@@ -82,7 +82,8 @@ fun ResultScreen(
                         Text("Fetch media", style = MaterialTheme.typography.headlineMedium)
                         Spacer(Modifier.height(16.dp))
                         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Thumbnail(media, Modifier.fillMaxWidth().aspectRatio(16f / 9f))
+                            Thumbnail(media, Modifier.fillMaxWidth().aspectRatio(
+                                if ((media.height ?: 0) > (media.width ?: Int.MAX_VALUE)) 9f / 16f else 16f / 9f))
                             Text(media.title, style = MaterialTheme.typography.titleLarge, maxLines = 3,
                                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -96,7 +97,7 @@ fun ResultScreen(
                         Spacer(Modifier.height(6.dp))
                         Text(when (state.activeKind) {
                             QualityKind.VIDEO -> "Higher quality uses more storage."
-                            QualityKind.AUDIO -> "Choose an audio format and quality."
+                            QualityKind.AUDIO -> "Choose an MP3 bitrate."
                             else -> "Save the original file."
                         }, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
@@ -200,7 +201,7 @@ private fun Thumbnail(media: MediaInfo, modifier: Modifier = Modifier.fillMaxWid
                 model = media.thumbnailUrl,
                 contentDescription = "Preview of ${media.title}",
                 modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop,
+                contentScale = ContentScale.Fit,
                 loading = {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 2.dp)
