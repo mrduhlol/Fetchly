@@ -31,8 +31,8 @@ android {
         applicationId = "com.fetchly.app"
         minSdk = 29
         targetSdk = 34
-        versionCode = 27
-        versionName = "2.4.3"
+        versionCode = 28
+        versionName = "2.4.4"
 
         // 64-bit only: ffmpeg-kit publishes no 32-bit builds, and without the
         // merge engine a 32-bit device could not download any video at all.
