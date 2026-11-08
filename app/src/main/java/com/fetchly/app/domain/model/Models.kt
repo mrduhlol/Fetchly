@@ -90,4 +90,6 @@ data class HistoryEntry(
     val outputPath: String?,
     val createdAt: Long,
     val updatedAt: Long,
+    val progressBytes: Long = 0L,
+    val progressTotal: Long = 0L,
 )
