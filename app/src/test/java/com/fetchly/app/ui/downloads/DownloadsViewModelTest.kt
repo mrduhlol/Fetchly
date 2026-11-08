@@ -76,6 +76,7 @@ class DownloadsViewModelTest {
         ): Int = 1
 
         override suspend fun cancelIfActive(id: String, updatedAt: Long): Int = 1
+        override suspend fun pauseIfActive(id: String, updatedAt: Long): Int = 1
 
         override suspend fun delete(id: String) {
             rows.value = rows.value.filterNot { it.id == id }
@@ -90,6 +91,7 @@ class DownloadsViewModelTest {
         var failRetry = false
         var retryGate: CompletableDeferred<Unit>? = null
         val cancelled = mutableListOf<String>()
+        val paused = mutableListOf<String>()
         val retried = mutableListOf<String>()
         val deleted = mutableListOf<Pair<String, Boolean>>()
 
@@ -99,6 +101,8 @@ class DownloadsViewModelTest {
             cancelled += id
             return true
         }
+
+        override suspend fun pause(id: String): Boolean { paused += id; return true }
 
         override suspend fun retry(id: String): Boolean {
             if (failRetry) throw IllegalStateException("storage unavailable")
@@ -253,11 +257,13 @@ class DownloadsViewModelTest {
             FakeWorks(MutableStateFlow(emptyList())),
         )
 
+        viewModel.pause("p")
         viewModel.cancel("a")
         viewModel.retry("b")
         viewModel.delete("c")
         advanceUntilIdle()
 
+        assertEquals(listOf("p"), commands.paused)
         assertEquals(listOf("a"), commands.cancelled)
         assertEquals(listOf("b"), commands.retried)
         assertEquals(listOf("c" to true), commands.deleted)
@@ -297,6 +303,17 @@ class DownloadsViewModelTest {
         gate.complete(Unit)
         advanceUntilIdle()
         org.junit.Assert.assertTrue(viewModel.busyIds.value.isEmpty())
+    }
+
+    @Test fun `paused entry remains paused when its work is cancelled and is not pumped automatically`() {
+        val entry = entity("paused", "PAUSED").toDomain()
+        val state = DownloadsViewModel.map(listOf(entry), mapOf(
+            "paused" to DownloadWork("paused", false, null, 0, 0, 0, finished = true, cancelled = true),
+        ))
+        assertEquals(0, state.active.size)
+        assertEquals(com.fetchly.app.domain.model.DownloadStatus.PAUSED, state.history.single().status)
+        assertEquals(emptyList<com.fetchly.app.domain.model.HistoryEntry>(),
+            com.fetchly.app.data.download.DownloadQueuePolicy.next(listOf(entry), emptySet()))
     }
 
 }
