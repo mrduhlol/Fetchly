@@ -9,6 +9,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
+import com.fetchly.app.data.prefs.SettingsStore
 
 private val DarkColors = darkColorScheme(
     primary = DarkPrimary,
@@ -79,9 +83,10 @@ private val LightColors = lightColorScheme(
 @Composable
 fun FetchlyTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    uiScale: UiScale = UiScale.COMPACT,
     content: @Composable () -> Unit,
 ) {
-    DefaultUiScale {
+    ScaledUi(uiScale) {
         MaterialTheme(
             colorScheme = if (darkTheme) DarkColors else LightColors,
             typography = Typography,
@@ -95,4 +100,15 @@ fun FetchlyTheme(
             content = content,
         )
     }
+}
+
+@Composable
+fun FetchlyAppTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit,
+) {
+    val context = LocalContext.current
+    val settings = androidx.compose.runtime.remember(context) { SettingsStore(context) }
+    val uiScale by settings.uiScale.collectAsState(initial = UiScale.COMPACT)
+    FetchlyTheme(darkTheme = darkTheme, uiScale = uiScale, content = content)
 }
