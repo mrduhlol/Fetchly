@@ -113,9 +113,9 @@ fun MediaDetailsSheet(
                 PlaqueOutlinedButton(onClick = onShare, enabled = entry.status == DownloadStatus.COMPLETED && fileAvailable) {
                     Text("Share")
                 }
-                if (entry.status == DownloadStatus.FAILED || entry.status == DownloadStatus.CANCELLED) {
+                if (entry.status == DownloadStatus.FAILED || entry.status == DownloadStatus.CANCELLED || entry.status == DownloadStatus.PAUSED) {
                     PlaqueOutlinedButton(onClick = onRetry) {
-                        Text("Retry")
+                        Text(if (entry.status == DownloadStatus.PAUSED) "Resume" else "Retry")
                     }
                 }
                 PlaqueOutlinedButton(
