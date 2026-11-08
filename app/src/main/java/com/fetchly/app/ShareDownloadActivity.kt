@@ -19,7 +19,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.fetchly.app.domain.model.ThemeChoice
 import com.fetchly.app.ui.share.ShareDownloadScreen
 import com.fetchly.app.ui.share.ShareDownloadViewModel
-import com.fetchly.app.ui.theme.FetchlyTheme
+import com.fetchly.app.ui.theme.FetchlyAppTheme
 
 /** A floating share target in the caller's task; never launches the full Fetchly UI. */
 class ShareDownloadActivity : ComponentActivity() {
@@ -57,7 +57,7 @@ class ShareDownloadActivity : ComponentActivity() {
                     finish()
                 }
             }
-            FetchlyTheme(darkTheme = dark) {
+            FetchlyAppTheme(darkTheme = dark) {
                 ShareDownloadScreen(state, vm::selectKind, vm::select, vm::check, vm::confirmSilent,
                     vm::retry, { startDownload(vm::download) }, close)
             }
