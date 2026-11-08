@@ -17,8 +17,6 @@ import com.fetchly.app.domain.util.Filenames
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -33,21 +31,21 @@ class DownloadQueue(
     private val workManager: WorkManager = WorkManager.getInstance(context),
 ) : DownloadCommands {
 
-    private val mutex = Mutex()
+    private val gate = DownloadQueueGate()
 
     override suspend fun enqueue(media: MediaInfo, option: QualityOption): String = enqueueWithReceipt(media, option).id
 
     /** Reuse an active or readable saved copy; one lock covers check, insert and scheduling. */
-    override suspend fun enqueueWithReceipt(media: MediaInfo, option: QualityOption): EnqueueReceipt = mutex.withLock {
+    override suspend fun enqueueWithReceipt(media: MediaInfo, option: QualityOption): EnqueueReceipt = gate.serial {
         val entries = history.observeAll().first()
         for (existing in entries.filter { DownloadQueuePolicy.sameDownload(it, media, option) }) {
             if (existing.status in setOf(DownloadStatus.QUEUED, DownloadStatus.RUNNING)) {
                 pumpLocked()
-                return@withLock EnqueueReceipt(existing.id, EnqueueDisposition.ACTIVE)
+                return@serial EnqueueReceipt(existing.id, EnqueueDisposition.ACTIVE)
             }
             if (existing.status == DownloadStatus.COMPLETED && withContext(Dispatchers.IO) {
                     MediaStorePublisher.exists(context, existing.outputUri)
-                }) return@withLock EnqueueReceipt(existing.id, EnqueueDisposition.SAVED)
+                }) return@serial EnqueueReceipt(existing.id, EnqueueDisposition.SAVED)
         }
         val id = UUID.randomUUID().toString()
         val now = maxOf(System.currentTimeMillis(), (entries.maxOfOrNull { it.createdAt } ?: 0L) + 1L)
@@ -81,41 +79,41 @@ class DownloadQueue(
     }
 
     /** Stops a queued or running download; finished rows are left alone. */
-    override suspend fun cancel(id: String): Boolean {
+    override suspend fun cancel(id: String): Boolean = gate.serial {
         val cancelled = history.cancelIfActive(id, System.currentTimeMillis())
-        if (!cancelled) return false
+        if (!cancelled) return@serial false
         withContext(Dispatchers.IO) { workManager.cancelUniqueWork(HistoryRepository.workNameOf(id)).result.get() }
-        pump()
-        return true
+        pumpLocked()
+        true
     }
 
-    override suspend fun pause(id: String): Boolean {
-        if (!history.pauseIfActive(id, System.currentTimeMillis())) return false
+    override suspend fun pause(id: String): Boolean = gate.serial {
+        if (!history.pauseIfActive(id, System.currentTimeMillis())) return@serial false
         withContext(Dispatchers.IO) { workManager.cancelUniqueWork(HistoryRepository.workNameOf(id)).result.get() }
-        pump()
-        return true
+        pumpLocked()
+        true
     }
 
     /** FAILED and CANCELLED rows can resume validated direct files; anything else is ignored. */
-    override suspend fun retry(id: String): Boolean {
-        val entry = history.getById(id) ?: return false
+    override suspend fun retry(id: String): Boolean = gate.serial {
+        val entry = history.getById(id) ?: return@serial false
         if (entry.status != DownloadStatus.FAILED && entry.status != DownloadStatus.CANCELLED && entry.status != DownloadStatus.PAUSED) {
-            if (entry.status == DownloadStatus.COMPLETED) return false
+            if (entry.status == DownloadStatus.COMPLETED) return@serial false
             val terminal = withContext(Dispatchers.IO) {
                 val infos = workManager.getWorkInfosForUniqueWork(HistoryRepository.workNameOf(id)).get()
                 infos.isNotEmpty() && infos.all { it.state.isFinished }
             }
-            if (!terminal) return false
+            if (!terminal) return@serial false
         }
         history.setStatus(id, DownloadStatus.QUEUED, null, null, System.currentTimeMillis())
-        pump()
-        return true
+        pumpLocked()
+        true
     }
 
     /** Removes the row (and, when asked, its published file). */
-    override suspend fun delete(id: String, deleteFile: Boolean): Boolean {
-        val entry = history.getById(id) ?: return false
-        workManager.cancelUniqueWork(HistoryRepository.workNameOf(id))
+    override suspend fun delete(id: String, deleteFile: Boolean): Boolean = gate.serial {
+        val entry = history.getById(id) ?: return@serial false
+        withContext(Dispatchers.IO) { workManager.cancelUniqueWork(HistoryRepository.workNameOf(id)).result.get() }
         if (deleteFile) {
             // MediaStore deletion is a ContentResolver call: never on Main.
             withContext(Dispatchers.IO) {
@@ -126,11 +124,11 @@ class DownloadQueue(
         withContext(Dispatchers.IO) {
             TempFiles.deleteFor(TempFiles.dir(context), Filenames.tempPrefix(id))
         }
-        return true
+        true
     }
 
     /** Only two WorkManager requests are admitted at once; waiting rows stay durable in Room. */
-    suspend fun pump() = mutex.withLock { pumpLocked() }
+    suspend fun pump() = gate.serial { pumpLocked() }
 
     private suspend fun pumpLocked() = withContext(Dispatchers.IO) {
         val liveIds = workManager.getWorkInfosByTag(TAG).get().filterNot { it.state.isFinished }
