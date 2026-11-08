@@ -53,6 +53,7 @@ jobs:
 
       - name: Verify pinned APK signing certificate
         run: |
+          set -euo pipefail
           fetchly_apksigner="$ANDROID_SDK_ROOT/build-tools/35.0.0/apksigner"
           fetchly_actual_cert=$("$fetchly_apksigner" verify --print-certs app/build/outputs/apk/debug/app-debug.apk | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
           fetchly_expected_cert=$(tr -d '[:space:]' < docs/SIGNING_CERT_SHA256)
@@ -93,6 +94,9 @@ jobs:
             else
               gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" --title "Fetchly $RELEASE_TAG" --notes "Fetchly $RELEASE_TAG, built from $GITHUB_SHA" --draft
             fi
+          fi
+          if [ -f "$NOTES_FILE" ]; then
+            gh release edit "$RELEASE_TAG" --notes-file "$NOTES_FILE"
           fi
           gh release upload "$RELEASE_TAG" "fetchly_${RELEASE_TAG}.apk" fetchly.apk SHA256SUMS BUILD.txt --clobber
           gh release edit "$RELEASE_TAG" --draft=false --latest
