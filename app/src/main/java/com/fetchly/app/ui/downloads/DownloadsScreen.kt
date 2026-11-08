@@ -299,6 +299,12 @@ private fun ActiveCard(active: ActiveDownload, enabled: Boolean, onCancel: () ->
                     color = if (paused) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
                     trackColor = if (paused) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant,
                 )
+            } else if (paused) {
+                Text("${FormatSize.format(active.bytes).orEmpty()} transferred", style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.alpha(0.45f))
+                LinearProgressIndicator(progress = { 0f }, modifier = Modifier.fillMaxWidth().alpha(0.4f),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    trackColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.18f))
             } else {
                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
             }
