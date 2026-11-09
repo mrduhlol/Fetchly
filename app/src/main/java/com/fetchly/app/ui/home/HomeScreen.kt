@@ -20,7 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.text.font.FontFamily
+import com.fetchly.app.ui.theme.DisplayFontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
@@ -78,7 +78,7 @@ fun HomeScreen(
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Image(painterResource(R.drawable.fetchly_logo), null, Modifier.size(30.dp))
                         Spacer(Modifier.width(10.dp))
-                        Text("Fetchly", style = MaterialTheme.typography.titleMedium.copy(fontFamily = FontFamily.Serif), modifier = Modifier.weight(1f))
+                        Text("Fetchly", style = MaterialTheme.typography.titleMedium.copy(fontFamily = DisplayFontFamily), modifier = Modifier.weight(1f))
                         TextButton(onClick = onOpenDownloads) { Text("Downloads") }
                         IconButton(onClick = onOpenSettings) {
                             Icon(Icons.Filled.Settings, contentDescription = "Settings")

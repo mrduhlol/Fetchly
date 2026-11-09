@@ -42,7 +42,7 @@ fun ScreenTopBar(
             title,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleLarge,
             modifier = Modifier
                 .weight(1f)
                 .semantics { heading() }
