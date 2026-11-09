@@ -108,8 +108,9 @@ def extract(url):
         return cached["preview"]
     try:
         params = _base_params(skip_download=True)
-        if _is_x_url(url):
+        if _is_x_url(url) or _is_multi_post(url):
             params["noplaylist"] = False
+            params["playlistend"] = 50
         else:
             params["playlist_items"] = "1"
         with yt_dlp.YoutubeDL(params) as ydl:
@@ -125,7 +126,8 @@ def extract(url):
                 photo_only = True
             photos = _x_photos(getattr(ydl, "_fetchly_x_status", None)) if _is_x_url(url) else []
         raw_info = info
-        multi_entries = ([] if photo_only else (_entries(info) or [info])) + photos if _is_x_url(url) else []
+        multi_entries = (([] if photo_only else (_entries(info) or [info])) + photos if _is_x_url(url)
+                         else _entries(info) if _is_multi_post(url) else [])
         is_multi = len(multi_entries) > 1
         info = _first_entry(info)
         if not info:
@@ -206,7 +208,7 @@ def download(url, format_id, dest_dir, prefix, hook):
         continuedl=True,
         nopart=False,
     )
-    if playlist_item is not None and _is_x_url(url):
+    if playlist_item is not None and (_is_x_url(url) or _is_multi_post(url)):
         params["noplaylist"] = False
         params["playlist_items"] = str(playlist_item)
     else:
@@ -302,6 +304,15 @@ def _is_x_url(url):
     return host == "x.com" or host.endswith(".x.com") or host == "twitter.com" or host.endswith(".twitter.com")
 
 
+def _is_multi_post(url):
+    parsed = urlsplit(url)
+    host = (parsed.hostname or "").lower()
+    return ((host == "instagram.com" or host.endswith(".instagram.com"))
+            and parsed.path.startswith(("/p/", "/reel/"))) or (
+            (host == "tiktok.com" or host.endswith(".tiktok.com"))
+            and ("/photo/" in parsed.path or "/video/" in parsed.path))
+
+
 def _entries(info):
     if isinstance(info, dict) and info.get("_type") in ("playlist", "multi_video"):
         return [entry for entry in info.get("entries") or [] if entry]
@@ -331,7 +342,11 @@ def _x_photos(status):
 
 
 def _clean_entry(info):
-    return {"formats": [_clean_format(f, info.get("duration")) for f in _formats(info)]}
+    return {"ok": True, "title": str(info.get("title") or ""),
+            "uploader": str(info.get("uploader") or ""),
+            "duration": int(info.get("duration") or 0), "thumbnail": _thumbnail(info),
+            "width": info.get("width"), "height": info.get("height"),
+            "formats": [_clean_format(f, info.get("duration")) for f in _formats(info)]}
 
 
 def _formats(info):
