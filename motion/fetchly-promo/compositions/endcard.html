@@ -1,0 +1,26 @@
+<template>
+<style>#root{position:absolute;inset:0;overflow:hidden}
+.end-ground{position:absolute;inset:0;background:#050504}#end-smoke{position:absolute;width:1920px;height:1080px;left:0;top:0}#end-lockup{position:absolute;inset:0;text-align:center}#end-logo{position:absolute;width:190px;height:190px;object-fit:contain;left:865px;top:125px}#end-lockup h1{position:absolute;top:345px;left:192px;width:1536px;font-size:115px;letter-spacing:-2px;color:#e4c68a}#end-repo{position:absolute;top:505px;left:192px;width:1536px;font-size:48px;color:#eee7d9}#end-prompt{position:absolute;top:605px;left:192px;width:1536px;font-size:29px;color:#bbb19e}#end-download{position:absolute;left:624px;top:705px;width:672px;height:176px}#end-cursor{position:absolute;left:0;top:0}#end-black{position:absolute;inset:0;background:#000;opacity:0}
+</style>
+<div id="root" data-composition-id="endcard" data-width="1920" data-height="1080" data-duration="8.8">
+<div id="endcard-clip" class="clip" data-start="0" data-duration="8.8" data-track-index="1"><div id="endcard-stage" class="stage">
+<div class="end-ground"></div><canvas id="end-smoke" width="960" height="540" data-layout-ignore></canvas>
+<div id="end-lockup"><img id="end-logo" src="assets/brand/fetchly-logo.png" alt="Fetchly Apollo icon"/><h1 data-var-text="creator">@mrduhlol</h1><p id="end-repo" data-var-text="repo">github.com/mrduhlol/Fetchly</p><p id="end-prompt">Download Fetchly on GitHub</p><img id="end-download" src="assets/brand/download-apk.svg" alt="Download Fetchly for Android — original README button"/></div>
+<div id="end-cursor"><svg class="cursor" viewBox="0 0 64 78" aria-hidden="true"><path d="M5 3 L6 64 L22 49 L34 75 L46 69 L33 45 L56 44 Z" fill="#fff" stroke="#1b1915" stroke-width="3" stroke-linejoin="round"/></svg></div><div id="end-black"></div>
+</div></div>
+</div>
+<script>
+const clock={t:0},canvas=document.getElementById('end-smoke'),ctx=canvas.getContext('2d');
+function smoke(t){ctx.clearRect(0,0,960,540);const envelope=Math.min(1,Math.max(0,(t-.35)/1.0))*Math.min(1,Math.max(0,(8.7-t)/.5));for(let i=0;i<26;i++){let side=i%2===0?-1:1;let x=480+side*(310-(t*.055+i*.018)%1*230)+Math.sin(i*2.37+t*.5)*70;let y=460-i*12-Math.sin(i*1.7+t*.4)*60;let r=110+(i%5)*17;let g=ctx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,'rgba(169,153,121,'+(.055*envelope)+')');g.addColorStop(.5,'rgba(108,105,98,'+(.025*envelope)+')');g.addColorStop(1,'rgba(40,40,36,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();}}
+const tl=gsap.timeline({paused:true});tl.fromTo(clock,{t:0},{t:8.8,duration:8.8,ease:'none',onUpdate:()=>smoke(clock.t)},0);
+tl.fromTo('#end-lockup',{opacity:0},{opacity:1,duration:.8},.8);
+tl.fromTo('#end-repo',{opacity:0},{opacity:1,duration:.55},1.4);
+tl.fromTo('#end-prompt',{opacity:0},{opacity:1,duration:.4},1.9);
+tl.fromTo('#end-download',{opacity:0,y:20},{opacity:1,y:0,duration:.4,ease:'power2.out'},2.1);
+tl.fromTo('#end-cursor',{x:1650,y:1040,opacity:0},{x:1090,y:809,opacity:1,duration:.8,ease:'power3.out'},7.0);
+tl.fromTo('#end-download',{scale:1},{scale:.965,duration:.1,yoyo:true,repeat:1},8.05);
+tl.fromTo('#end-cursor .cursor',{scale:1},{scale:.92,duration:.1,yoyo:true,repeat:1},8.05);
+tl.fromTo('#end-black',{opacity:0},{opacity:1,duration:.12},8.63);
+window.__timelines.endcard=tl;smoke(0);
+</script>
+</template>

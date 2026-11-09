@@ -1,0 +1,28 @@
+<template>
+<style>#root{position:absolute;inset:0;overflow:hidden}#beauty-copy{top:235px;width:710px}#beauty-copy h2{font-size:100px}#beauty-two{position:absolute;top:68px;opacity:0}#beauty-copy .body-copy{font-size:28px;margin-top:12px}
+</style>
+<div id="root" data-composition-id="beauty" data-width="1920" data-height="1080" data-duration="9">
+<div id="beauty-clip" class="clip" data-start="0" data-duration="9" data-track-index="1"><div id="beauty-stage" class="stage">
+<div class="stone stage"></div><div id="beauty-canvas" class="canvas-stage" data-layout-ignore></div>
+<div id="beauty-copy" class="safe-left"><p class="eyebrow gold">ON YOUR PHONE</p><h2 id="beauty-one">Paste.<br>Choose.<br><span class="gold">Fetch.</span></h2><h2 id="beauty-two">Every link.<br>A little<br><span class="gold">character.</span></h2><div class="rule"></div><p class="body-copy">The real Fetchly home screen</p></div>
+</div></div>
+</div>
+<script>
+window.__hf=window.__hf||{};window.__hf.buildReady=window.__hf.buildReady||{};
+window.__hf.buildReady.beauty=(async()=>{
+const stage=await window.Fetchly3D.create(document.getElementById('beauty-canvas'),'assets/screens/home-dark.png');
+const clock={t:0};function draw(t){
+ const smooth=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x)};
+ const p=smooth((t-2.7)/1.2),q=smooth((t-6)/1.0);
+ stage.phone.position.set(2.2,0,0);stage.phone.rotation.set(.035,-.27+p*.14+q*.17,.025-q*.03);
+ stage.camera.position.set(.3+p*1.0+q*.7,.3+p*1.8-q*3.1,14.8-p*4.1+q*.8);
+ stage.camera.lookAt(0+p*.55+q*.5,p*1.25-q*2.0,0);stage.shadow.position.x=2.2;stage.draw();}
+const tl=gsap.timeline({paused:true});tl.fromTo(clock,{t:0},{t:9,duration:9,ease:'none',onUpdate:()=>draw(clock.t)},0);
+tl.fromTo('#beauty-copy',{opacity:0,x:-30},{opacity:1,x:0,duration:.45,ease:'power3.out'},.25);
+tl.fromTo('#beauty-one',{opacity:1},{opacity:0,duration:.15},5.7);
+tl.fromTo('#beauty-two',{opacity:0},{opacity:1,duration:.2},5.95);
+tl.fromTo('#beauty-stage',{opacity:1},{opacity:0,duration:.16},8.83);
+window.__timelines.beauty=tl;draw(0);
+})();
+</script>
+</template>

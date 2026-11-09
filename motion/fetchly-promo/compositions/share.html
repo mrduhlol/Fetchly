@@ -1,0 +1,36 @@
+<template>
+<style>#root{position:absolute;inset:0;overflow:hidden}
+#share-phone{width:510px;height:946px;left:1160px;top:67px;transform-origin:50% 45%}.source-surface{position:absolute;inset:0;background:#f5f1e8;color:#24211b;padding:36px 23px}.source-brand{font-size:25px;display:flex;align-items:center;gap:15px}.source-brand img{position:static!important;width:45px!important;height:35px;filter:brightness(.3)}.source-thumb{height:240px;overflow:hidden;position:relative;margin:30px -23px 22px}.source-thumb img{width:100%;top:-162px!important}.source-surface h3{font-size:34px}.source-surface p{font-size:25px;margin-top:12px;color:#686359}#share-action{margin-top:35px;background:#e1dccf;display:inline-block;padding:14px 26px;border-radius:28px;font-size:30px}#share-picker{position:absolute;left:0;bottom:0;width:100%;height:350px;padding:30px;background:#25241f;border-radius:28px 28px 0 0;color:#eee6d8}#share-picker>p{font-size:29px}#share-target{width:140px;text-align:center;margin:35px auto}#share-target img{position:static!important;width:85px!important;height:85px;display:block;margin:auto}#share-target strong{font-size:27px}#share-shade{position:absolute;inset:0;background:#0008;opacity:0}#share-dialog{position:absolute;left:15px;top:165px;width:452px;padding:23px;background:#181916;border-radius:25px;color:#ece5d9;opacity:0;box-shadow:0 15px 45px #0006}#share-dialog h3{font-size:29px;font-weight:600;line-height:1.3}.dialog-thumb{height:167px;overflow:hidden;position:relative;border-radius:12px;margin:20px 0 16px}.dialog-thumb img{top:-142px!important}.dialog-title{font-size:26px;line-height:1.3}.dialog-source{font-size:24px;color:#b8ad9a;margin:12px 0}.kind-row{display:flex;gap:10px;margin:14px 0}.kind-row span{font-size:25px;padding:8px 17px;border:1px solid #92826b;border-radius:14px}.kind-row span.selected{background:#4b3d2a;color:#f2deb9}.container-row span{font-size:23px}#share-quality{padding:19px 12px;font-size:24px;border:1px solid #ad9774;border-radius:12px;margin:20px 0}.source-note{font-size:20px;color:#bcb4a4;line-height:1.4}.dialog-actions{display:flex;align-items:center;justify-content:flex-end;gap:20px;font-size:23px;margin-top:24px}.dialog-actions strong{display:block;background:#d9b873;color:#302516;padding:14px 19px;clip-path:polygon(5% 0,95% 0,100% 16%,100% 84%,95% 100%,5% 100%,0 84%,0 16%)}.share-disclosure{position:absolute;left:192px;bottom:110px;font-size:27px;color:#b6ae9e;max-width:780px;line-height:1.4}
+</style>
+<div id="root" data-composition-id="share" data-width="1920" data-height="1080" data-duration="14">
+<div id="share-clip" class="clip" data-start="0" data-duration="14" data-track-index="1"><div id="share-stage" class="stage">
+<div class="stone stage"></div>
+<div class="safe-left"><p class="eyebrow gold">THE SHARE SHORTCUT</p><h2>Share it.<br><span class="gold">Fetch it.</span></h2><div class="rule"></div><p id="share-caption" class="body-copy">Your download options.<br>Right over the app.</p></div>
+<div id="share-phone" class="phone-flat"><div class="screen">
+<div class="source-surface"><div class="source-brand"><img src="assets/platforms/youtube.svg" alt="YouTube"/>Public YouTube link</div><div class="source-thumb"><img src="assets/screens/quality-video.png" alt="Big Buck Bunny source thumbnail"/></div><h3>Big Buck Bunny</h3><p>Blender Foundation</p><div id="share-action">↗ &nbsp; Share</div></div>
+<div id="share-picker"><p>Share with</p><div id="share-target"><img src="assets/brand/fetchly-logo.png" alt="Fetchly"/><strong>Fetchly</strong></div></div>
+<div id="share-shade"></div><div id="share-dialog">
+<h3>Download with Fetchly</h3><div class="dialog-thumb"><img src="assets/screens/quality-video.png" alt="Preview of Big Buck Bunny"/></div>
+<p class="dialog-title">Big Buck Bunny 60fps 4K</p><p class="dialog-source">YouTube</p><div class="kind-row"><span class="selected">Video</span><span>Audio</span></div><div class="kind-row container-row"><span class="selected">MP4</span><span>MKV</span></div>
+<div id="share-quality">2160p · MP4 · ~1.28 GB &nbsp;⌄</div><p class="source-note">Only formats available from the source are shown.</p>
+<div class="dialog-actions"><span>Cancel</span><strong id="share-download">Download</strong></div></div>
+</div></div>
+<div id="share-tap" class="touch"></div><p class="share-disclosure">Share flow reconstructed from Fetchly’s native UI source</p>
+</div></div>
+</div>
+<script>const tl=gsap.timeline({paused:true});
+tl.fromTo('#share-phone',{x:100,opacity:0},{x:0,opacity:1,duration:.4,ease:'power3.out'},0);
+tl.fromTo('#share-tap',{x:1438,y:520,opacity:0,scale:1.35},{opacity:1,scale:1,duration:.2},2.1);
+tl.to('#share-tap',{opacity:0,duration:.25},2.45);
+tl.fromTo('#share-picker',{y:370},{y:0,duration:.35,ease:'power3.out'},2.35);
+tl.fromTo('#share-target',{scale:1},{scale:.93,duration:.1,yoyo:true,repeat:1},4.25);
+tl.fromTo('#share-picker',{opacity:1},{opacity:0,duration:.15},4.5);
+tl.fromTo('#share-shade',{opacity:0},{opacity:1,duration:.2},4.5);
+tl.fromTo('#share-dialog',{opacity:0,y:40},{opacity:1,y:0,duration:.3,ease:'power3.out'},4.6);
+tl.fromTo('#share-phone',{scale:1,x:0,y:0},{scale:1.18,x:-50,y:30,duration:.7,ease:'power3.inOut'},7);
+tl.fromTo('#share-quality',{backgroundColor:'#28241e'},{backgroundColor:'#5a492b',duration:.15,yoyo:true,repeat:1},9.3);
+tl.fromTo('#share-download',{scale:1},{scale:.94,duration:.11,yoyo:true,repeat:1},11.5);
+tl.fromTo('#share-stage',{opacity:1},{opacity:0,duration:.2},13.8);
+
+tl.to({},{duration:.01},13.98);window.__timelines["share"]=tl;</script>
+</template>

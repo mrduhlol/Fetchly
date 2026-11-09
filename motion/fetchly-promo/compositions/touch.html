@@ -1,0 +1,26 @@
+<template>
+<style>#root{position:absolute;inset:0;overflow:hidden}#touch-copy{position:absolute;left:192px;top:250px}#touch-copy h2{font-size:125px;margin-top:25px}#touch-black{position:absolute;inset:0;background:#000;opacity:0}
+</style>
+<div id="root" data-composition-id="touch" data-width="1920" data-height="1080" data-duration="7.2">
+<div id="touch-clip" class="clip" data-start="0" data-duration="7.2" data-track-index="1"><div id="touch-stage" class="stage">
+<div class="stone stage"></div><div id="touch-canvas" class="canvas-stage" data-layout-ignore></div><div id="touch-copy"><p class="eyebrow gold">PASTE. CHOOSE.</p><h2>FETCH.</h2></div><div id="touch-black"></div>
+</div></div>
+</div>
+<script>
+window.__hf=window.__hf||{};window.__hf.buildReady=window.__hf.buildReady||{};
+window.__hf.buildReady.touch=(async()=>{
+const s=await window.Fetchly3D.create(document.getElementById('touch-canvas'),'assets/screens/home-enabled.png',{hand:true});
+const clock={t:0};function render(t){const sm=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x)};const orbit=sm((t-.4)/1.9),dive=sm((t-2.25)/1.5),reach=sm((t-4.2)/2.42);
+s.phone.position.set(0,0,0);s.phone.rotation.set(0,0,0);
+s.camera.position.set(orbit*4.2-dive*2.3,.4+dive*.34,14.8-orbit*3.1-dive*7.7);
+s.camera.lookAt(0,dive*.74,0);
+s.hand.position.set(5.5*(1-reach),-.5*(1-reach),3.2*(1-reach));s.hand.visible=t>=4.1;
+// A 0.1s press is visible before the blackout; the fingertip lands on the screen.
+const press=Math.max(0,1-Math.abs((t-6.66)/.1));s.phone.position.z=-.035*press;s.hand.position.z-=.16*press;s.draw();}
+const tl=gsap.timeline({paused:true});tl.fromTo(clock,{t:0},{t:7.2,duration:7.2,ease:'none',onUpdate:()=>render(clock.t)},0);
+tl.fromTo('#touch-copy',{opacity:0},{opacity:1,duration:.3},.2);tl.fromTo('#touch-copy',{opacity:1},{opacity:0,duration:.3},2);
+tl.fromTo('#touch-black',{opacity:0},{opacity:1,duration:.1},6.83);
+window.__timelines.touch=tl;render(0);
+})();
+</script>
+</template>

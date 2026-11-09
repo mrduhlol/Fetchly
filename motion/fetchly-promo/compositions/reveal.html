@@ -1,0 +1,16 @@
+<template>
+<style>#root{position:absolute;inset:0;overflow:hidden}.reveal-temple{position:absolute;width:1400px;left:260px;top:150px;opacity:.16}#reveal-lockup{position:absolute;inset:115px 0 0;text-align:center}#reveal-lockup>img{width:330px;height:330px;object-fit:contain}#reveal-lockup h1{font-size:135px;letter-spacing:14px;margin:18px 0}#reveal-line{font-size:34px;letter-spacing:6px;color:#ddc595}
+</style>
+<div id="root" data-composition-id="reveal" data-width="1920" data-height="1080" data-duration="5">
+<div id="reveal-clip" class="clip" data-start="0" data-duration="5" data-track-index="1"><div id="reveal-stage" class="stage">
+<div class="stone stage"></div><img class="reveal-temple" src="assets/brand/monument.webp" alt="Fetchly Greek temple artwork"/>
+<div id="reveal-lockup"><img src="assets/brand/fetchly-logo.png" alt="Fetchly Apollo icon"/><h1 data-var-text="appName">FETCHLY</h1><p id="reveal-line">Paste. Choose. Fetch.</p></div>
+</div></div>
+</div>
+<script>const tl=gsap.timeline({paused:true});
+tl.fromTo('#reveal-lockup',{opacity:0,scale:.9},{opacity:1,scale:1,duration:.85,ease:'power2.out'},.1);
+tl.fromTo('#reveal-line',{opacity:0},{opacity:1,duration:.45},2.3);
+tl.fromTo('#reveal-lockup',{opacity:1},{opacity:0,duration:.25},4.7);
+
+tl.to({},{duration:.01},4.98);window.__timelines["reveal"]=tl;</script>
+</template>
