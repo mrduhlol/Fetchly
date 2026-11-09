@@ -12,6 +12,7 @@ chaquopy {
         // Pinned stable build; compatible official engine updates can be staged
         // in Settings and activated on the next app process start.
         version = "3.12"
+        providers.gradleProperty("fetchlyBuildPython").orNull?.let { buildPython(it) }
         pip {
             install("yt-dlp==2026.10.26")
             install("packaging==25.0")
@@ -36,9 +37,6 @@ android {
 
         // 64-bit only: ffmpeg-kit publishes no 32-bit builds, and without the
         // merge engine a 32-bit device could not download any video at all.
-        ndk {
-            abiFilters += listOf("arm64-v8a", "x86_64")
-        }
 
         vectorDrawables { useSupportLibrary = true }
     }
@@ -48,6 +46,7 @@ android {
         create("full") {
             dimension = "edition"
             buildConfigField("boolean", "IS_LITE", "false")
+            ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
         }
         create("lite") {
             dimension = "edition"
@@ -74,6 +73,7 @@ android {
 
     buildTypes {
         release {
+            if (fetchlySigningStore != null) signingConfig = signingConfigs.getByName("persistent")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
