@@ -81,7 +81,7 @@ private fun LiteFormatContent(state: LiteResolveState, vm: LiteResolveViewModel,
                     }
                 }
                 Column(Modifier.selectableGroup()) {
-                    media.options.filter { it.kind == selected?.kind }.forEach { option ->
+                    media.options.filter { it.kind == (selected?.kind ?: media.options.firstOrNull()?.kind) }.forEach { option ->
                         Row(Modifier.fillMaxWidth().selectable(selected?.id == option.id,
                             enabled = !state.adding, role = Role.RadioButton, onClick = { vm.select(option.id) })
                             .padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
