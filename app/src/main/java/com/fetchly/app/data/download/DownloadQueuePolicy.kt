@@ -6,10 +6,10 @@ import java.net.URI
 object DownloadQueuePolicy {
     const val MAX_PARALLEL = 2
 
-    fun next(entries: List<HistoryEntry>, liveIds: Set<String>): List<HistoryEntry> = entries
+    fun next(entries: List<HistoryEntry>, liveIds: Set<String>, maxParallel: Int = MAX_PARALLEL): List<HistoryEntry> = entries
         .filter { it.status == DownloadStatus.QUEUED && it.id !in liveIds }
         .sortedWith(compareBy<HistoryEntry> { it.createdAt }.thenBy { it.id })
-        .take((MAX_PARALLEL - liveIds.size).coerceAtLeast(0))
+        .take((maxParallel - liveIds.size).coerceAtLeast(0))
 
     fun sameDownload(entry: HistoryEntry, media: MediaInfo, option: QualityOption): Boolean =
         sourceKey(entry.sourceUrl) == sourceKey(media.sourceUrl) && entry.kind == option.kind &&
@@ -18,7 +18,7 @@ object DownloadQueuePolicy {
             signature(entry.signature, option.kind) == signature(option.streams, option.kind)
 
     private fun signature(streams: List<StreamRef>, kind: QualityKind) = streams.map {
-        listOf(it.height, it.vcodec, it.acodec, it.ext, it.language,
+        listOf(it.formatId.takeIf { id -> id.startsWith("x-entry-") }?.substringBefore("::"), it.height, it.vcodec, it.acodec, it.ext, it.language,
             if (kind == QualityKind.AUDIO) it.abr else null).joinToString("|")
     }.sorted()
 
