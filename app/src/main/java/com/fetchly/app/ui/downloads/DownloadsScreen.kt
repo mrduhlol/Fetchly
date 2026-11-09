@@ -71,6 +71,22 @@ fun DownloadsScreen(viewModel: DownloadsViewModel, onBack: () -> Unit, initialNo
     onOpenSettings: () -> Unit = {}, onChooseFormat: (String) -> Unit = {},
     libraryOnly: Boolean = false,
 ) {
+    // The gold wallpaper needs its matching dark foreground roles even in light mode.
+    // Override colors only: retain the user's UI scale, typography and touch targets.
+    MaterialTheme(colorScheme = if (!libraryOnly && !com.fetchly.app.BuildConfig.IS_LITE)
+        com.fetchly.app.ui.theme.DarkColors else MaterialTheme.colorScheme) {
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            DownloadsContent(viewModel, onBack, initialNotice, onOpenSettings, onChooseFormat, libraryOnly)
+        }
+    }
+}
+
+@Composable
+private fun DownloadsContent(
+    viewModel: DownloadsViewModel, onBack: () -> Unit, initialNotice: String?,
+    onOpenSettings: () -> Unit, onChooseFormat: (String) -> Unit, libraryOnly: Boolean,
+) {
+    val premiumBackground = !libraryOnly && !com.fetchly.app.BuildConfig.IS_LITE
     val state by viewModel.state.collectAsStateWithLifecycle()
     var query by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("") }
     var filterName by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("ALL") }
@@ -100,6 +116,17 @@ fun DownloadsScreen(viewModel: DownloadsViewModel, onBack: () -> Unit, initialNo
     }
 
     Box(Modifier.fillMaxSize()) {
+    if (premiumBackground) {
+        Image(
+            painter = painterResource(R.drawable.fetchly_downloads),
+            contentDescription = null,
+            modifier = Modifier.matchParentSize(),
+            // Crop uniformly rather than stretching. Keep Hermes at the bottom right.
+            contentScale = ContentScale.Crop,
+            alignment = Alignment.BottomEnd,
+            alpha = 0.75f,
+        )
+    }
     Column(Modifier.widthIn(max = 640.dp).fillMaxSize().align(Alignment.TopCenter)) {
         ScreenTopBar(if (libraryOnly) "Library" else "Downloads", onBack = onBack)
 
@@ -123,7 +150,7 @@ fun DownloadsScreen(viewModel: DownloadsViewModel, onBack: () -> Unit, initialNo
             )
             if (libraryOnly) Image(painterResource(R.drawable.fetchly_library), contentDescription = null,
                 modifier = Modifier.fillMaxWidth().height(180.dp), contentScale = ContentScale.Fit)
-            else com.fetchly.app.ui.components.TempleArtwork(Modifier.fillMaxWidth().height(140.dp))
+            else if (!premiumBackground) com.fetchly.app.ui.components.TempleArtwork(Modifier.fillMaxWidth().height(140.dp))
             return@Column
         }
 
@@ -134,7 +161,7 @@ fun DownloadsScreen(viewModel: DownloadsViewModel, onBack: () -> Unit, initialNo
             if (!libraryOnly && state.active.isNotEmpty()) {
                 item { SectionHeader("Downloading (${state.active.size})", horizontalPadding = 0.dp) }
                 items(state.active, key = { it.entry.id }) { active ->
-                    ActiveCard(active = active, enabled = active.entry.id !in busy, onCancel = { viewModel.cancel(active.entry.id) }, onPause = { if (active.entry.status == DownloadStatus.PAUSED) viewModel.retry(active.entry.id) else viewModel.pause(active.entry.id) })
+                    ActiveCard(active = active, translucent = premiumBackground, enabled = active.entry.id !in busy, onCancel = { viewModel.cancel(active.entry.id) }, onPause = { if (active.entry.status == DownloadStatus.PAUSED) viewModel.retry(active.entry.id) else viewModel.pause(active.entry.id) })
                     Spacer(Modifier.height(8.dp))
                 }
             }
@@ -159,6 +186,7 @@ fun DownloadsScreen(viewModel: DownloadsViewModel, onBack: () -> Unit, initialNo
                 items(library, key = { it.id }) { entry ->
                     HistoryRow(
                         entry = entry,
+                        translucent = premiumBackground,
                         onOpenDetails = { detailsFor = entry },
                         onRetry = { viewModel.retry(entry.id) },
                         onOpen = { openFile(entry) },
@@ -252,13 +280,13 @@ private fun LibraryCategories(history: List<HistoryEntry>, selected: LibraryFilt
 }
 
 @Composable
-private fun ActiveCard(active: ActiveDownload, enabled: Boolean, onCancel: () -> Unit, onPause: () -> Unit) {
+private fun ActiveCard(active: ActiveDownload, translucent: Boolean, enabled: Boolean, onCancel: () -> Unit, onPause: () -> Unit) {
     val paused = active.entry.status == DownloadStatus.PAUSED
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
         border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        color = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = if (translucent) 0.72f else 1f),
     ) {
         Column(Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -315,6 +343,7 @@ private fun ActiveCard(active: ActiveDownload, enabled: Boolean, onCancel: () ->
 @Composable
 private fun HistoryRow(
     entry: HistoryEntry,
+    translucent: Boolean,
     onOpenDetails: () -> Unit,
     onRetry: () -> Unit,
     onOpen: () -> Unit,
@@ -325,7 +354,7 @@ private fun HistoryRow(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
         border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        color = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = if (translucent) 0.72f else 1f),
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),

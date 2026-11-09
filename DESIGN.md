@@ -92,3 +92,7 @@ The assets were generated with the built-in image tool and approved as previews 
 ## Approved navigation dock (November 2026)
 
 The owner selected preview B: an inset dock shared by Home, Downloads, and Library. In the main navigation, keep 16 dp horizontal margins, 8 dp vertical margins, 16 dp rounded corners, a 0.5 dp outline, and a low surface from the selected theme. Tabs have at least 70 dp height and retain their labels and outline icons. Selection uses the secondary gold/bronze role for both icon and semibold label; a 28 × 3 dp underline slides between equal-width tabs over 260 ms. Preserve native ripple, tab selection semantics, system motion scaling, RTL positioning, and the existing retained navigation state. The system gesture area remains outside the dock. This supersedes the earlier flat bar and per-icon tonal pill treatment for the main navigation.
+
+## Downloads wallpaper (November 2026)
+
+Full edition Downloads uses the borderless Hermes artwork in `fetchly_downloads.webp`, uniformly cropped with bottom-right alignment rather than stretched. The wallpaper is drawn at 75% opacity over the dark background in loading, empty and populated states. Downloads locally uses the existing dark color roles so labels remain readable regardless of the app's selected palette, without changing UI scale or typography. Active and finished download panels use 72% surface opacity with opaque text and controls. The old empty-state temple footer is omitted on this surface. Library and Lite retain their existing appearance.

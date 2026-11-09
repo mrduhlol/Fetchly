@@ -14,7 +14,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import com.fetchly.app.data.prefs.SettingsStore
 
-private val DarkColors = darkColorScheme(
+internal val DarkColors = darkColorScheme(
     primary = DarkPrimary,
     inverseSurface = LightSurface,
     inverseOnSurface = LightOnSurface,
