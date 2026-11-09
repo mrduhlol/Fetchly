@@ -43,7 +43,7 @@ fun LiteTheme(content: @Composable () -> Unit) {
 @Composable
 fun LiteBackdrop(art: Int, modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
     Box(modifier.background(Color.Black)) {
-        Image(painterResource(art), null, Modifier.fillMaxSize(), alpha = .77f, contentScale = ContentScale.Fit)
+        Image(painterResource(art), null, Modifier.matchParentSize(), alpha = .77f, contentScale = ContentScale.Fit, alignment = androidx.compose.ui.Alignment.TopCenter)
         content()
     }
 }
