@@ -46,6 +46,14 @@ class LiteResolveViewModelTest {
         assertEquals(listOf("Photo 2", "Photo 4"), commands.added)
         assertTrue(vm.state.value.complete)
     }
+    @Test fun `photos with one original format stay downloadable with Ask preference`() = runTest(main.dispatcher) {
+        val photo = media.copy(mediaType = MediaType.IMAGE,
+            options = listOf(BatchFixture.option.copy(kind = QualityKind.FILE, container = "jpg")))
+        val vm = vm(photo, ask = true)
+        vm.resolve(media.sourceUrl); advanceUntilIdle()
+        assertTrue(vm.state.value.canDownload)
+        assertEquals("jpg", vm.state.value.option(0)?.container)
+    }
     @Test fun `partial enqueue failure retries only remaining selections`() = runTest(main.dispatcher) {
         val commands = Commands().apply { failAt = 1 }
         val vm = vm(media.copy(items = listOf(media.copy(title = "First"), media.copy(title = "Second"))), commands)
