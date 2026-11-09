@@ -89,7 +89,12 @@ class LiteResolveViewModel(
                         val best = quality.first() == DefaultQuality.BEST
                         mutable.update { it.copy(loading = false, items = items,
                             selected = items.indices.toSet(), choices = items.mapIndexed { index, info ->
-                                index to (info.options.firstOrNull { option -> !option.silentVideo } ?: info.options.first()).id
+                                val preferred = info.options.filter { it.kind == QualityKind.VIDEO && !it.silentVideo }
+                                    .maxByOrNull { option -> option.streams.maxOfOrNull { it.height ?: 0 } ?: 0 }
+                                    ?: info.options.filter { it.kind == QualityKind.AUDIO }
+                                        .maxByOrNull { it.label.substringBefore(" ").toIntOrNull() ?: 0 }
+                                    ?: info.options.first()
+                                index to preferred.id
                             }.toMap().filter { (index, _) -> best || (items[index].options.size == 1 && items[index].options.single().kind == QualityKind.FILE) }, error = if (items.isEmpty()) "No downloadable media was returned by this source." else null,
                             notice = if (items.size < source.size) "${items.size} of ${source.size} returned items are downloadable." else null) }
                     }
