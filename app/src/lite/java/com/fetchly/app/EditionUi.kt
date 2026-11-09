@@ -98,7 +98,7 @@ object EditionUi {
     @Composable
     private fun Main(graph: AppGraph, requestNotifications: (() -> Unit) -> Unit) {
         var route by rememberSaveable { mutableStateOf("home") }
-        val vm: LiteResolveViewModel = viewModel { LiteResolveViewModel(graph.resolver, graph.queue) }
+        val vm: LiteResolveViewModel = viewModel { LiteResolveViewModel(graph.resolver, graph.queue, graph.settings.defaultQuality) }
         val state by vm.state.collectAsStateWithLifecycle()
         val downloadsVm: DownloadsViewModel = viewModel { DownloadsViewModel(graph.history, graph.queue, graph.downloadWorks) }
         val incoming by graph.incoming.text.collectAsStateWithLifecycle()
@@ -183,11 +183,12 @@ object EditionUi {
 
     @Composable
     fun Share(graph: AppGraph, text: String, requestNotifications: (() -> Unit) -> Unit, close: () -> Unit) {
-        val vm: LiteResolveViewModel = viewModel { LiteResolveViewModel(graph.resolver, graph.queue) }
+        val vm: LiteResolveViewModel = viewModel { LiteResolveViewModel(graph.resolver, graph.queue, graph.settings.defaultQuality) }
         val state by vm.state.collectAsStateWithLifecycle()
         val context = LocalContext.current
         LaunchedEffect(Unit) { vm.resolve(text) }
         BackHandler { if (!state.adding) close() }
+        LaunchedEffect(state.adding) { (context as? android.app.Activity)?.setFinishOnTouchOutside(!state.adding) }
         LaunchedEffect(state.complete) { if (state.complete) {
             Toast.makeText(context, state.notice ?: "Added to downloads.", Toast.LENGTH_SHORT).show(); close()
         } }
