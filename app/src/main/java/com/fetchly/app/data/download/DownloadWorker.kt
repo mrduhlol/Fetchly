@@ -124,8 +124,7 @@ class DownloadWorker(
         scratch.mkdirs()
         val prefix = Filenames.tempPrefix(id)
         // Keep validated direct-file checkpoints for automatic and manual retries.
-        var retainPartial = entry.kind == QualityKind.FILE &&
-            entry.signature.any { it.formatId == DIRECT_FORMAT_ID }
+        var retainPartial = entry.signature.any { it.formatId == DIRECT_FORMAT_ID }
 
         try {
             setForeground(foregroundInfo(entry))
@@ -350,7 +349,7 @@ class DownloadWorker(
         // A probed direct file is plain bytes at a URL: fetch it ourselves so
         // an HTML sign-in page can never pass for media (magic bytes are
         // checked before saving).
-        if (entry.kind == QualityKind.FILE && stream.formatId == DIRECT_FORMAT_ID) {
+        if (stream.formatId == DIRECT_FORMAT_ID) {
             return downloadDirect(stream, File(scratch, "$stem.${stream.ext.ifEmpty { "bin" }}"), onProgress)
         }
         val hook = DownloadHook(onProgress)
@@ -732,6 +731,11 @@ class DownloadWorker(
             ?: return Refresh.ResolveFailed(
                 "The link couldn't be opened again.", null, network = false,
             )
+        if (entry.kind == QualityKind.AUDIO && entry.container == "mp3" &&
+            entry.signature.all { it.formatId == DIRECT_FORMAT_ID } && info.mediaType == com.fetchly.app.domain.model.MediaType.AUDIO) {
+            val streams = info.options.firstOrNull()?.streams ?: return Refresh.NoMatch
+            return Refresh.Fresh(optionFrom(entry).copy(streams = streams))
+        }
         val fresh = OptionMatcher.match(entry.signature, (if (info.items.isEmpty()) info.options else info.items.flatMap { it.options }).filter {
             it.container.equals(entry.container, true) &&
                 (entry.kind != QualityKind.AUDIO || it.label == entry.optionLabel)
