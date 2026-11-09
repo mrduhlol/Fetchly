@@ -79,6 +79,13 @@ class LiteResolveViewModelTest {
         assertTrue(options.all { it.kind == QualityKind.AUDIO && it.container == "mp3" && it.needsMerge })
         assertEquals(listOf("128 kb/s", "192 kb/s", "320 kb/s"), options.map { it.label })
     }
+    @Test fun `Best available picks the highest MP3 bitrate for audio`() = runTest(main.dispatcher) {
+        val audio = media.copy(mediaType = MediaType.AUDIO, options = listOf(
+            BatchFixture.option.copy(kind = QualityKind.FILE, container = "m4a")))
+        val vm = vm(audio)
+        vm.resolve(media.sourceUrl); advanceUntilIdle()
+        assertEquals("320 kb/s", vm.state.value.option(0)?.label)
+    }
     @Test fun `direct audio also converts instead of exposing an M4A file`() {
         val direct = BatchFixture.option.copy(kind = QualityKind.FILE, container = "m4a")
         val options = LiteFormats.options(media.copy(mediaType = MediaType.AUDIO, options = listOf(direct)))
