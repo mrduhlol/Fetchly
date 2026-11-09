@@ -50,6 +50,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         handleIncoming(intent)
         if (BuildConfig.IS_LITE) {
+            enableEdgeToEdge(statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
+                navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT))
             setContent { EditionUi.Root(graph) { action ->
                 requestNotificationPermissionIfNeeded()
                 action()
@@ -129,6 +131,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun requestNotificationPermissionIfNeeded() {
+        if (BuildConfig.IS_LITE) {
+            val preferences = getSharedPreferences("share_download", MODE_PRIVATE)
+            if (preferences.getBoolean("asked_for_notifications", false)) return
+            preferences.edit().putBoolean("asked_for_notifications", true).apply()
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) !=
             PackageManager.PERMISSION_GRANTED
