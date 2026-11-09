@@ -35,6 +35,7 @@ window.Fetchly3D = {
     const shadow=new T.Mesh(new T.PlaneGeometry(7,3),new T.MeshBasicMaterial({map:new T.CanvasTexture(shadowCanvas),transparent:true,depthWrite:false}));shadow.rotation.x=-Math.PI/2;shadow.position.set(0,-4.2,0);scene.add(shadow);
     let hand;
     if(options.hand){
+      renderer.toneMappingExposure=1.0; key.intensity=2.2; rim.intensity=1.5; fill.intensity=.45;
       hand=new T.Group();scene.add(hand);
       // A quiet, deterministic stone grain gives the sculpture depth without external textures.
       const stoneCanvas=document.createElement('canvas'); stoneCanvas.width=256; stoneCanvas.height=256;
@@ -47,7 +48,7 @@ window.Fetchly3D = {
       }
       stoneCtx.putImageData(pixels,0,0);
       const stoneTexture=new T.CanvasTexture(stoneCanvas); stoneTexture.colorSpace=T.SRGBColorSpace;
-      const marble=new T.MeshStandardMaterial({map:stoneTexture,roughness:.48,metalness:.015});
+      const marble=new T.MeshStandardMaterial({map:stoneTexture,color:0xc9c0ad,roughness:.60,metalness:.015});
       const nail=new T.MeshStandardMaterial({color:0xf0e7d9,roughness:.42,metalness:.01});
       const sphereGeometry=new T.SphereGeometry(1,32,24);
       function ellipsoid(x,y,z,sx,sy,sz,material=marble){const m=new T.Mesh(sphereGeometry,material);m.position.set(x,y,z);m.scale.set(sx,sy,sz);hand.add(m);return m;}

@@ -10,9 +10,9 @@
 window.__hf=window.__hf||{};window.__hf.buildReady=window.__hf.buildReady||{};
 window.__hf.buildReady.touch=(async()=>{
 const s=await window.Fetchly3D.create(document.getElementById('touch-canvas'),'assets/screens/home-enabled.png',{hand:true});
-const clock={t:0};function render(t){const sm=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x)};const orbit=sm((t-.4)/1.9),dive=sm((t-2.25)/1.5),reach=sm((t-4.2)/2.42);
+const clock={t:0};function render(t){const sm=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x)};const orbit=sm((t-.4)/1.9),dive=sm((t-2.25)/1.5),reach=sm((t-4.2)/2.42),widen=sm((t-4.05)/1.4);
 s.phone.position.set(0,0,0);s.phone.rotation.set(0,0,0);
-s.camera.position.set(orbit*4.2-dive*2.3,.4+dive*.34,14.8-orbit*3.1-dive*7.7);
+s.camera.position.set(orbit*4.2-dive*2.3+widen*1.0,.4+dive*.34,14.8-orbit*3.1-dive*7.7+widen*2.5);
 s.camera.lookAt(0,dive*.74,0);
 s.hand.position.set(5.5*(1-reach),-.5*(1-reach),3.2*(1-reach));s.hand.visible=t>=4.1;
 // A 0.1s press is visible before the blackout; the fingertip lands on the screen.
