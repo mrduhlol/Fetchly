@@ -20,5 +20,6 @@
       "type": "hyperframes:component",
       "target": "compositions/components/caption-editorial-emphasis.html"
     }
-  ]
+  ],
+  "authoringSkill": "hyperframes"
 }
