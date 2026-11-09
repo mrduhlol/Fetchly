@@ -23,6 +23,7 @@ import com.fetchly.app.BuildConfig
 import com.fetchly.app.domain.model.DefaultQuality
 import com.fetchly.app.ui.components.ExternalLinks
 import com.fetchly.app.ui.settings.SettingsViewModel
+import com.fetchly.app.ui.theme.UiScale
 
 @Composable
 fun LiteSettings(vm: SettingsViewModel, onBack: () -> Unit) {
@@ -33,6 +34,7 @@ fun LiteSettings(vm: SettingsViewModel, onBack: () -> Unit) {
     var about by remember { mutableStateOf(false) }
     var systemError by remember { mutableStateOf<String?>(null) }
     val quality by vm.defaultQuality.collectAsStateWithLifecycle()
+    val uiScale by vm.uiScale.collectAsStateWithLifecycle()
     val engine by vm.engineState.collectAsStateWithLifecycle()
     val historyMessage by vm.historyMessage.collectAsStateWithLifecycle()
     DisposableEffect(owner) {
@@ -46,6 +48,17 @@ fun LiteSettings(vm: SettingsViewModel, onBack: () -> Unit) {
         ParchmentPanel(Modifier.fillMaxWidth()) {
             TextButton(onClick = onBack) { Text("Back") }
             Text("Settings", style = MaterialTheme.typography.headlineMedium)
+            Text("App zoom", style = MaterialTheme.typography.titleMedium)
+            Text("Choose how large Fetchly Lite appears.", style = MaterialTheme.typography.bodySmall)
+            Row(Modifier.fillMaxWidth().selectableGroup(), horizontalArrangement = Arrangement.SpaceBetween) {
+                UiScale.entries.forEach { choice ->
+                    Row(Modifier.selectable(uiScale == choice, role = Role.RadioButton, onClick = { vm.setUiScale(choice) }), verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(uiScale == choice, onClick = null)
+                        Text("${choice.percent}%")
+                    }
+                }
+            }
+            HorizontalDivider()
             Text("Notifications", style = MaterialTheme.typography.titleMedium)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(if (notifications) "On" else "Off", Modifier.weight(1f))

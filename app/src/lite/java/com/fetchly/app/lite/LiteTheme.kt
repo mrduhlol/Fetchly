@@ -11,13 +11,16 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import com.fetchly.app.ui.theme.ScaledUi
+import com.fetchly.app.ui.theme.UiScale
 
 val Ink = Color(0xFF211C18)
 val Parchment = Color(0xFFEFD5AA)
 private val Clay = Color(0xFFA75429)
 
 @Composable
-fun LiteTheme(content: @Composable () -> Unit) {
+fun LiteTheme(uiScale: UiScale = UiScale.COMPACT, content: @Composable () -> Unit) {
+    ScaledUi(uiScale) {
     MaterialTheme(colorScheme = lightColorScheme(
         primary = Ink, onPrimary = Parchment, primaryContainer = Parchment, onPrimaryContainer = Ink,
         secondary = Color(0xFF674325), onSecondary = Parchment,
@@ -37,13 +40,14 @@ fun LiteTheme(content: @Composable () -> Unit) {
         headlineMedium = MaterialTheme.typography.headlineMedium.copy(fontFamily = FontFamily.Serif),
         titleLarge = MaterialTheme.typography.titleLarge.copy(fontFamily = FontFamily.Serif),
     ), content = content)
+    }
 }
 
-/** Fit artwork without distortion; a black base makes 77% opacity darken it. */
+/** Fill the screen with artwork so no black side bands show on tall devices. */
 @Composable
 fun LiteBackdrop(art: Int, modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
     Box(modifier.background(Color.Black)) {
-        Image(painterResource(art), null, Modifier.matchParentSize(), alpha = .77f, contentScale = ContentScale.Fit, alignment = androidx.compose.ui.Alignment.TopCenter)
+        Image(painterResource(art), null, Modifier.matchParentSize(), alpha = .77f, contentScale = ContentScale.Crop, alignment = androidx.compose.ui.Alignment.TopCenter)
         content()
     }
 }

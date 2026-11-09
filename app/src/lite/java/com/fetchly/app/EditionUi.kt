@@ -37,6 +37,7 @@ import com.fetchly.app.domain.batch.BatchLinks
 import com.fetchly.app.lite.*
 import com.fetchly.app.ui.downloads.DownloadsViewModel
 import com.fetchly.app.ui.settings.SettingsViewModel
+import com.fetchly.app.ui.theme.UiScale
 import com.fetchly.app.ui.welcome.WelcomeViewModel
 import kotlinx.coroutines.delay
 
@@ -46,7 +47,8 @@ object EditionUi {
     fun Root(graph: AppGraph, requestNotifications: (() -> Unit) -> Unit) {
         val welcomeVm: WelcomeViewModel = viewModel { WelcomeViewModel(graph.settings) }
         val welcome by welcomeVm.state.collectAsStateWithLifecycle()
-        LiteTheme {
+        val uiScale by graph.settings.uiScale.collectAsStateWithLifecycle(initialValue = UiScale.COMPACT)
+        LiteTheme(uiScale) {
             Surface(color = Color.Black, modifier = Modifier.fillMaxSize()) {
                 Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
                     when (welcome.completed) {
