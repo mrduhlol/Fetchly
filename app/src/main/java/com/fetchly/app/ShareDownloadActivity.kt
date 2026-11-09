@@ -23,9 +23,13 @@ import com.fetchly.app.ui.theme.FetchlyAppTheme
 
 /** A floating share target in the caller's task; never launches the full Fetchly UI. */
 class ShareDownloadActivity : ComponentActivity() {
+    private var litePendingDownload: (() -> Unit)? = null
     private var permissionAnswered by mutableStateOf(false)
     private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
-        permissionAnswered = true
+        if (BuildConfig.IS_LITE) {
+            litePendingDownload?.invoke()
+            litePendingDownload = null
+        } else permissionAnswered = true
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -74,6 +78,7 @@ class ShareDownloadActivity : ComponentActivity() {
             ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED &&
             !preferences.getBoolean("asked_for_notifications", false)) {
             preferences.edit().putBoolean("asked_for_notifications", true).apply()
+            if (BuildConfig.IS_LITE) litePendingDownload = download
             notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         } else download()
     }
