@@ -6,7 +6,7 @@ SOURCE OF TRUTH: README.md; running full Fetchly Android app; original app artwo
 LOOK: Greek bronze and stone drawn from Fetchly; charcoal #171510, gold #d9b873, limestone #e8ddc6. Cinzel display 84–130 px; Inter body 32–44 px. UI captures remain authentic. Beauty shots may rotate in 3D as explicitly requested; proof shots settle front-on. Primary text inside 80% title-safe; one focal action per shot.
 OBJECTS: Actual Android phone screens, public-media sample, real platform marks, bronze phone frame, articulated marble hand, readable GitHub end card, exact README APK button.
 MOTION: Camera moves 0.5–1.1 s, power3.inOut; icon pops 0.28 s back.out(1.3), stagger 0.45 s; hero hand approaches 1.5 s, contact 0.12 s, blackout 0.10 s after contact; final cursor approach 0.8 s.
-AUDIO: English narration with room between phrases; Greek-inspired plucked instrument and restrained percussion; timed pops, taps, whooshes, final riser, impact and deliberate silence. Provider pending user choice; do not silently substitute.
+AUDIO: English narration with room between phrases; Greek-inspired plucked instrument and restrained percussion; timed pops, taps, whooshes, final riser, impact and deliberate silence. HeyGen selected by the user; sign-in verified. Do not substitute providers silently.
 
 ## Shot plan, at 30 fps
 
@@ -21,3 +21,5 @@ AUDIO: English narration with room between phrases; Greek-inspired plucked instr
 
 BANNED: Invented Fetchly controls; invented speed claims; named competitor accusations; feature-list cards; universal-platform promises; repetitive slide-up transitions; decorative HUD; illegible tilted UI during proof; smoke over the repo text; logo docked in a corner. User explicitly requests centre fade, 3D phone motion and final smoke/blackout.
 QA: Inspect every scene midpoint, transitions, button contact and end-card read time. Check full runtime/lint/layout. Measure final duration, audio peak/loudness and nonempty output; inspect decoded frames. Audio can be measured but is not human-listened by the agent.
+
+WATERMARK REQUIREMENT: No visible renderer, stock-library or media-provider watermark at any time, including corners and opening/closing frames. Use original app assets, captured app UI, locally rendered 3D and clean licensed audio. Do not remove a provider-required watermark; avoid that asset or report the limitation. Inspect delivery frames for accidental labels and watermarks. Fetchly branding and the requested creator/repo end card remain intentional.
