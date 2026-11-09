@@ -36,12 +36,25 @@ window.Fetchly3D = {
     let hand;
     if(options.hand){
       hand=new T.Group();scene.add(hand);
-      const marble=new T.MeshStandardMaterial({color:0xe5decf,roughness:.55,metalness:.015});
-      const nail=new T.MeshStandardMaterial({color:0xf3eadb,roughness:.38,metalness:.01});
-      function ellipsoid(x,y,z,sx,sy,sz,material=marble){const m=new T.Mesh(new T.SphereGeometry(1,20,14),material);m.position.set(x,y,z);m.scale.set(sx,sy,sz);hand.add(m);return m;}
-      function bone(a,b,r1,r2){let va=new T.Vector3(...a),vb=new T.Vector3(...b),d=vb.clone().sub(va);let m=new T.Mesh(new T.CylinderGeometry(r2,r1,d.length(),16),marble);m.position.copy(va.clone().add(vb).multiplyScalar(.5));m.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d.normalize());hand.add(m);ellipsoid(...a,r1,r1,r1);ellipsoid(...b,r2,r2,r2);}
+      // A quiet, deterministic stone grain gives the sculpture depth without external textures.
+      const stoneCanvas=document.createElement('canvas'); stoneCanvas.width=256; stoneCanvas.height=256;
+      const stoneCtx=stoneCanvas.getContext('2d'); const pixels=stoneCtx.createImageData(256,256);
+      for(let y=0;y<256;y++) for(let x=0;x<256;x++){
+        const vein=Math.pow(Math.max(0,Math.sin(x*.055+y*.027+2.2*Math.sin(y*.025)+.7*Math.sin(x*.035+y*.018))),18);
+        const grain=Math.sin(x*1.73+y*2.19)*Math.sin(x*.39-y*.71);
+        const shade=vein*13+grain*2, i=(y*256+x)*4;
+        pixels.data[i]=235-shade; pixels.data[i+1]=229-shade; pixels.data[i+2]=216-shade; pixels.data[i+3]=255;
+      }
+      stoneCtx.putImageData(pixels,0,0);
+      const stoneTexture=new T.CanvasTexture(stoneCanvas); stoneTexture.colorSpace=T.SRGBColorSpace;
+      const marble=new T.MeshStandardMaterial({map:stoneTexture,roughness:.48,metalness:.015});
+      const nail=new T.MeshStandardMaterial({color:0xf0e7d9,roughness:.42,metalness:.01});
+      const sphereGeometry=new T.SphereGeometry(1,32,24);
+      function ellipsoid(x,y,z,sx,sy,sz,material=marble){const m=new T.Mesh(sphereGeometry,material);m.position.set(x,y,z);m.scale.set(sx,sy,sz);hand.add(m);return m;}
+      function bone(a,b,r1,r2){let va=new T.Vector3(...a),vb=new T.Vector3(...b),d=vb.clone().sub(va);let m=new T.Mesh(new T.CylinderGeometry(r2,r1,d.length(),24),marble);m.position.copy(va.clone().add(vb).multiplyScalar(.5));m.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d.normalize());hand.add(m);ellipsoid(...a,r1,r1,r1);ellipsoid(...b,r2,r2,r2);}
       // Extended index, three curled fingers, thumb, palm and forearm form one carved hand.
       ellipsoid(2.9,-.75,1.15,.74,.87,.33).rotation.z=-.64;
+      ellipsoid(2.54,-.42,1.13,.53,.55,.30).rotation.z=-.64;
       bone([3.1,-1.18,1.15],[4.7,-2.5,1.55],.43,.48);
       bone([2.65,-.07,1.05],[1.63,.39,.67],.25,.205);
       bone([1.63,.39,.67],[.68,.68,.34],.205,.17);
