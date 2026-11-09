@@ -1,0 +1,17 @@
+{
+  "file": "renders/fetchly-latest-1080p.mp4",
+  "sha256": "c211532a2aa1e40a4b451f5a7434fb1c6ee1bc1215c0ad2eb4b9d0465d037b63",
+  "bytes": 6730039,
+  "duration_seconds": 55.0,
+  "width": 1920,
+  "height": 1080,
+  "fps": "30/1",
+  "frames": 1650,
+  "video_codec": "h264",
+  "audio_codec": "aac",
+  "audio_sample_rate": "48000",
+  "integrated_lufs": -16.14,
+  "true_peak_dbtp": -4.52,
+  "subtitles": "burned-in + fetchly-latest.srt",
+  "sound_review": "Measured; not human-listened."
+}
