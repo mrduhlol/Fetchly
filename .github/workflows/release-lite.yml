@@ -1,0 +1,83 @@
+name: Release Fetchly Lite
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing latest stable Fetchly release to receive the Lite APK
+        required: true
+        default: v2.4.6
+        type: string
+concurrency:
+  group: release-apk
+  cancel-in-progress: false
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ inputs.release_tag }}
+      FETCHLY_SIGNING_STORE_PASSWORD: ${{ secrets.FETCHLY_RELEASE_STORE_PASSWORD }}
+      FETCHLY_SIGNING_KEY_ALIAS: ${{ secrets.FETCHLY_RELEASE_KEY_ALIAS }}
+      FETCHLY_SIGNING_KEY_PASSWORD: ${{ secrets.FETCHLY_RELEASE_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate stable destination without replacing published assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo 'Invalid stable release tag' >&2; exit 1; }
+          gh release view "$RELEASE_TAG" --json tagName,isDraft,isPrerelease,assets > "$RUNNER_TEMP/target-release.json"
+          gh release view --json tagName > "$RUNNER_TEMP/latest-release.json"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path(os.environ['RUNNER_TEMP'])
+          target = json.loads((root / 'target-release.json').read_text())
+          latest = json.loads((root / 'latest-release.json').read_text())
+          assert not target['isDraft'] and not target['isPrerelease'], 'Destination must be a published stable release'
+          assert target['tagName'] == latest['tagName'], 'Destination must be the latest stable release'
+          assert not any(a['name'] == 'fetchly-lite.apk' for a in target['assets']), 'Published Lite APK already exists; it will not be replaced'
+          assert Path(f"docs/release-notes/{os.environ['RELEASE_TAG']}-lite.md").is_file(), 'Lite release notes are required'
+          PY
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+      - name: Install Android platform and bridge test dependencies
+        run: |
+          "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses < <(yes) > /dev/null
+          "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0'
+          python3 -m pip install 'yt-dlp==2026.10.26' 'packaging==25.0'
+      - name: Restore and verify persistent production signer
+        env:
+          # The legacy secret contains the existing pinned persistent key, not an ephemeral test key.
+          FETCHLY_KEYSTORE_BASE64: ${{ secrets.FETCHLY_RELEASE_KEYSTORE_BASE64 || secrets.FETCHLY_DEBUG_KEYSTORE_BASE64 }}
+        run: bash scripts/prepare-production-signing.sh
+      - name: Test and build production Lite
+        run: |
+          python3 -m unittest discover -s app/src/test/python -v
+          ./gradlew :app:testLiteDebugUnitTest :app:testFullDebugUnitTest :app:lintLiteDebug :app:assembleLiteRelease --max-workers=2 -Pkotlin.compiler.execution.strategy=in-process '-Dorg.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8' --console=plain
+      - name: Verify production APK and prepare download metadata
+        run: |
+          python3 scripts/verify-production-apk.py --apk app/build/outputs/apk/lite/release/app-lite-release.apk --package com.fetchly.app.lite --version "${RELEASE_TAG#v}-lite" --tools "$ANDROID_SDK_ROOT/build-tools/35.0.0" --output fetchly-lite-release.json
+          cp app/build/outputs/apk/lite/release/app-lite-release.apk fetchly-lite.apk
+          cp fetchly-lite.apk "fetchly-lite_${RELEASE_TAG}.apk"
+          cp "docs/release-notes/${RELEASE_TAG}-lite.md" fetchly-lite-release-notes.md
+          sha256sum fetchly-lite.apk > fetchly-lite.sha256
+      - name: Upload direct production APK to the stable release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          test "$(gh release view --json tagName --jq .tagName)" = "$RELEASE_TAG"
+          # No --clobber: an existing published asset must never be replaced.
+          gh release upload "$RELEASE_TAG" fetchly-lite.apk "fetchly-lite_${RELEASE_TAG}.apk" fetchly-lite.sha256 fetchly-lite-release.json fetchly-lite-release-notes.md
+      - name: Remove restored private keystore
+        if: always()
+        run: rm -f -- "$RUNNER_TEMP/fetchly-production-signing.jks"
