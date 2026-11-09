@@ -35,6 +35,10 @@ class ShareDownloadActivity : ComponentActivity() {
         window.setLayout((width * resources.displayMetrics.density).toInt(), WindowManager.LayoutParams.WRAP_CONTENT)
         val graph = (application as FetchlyApp).graph
         val sharedText = readSharedText(intent)
+        if (BuildConfig.IS_LITE) {
+            setContent { EditionUi.Share(graph, sharedText, { action -> startDownload(action) }, { finish() }) }
+            return
+        }
         setContent {
             val vm: ShareDownloadViewModel = viewModel { ShareDownloadViewModel(sharedText, graph.resolver, graph.queue) }
             val state by vm.state.collectAsStateWithLifecycle()
