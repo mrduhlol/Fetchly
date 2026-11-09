@@ -78,3 +78,12 @@ Home keeps one wallpaper but subdues it with a theme scrim, restores translucent
 ### 2.4.4 feedback
 
 Home’s footer fades to the selected palette: warm ivory in light mode and black in dark mode, with matching readable copyright text. Notifications retain the small Moai status icons and download actions but show no media thumbnail or other large artwork. The installer and share sheet use the complete original PNG directly; adaptive launcher foregrounds fit a 72dp viewport with 18dp layer insets. These choices supersede the earlier black-only footer, notification thumbnail and zero-inset notes above.
+
+
+## Approved scrolling Home artwork (November 2026)
+
+Home now uses the approved matching night/day Apollo pavilion compositions, with quiet sky behind the existing controls and a complete monument revealed by scrolling. This supersedes the fixed wallpaper scrim and black footer fades. Each composition is split at 72% height into `fetchly_home_dark.webp` / `fetchly_home_light.webp` (sky) and matching `_monument.webp` assets. The sky can expand for content or larger text; the monument keeps its original proportions and remains below the controls. Both portions share the same scroll container. No gradient obscures the artwork.
+
+Keep the original Apollo logo, functional sans-serif labels, existing serif headline, and clipped-corner gold plaque primary buttons with their fine inset rule. Home's brand name also uses serif, and the link panel has a restrained bronze border. Supported platforms and download behavior are unchanged.
+
+The assets were generated with the built-in image tool and approved as previews before implementation. Dark prompt: extend the charcoal-blue sky upward in a 1:3 portrait while preserving the full Apollo pavilion, lyre statue, steps, olive foliage and distant mountains; reserve the upper sky for controls. Light prompt: preserve that composition and convert only the lighting/palette to soft morning daylight, ivory/limestone, muted bronze and misty mountains. Source files: `exec-574ec9c7-4015-45fc-abe8-b502dd9ee744.png` and `exec-f7ba5b1d-865c-4b48-b0e3-e9b673106c4e.png` in the generation session `01a1bd2d-c732-7670-96b2-6099df3d8b29`.

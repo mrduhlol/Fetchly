@@ -1,9 +1,6 @@
 package com.fetchly.app.ui.home
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.layout.ContentScale
@@ -23,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
@@ -63,91 +61,90 @@ fun HomeScreen(
         if (state.batchReady) { viewModel.consumeBatchReady(); onOpenBatch() }
     }
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val footerColor = if (dark) Color.Black else MaterialTheme.colorScheme.background
-    val footerTextColor = MaterialTheme.colorScheme.onBackground
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-        Image(
-            painterResource(if (dark)
-                R.drawable.fetchly_home_dark else R.drawable.fetchly_home_light),
-            contentDescription = null,
-            modifier = Modifier.matchParentSize(),
-            contentScale = ContentScale.FillBounds,
-        )
-        Box(Modifier.matchParentSize().background(MaterialTheme.colorScheme.background.copy(alpha = 0.304f)))
-        Box(Modifier.fillMaxWidth().height(160.dp).align(Alignment.BottomCenter)
-            .background(Brush.verticalGradient(listOf(footerColor.copy(alpha = 0f), footerColor))))
+    val artwork = painterResource(if (dark) R.drawable.fetchly_home_dark else R.drawable.fetchly_home_light)
+    val monument = painterResource(if (dark) R.drawable.fetchly_home_dark_monument else R.drawable.fetchly_home_light_monument)
+    // One scroll owns both controls and artwork. Extra content stretches only the
+    // empty sky; the complete monument always follows at its original aspect ratio.
+    BoxWithConstraints(Modifier.fillMaxSize().imePadding(), contentAlignment = Alignment.TopCenter) {
+        val pageWidth = maxWidth.coerceAtMost(640.dp)
+        val skyHeight = pageWidth / (artwork.intrinsicSize.width / artwork.intrinsicSize.height)
         Column(
-            modifier = Modifier.widthIn(max = 640.dp).fillMaxSize()
-                .imePadding().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 4.dp),
+            Modifier.width(pageWidth).fillMaxHeight().verticalScroll(rememberScrollState()),
         ) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Image(painterResource(R.drawable.fetchly_logo), null, Modifier.size(30.dp))
-                Spacer(Modifier.width(10.dp))
-                Text("Fetchly", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                TextButton(onClick = onOpenDownloads) { Text("Downloads") }
-                IconButton(onClick = onOpenSettings) {
-                    Icon(Icons.Filled.Settings, contentDescription = "Settings")
-                }
-            }
-            Spacer(Modifier.height(4.dp))
-            Text("Download a link", style = MaterialTheme.typography.headlineMedium)
-            Spacer(Modifier.height(8.dp))
-            Text(
-                "Paste a link, choose a format, and save it.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(16.dp))
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            ) {
-                Column(Modifier.heightIn(min = 280.dp).padding(horizontal = 18.dp, vertical = 20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Box(Modifier.fillMaxWidth().heightIn(min = skyHeight)) {
+                Image(artwork, contentDescription = null, modifier = Modifier.matchParentSize(),
+                    contentScale = ContentScale.FillBounds)
+                Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp)) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text("Start with a link", style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
-                        TextButton(
-                            enabled = !state.analyzing,
-                            onClick = { clipboard.getText()?.text?.let(viewModel::onInputChange) },
-                        ) {
-                            Icon(Icons.Filled.Add, null, Modifier.size(18.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text("Paste")
+                        Image(painterResource(R.drawable.fetchly_logo), null, Modifier.size(30.dp))
+                        Spacer(Modifier.width(10.dp))
+                        Text("Fetchly", style = MaterialTheme.typography.titleMedium.copy(fontFamily = FontFamily.Serif), modifier = Modifier.weight(1f))
+                        TextButton(onClick = onOpenDownloads) { Text("Downloads") }
+                        IconButton(onClick = onOpenSettings) {
+                            Icon(Icons.Filled.Settings, contentDescription = "Settings")
                         }
                     }
-                    UrlInput(state.input, viewModel::onInputChange, !state.analyzing, fetch)
-                    state.detected?.let {
-                        Text(detectedLine(it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.height(4.dp))
+                    Text("Download a link", style = MaterialTheme.typography.headlineMedium)
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "Paste a link, choose a format, and save it.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Surface(
+                        shape = MaterialTheme.shapes.medium,
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = if (dark) 0.65f else 0.75f)),
+                    ) {
+                        Column(Modifier.heightIn(min = 280.dp).padding(horizontal = 18.dp, vertical = 20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                Text("Start with a link", style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
+                                TextButton(
+                                    enabled = !state.analyzing,
+                                    onClick = { clipboard.getText()?.text?.let(viewModel::onInputChange) },
+                                ) {
+                                    Icon(Icons.Filled.Add, null, Modifier.size(18.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Paste")
+                                }
+                            }
+                            UrlInput(state.input, viewModel::onInputChange, !state.analyzing, fetch)
+                            state.detected?.let {
+                                Text(detectedLine(it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            state.suggestion?.let {
+                                ClipboardSuggestion(it, viewModel::acceptSuggestion, viewModel::dismissSuggestion)
+                            }
+                            FetchButton(loading = state.analyzing, enabled = state.canFetch, onClick = fetch)
+                            TextButton(onClick = viewModel::openBatch, enabled = !state.analyzing, modifier = Modifier.align(Alignment.CenterHorizontally)) { Text("Add multiple links") }
+                            state.status?.let { StatusCard(it, isError = false) }
+                            if (state.analyzing) TextButton(onClick = viewModel::cancelFetch) { Text("Cancel") }
+                            state.error?.let {
+                                StatusCard(it, isError = true)
+                                if (com.fetchly.app.domain.security.UrlSecurity.validate(state.input) is com.fetchly.app.domain.security.UrlValidation.Valid) RecoveryActions(
+                                    raw = state.errorRaw ?: it,
+                                    sourceUrl = state.input,
+                                    onRetry = { viewModel.fetch() },
+                                    onOpenSettings = onOpenSettings,
+                                )
+                            }
+                        }
                     }
-                    state.suggestion?.let {
-                        ClipboardSuggestion(it, viewModel::acceptSuggestion, viewModel::dismissSuggestion)
-                    }
-                    FetchButton(loading = state.analyzing, enabled = state.canFetch, onClick = fetch)
-                    TextButton(onClick = viewModel::openBatch, enabled = !state.analyzing, modifier = Modifier.align(Alignment.CenterHorizontally)) { Text("Add multiple links") }
-                    state.status?.let { StatusCard(it, isError = false) }
-                    if (state.analyzing) TextButton(onClick = viewModel::cancelFetch) { Text("Cancel") }
-                    state.error?.let {
-                        StatusCard(it, isError = true)
-                        if (com.fetchly.app.domain.security.UrlSecurity.validate(state.input) is com.fetchly.app.domain.security.UrlValidation.Valid) RecoveryActions(
-                            raw = state.errorRaw ?: it,
-                            sourceUrl = state.input,
-                            onRetry = { viewModel.fetch() },
-                            onOpenSettings = onOpenSettings,
-                        )
-                    }
+                    Spacer(Modifier.height(16.dp))
+                    SupportedApps()
+                    Spacer(Modifier.height(24.dp))
                 }
             }
-            Spacer(Modifier.height(16.dp))
-            SupportedApps()
-            Spacer(Modifier.height(16.dp))
-            Spacer(Modifier.height(44.dp))
-            Box(
-                Modifier.fillMaxWidth().height(160.dp)
-                    .background(Brush.verticalGradient(listOf(footerColor.copy(alpha = 0f), footerColor.copy(alpha = 0.92f), footerColor))),
-                contentAlignment = Alignment.BottomCenter,
-            ) {
-                Text("© mrduhlol", style = MaterialTheme.typography.labelSmall, color = footerTextColor,
-                    modifier = Modifier.padding(bottom = 24.dp))
+            Box(Modifier.fillMaxWidth()) {
+                Image(monument, contentDescription = null,
+                    modifier = Modifier.fillMaxWidth().aspectRatio(
+                        monument.intrinsicSize.width / monument.intrinsicSize.height),
+                    contentScale = ContentScale.Fit)
+                Text("© mrduhlol", style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp))
             }
         }
     }
