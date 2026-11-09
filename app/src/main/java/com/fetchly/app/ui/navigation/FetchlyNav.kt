@@ -1,6 +1,21 @@
 package com.fetchly.app.ui.navigation
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.material3.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -146,40 +161,84 @@ fun FetchlyNav(graph: AppGraph, navController: NavHostController = rememberNavCo
         }
     }
     if (route in listOf(Routes.HOME, Routes.DOWNLOADS, Routes.LIBRARY)) {
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 0.5.dp)
-        NavigationBar(
-            modifier = Modifier.height(68.dp),
-            containerColor = MaterialTheme.colorScheme.background,
-            tonalElevation = 0.dp,
-            windowInsets = WindowInsets(0, 0, 0, 0),
-        ) {
-            listOf(
-                Triple(Routes.HOME, "Home", R.drawable.ic_nav_home),
-                Triple(Routes.DOWNLOADS, "Downloads", R.drawable.ic_stat_download),
-                Triple(Routes.LIBRARY, "Library", R.drawable.ic_library_folder),
-            ).forEach { (destination, label, icon) ->
-                NavigationBarItem(
-                    selected = route == destination,
-                    onClick = {
-                        if (route != destination) navController.navigate(destination) {
-                            popUpTo(Routes.HOME) { saveState = true }
-                            launchSingleTop = true
-                            // Home is the retained root; restoring its saved pop can reopen the previous tab.
-                            restoreState = destination != Routes.HOME
-                        }
-                    },
-                    icon = { Icon(painterResource(icon), null, Modifier.size(22.dp)) },
-                    label = { Text(label, style = MaterialTheme.typography.labelSmall) },
-                    colors = NavigationBarItemDefaults.colors(
-                        indicatorColor = MaterialTheme.colorScheme.secondaryContainer,
-                        selectedIconColor = MaterialTheme.colorScheme.primary,
-                        selectedTextColor = MaterialTheme.colorScheme.onSurface,
-                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    ),
-                )
+        FetchlyNavigationDock(route = route) { destination ->
+            if (route != destination) navController.navigate(destination) {
+                popUpTo(Routes.HOME) { saveState = true }
+                launchSingleTop = true
+                // Home is the retained root; restoring its saved pop can reopen the previous tab.
+                restoreState = destination != Routes.HOME
             }
         }
     }
+    }
+}
+
+/** Shared inset surface; selection moves without shifting the tab targets or labels. */
+@Composable
+private fun FetchlyNavigationDock(route: String?, onNavigate: (String) -> Unit) {
+    val destinations = listOf(
+        Triple(Routes.HOME, "Home", R.drawable.ic_nav_home),
+        Triple(Routes.DOWNLOADS, "Downloads", R.drawable.ic_stat_download),
+        Triple(Routes.LIBRARY, "Library", R.drawable.ic_library_folder),
+    )
+    val selectedIndex = destinations.indexOfFirst { it.first == route }.coerceAtLeast(0)
+    val indicatorIndex by animateFloatAsState(
+        targetValue = selectedIndex.toFloat(),
+        animationSpec = tween(durationMillis = 260),
+        label = "Navigation underline",
+    )
+    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val colors = MaterialTheme.colorScheme
+    Surface(color = colors.background) {
+        Surface(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            shape = RoundedCornerShape(16.dp),
+            color = colors.surfaceContainerLow,
+            border = BorderStroke(0.5.dp, colors.outlineVariant),
+        ) {
+            Box(Modifier.padding(horizontal = 6.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min).selectableGroup(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    destinations.forEach { (destination, label, icon) ->
+                        val selected = route == destination
+                        val contentColor = if (selected) colors.secondary else colors.onSurfaceVariant
+                        Column(
+                            modifier = Modifier.weight(1f).fillMaxHeight()
+                                .heightIn(min = 70.dp)
+                                .selectable(
+                                    selected = selected,
+                                    role = Role.Tab,
+                                    onClick = { onNavigate(destination) },
+                                )
+                                .padding(horizontal = 4.dp, vertical = 12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(7.dp, Alignment.CenterVertically),
+                        ) {
+                            Icon(painterResource(icon), null, Modifier.size(23.dp), tint = contentColor)
+                            Text(
+                                text = label,
+                                color = contentColor,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                            )
+                        }
+                    }
+                }
+                Canvas(Modifier.matchParentSize()) {
+                    val tabWidth = size.width / destinations.size
+                    val position = if (isRtl) destinations.lastIndex - indicatorIndex else indicatorIndex
+                    val width = 28.dp.toPx().coerceAtMost(tabWidth)
+                    val height = 3.dp.toPx()
+                    drawRoundRect(
+                        color = colors.secondary,
+                        topLeft = Offset(tabWidth * (position + 0.5f) - width / 2, size.height - height),
+                        size = Size(width, height * 2),
+                        cornerRadius = CornerRadius(2.dp.toPx()),
+                    )
+                }
+            }
+        }
     }
 }
