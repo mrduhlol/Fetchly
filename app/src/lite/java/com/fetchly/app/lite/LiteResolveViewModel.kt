@@ -9,6 +9,9 @@ import com.fetchly.app.domain.model.*
 import com.fetchly.app.domain.resolve.ResolveUrlUseCase
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -50,6 +53,7 @@ data class LiteResolveState(
 class LiteResolveViewModel(
     private val resolver: ResolveUrlUseCase,
     private val commands: DownloadCommands,
+    private val quality: Flow<DefaultQuality> = flowOf(DefaultQuality.BEST),
 ) : ViewModel() {
     private val mutable = MutableStateFlow(LiteResolveState())
     val state = mutable.asStateFlow()
@@ -82,10 +86,11 @@ class LiteResolveViewModel(
                     is ResolveOutcome.Success -> if (token == generation) {
                         val source = result.info.items.ifEmpty { listOf(result.info) }
                         val items = source.map { it.copy(options = LiteFormats.options(it)) }.filter { it.options.isNotEmpty() }
+                        val best = quality.first() == DefaultQuality.BEST
                         mutable.update { it.copy(loading = false, items = items,
                             selected = items.indices.toSet(), choices = items.mapIndexed { index, info ->
                                 index to (info.options.firstOrNull { option -> !option.silentVideo } ?: info.options.first()).id
-                            }.toMap(), error = if (items.isEmpty()) "No downloadable media was returned by this source." else null,
+                            }.toMap().takeIf { best }.orEmpty(), error = if (items.isEmpty()) "No downloadable media was returned by this source." else null,
                             notice = if (items.size < source.size) "${items.size} of ${source.size} returned items are downloadable." else null) }
                     }
                 }
