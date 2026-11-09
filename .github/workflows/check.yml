@@ -45,4 +45,4 @@ jobs:
         if: success()
         with:
           name: fetchly-lite-test
-          path: app/build/outputs/apk/lite/release/app-lite-release.apk
+          path: app/build/outputs/apk/lite/preview/app-lite-preview.apk
