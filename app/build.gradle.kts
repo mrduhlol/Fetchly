@@ -46,6 +46,7 @@ android {
         create("full") {
             dimension = "edition"
             buildConfigField("boolean", "IS_LITE", "false")
+            proguardFile("proguard-rules.pro")
             ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
         }
         create("lite") {
@@ -53,6 +54,7 @@ android {
             applicationIdSuffix = ".lite"
             versionNameSuffix = "-lite"
             buildConfigField("boolean", "IS_LITE", "true")
+            proguardFile("proguard-lite.pro")
             ndk { abiFilters.clear(); abiFilters += "arm64-v8a" }
         }
     }
@@ -77,8 +79,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                getDefaultProguardFile("proguard-android-optimize.txt")
             )
         }
         debug {
