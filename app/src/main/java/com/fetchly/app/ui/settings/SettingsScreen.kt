@@ -54,7 +54,6 @@ fun SettingsScreen(
     viewModel: SettingsViewModel,
     onBack: () -> Unit,
     onOpenAbout: () -> Unit,
-    onOpenAppearance: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val historyMessage by viewModel.historyMessage.collectAsStateWithLifecycle()
@@ -63,13 +62,14 @@ fun SettingsScreen(
     val quality by viewModel.defaultQuality.collectAsStateWithLifecycle()
     val uiScale by viewModel.uiScale.collectAsStateWithLifecycle()
     var confirmClear by remember { mutableStateOf(false) }
+    var showAppearance by remember { mutableStateOf(false) }
 
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
             ScreenTopBar("Settings", onBack = onBack)
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
 
-                ActionRow("Appearance", themeLabel(theme), onOpenAppearance)
+                ActionRow("Appearance", themeLabel(theme)) { showAppearance = true }
 
                 SectionHeader("App size")
                 Column(Modifier.selectableGroup()) {
@@ -151,6 +151,28 @@ fun SettingsScreen(
         }
     }
 
+    if (showAppearance) {
+        AlertDialog(
+            onDismissRequest = { showAppearance = false },
+            title = { Text("Appearance") },
+            text = {
+                Column(Modifier.selectableGroup()) {
+                    listOf(ThemeChoice.LIGHT, ThemeChoice.DARK, ThemeChoice.SYSTEM).forEach { choice ->
+                        ChoiceRow(
+                            label = themeLabel(choice),
+                            selected = choice == theme,
+                            onClick = {
+                                viewModel.setTheme(choice)
+                                showAppearance = false
+                            },
+                        )
+                    }
+                }
+            },
+            confirmButton = {},
+        )
+    }
+
     if (confirmClear) {
         AlertDialog(
             onDismissRequest = { confirmClear = false },
@@ -172,63 +194,6 @@ fun SettingsScreen(
                 }
             },
         )
-    }
-}
-
-@Composable
-fun AppearanceScreen(viewModel: SettingsViewModel, onBack: () -> Unit) {
-    val theme by viewModel.theme.collectAsStateWithLifecycle()
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-        Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
-            ScreenTopBar("Appearance", onBack = onBack)
-            Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-                Text("Make it yours", style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp))
-                Note("Choose a palette. Your selection applies throughout Fetchly and stays after you close the app.")
-                SectionHeader("Appearance")
-                Column(Modifier.selectableGroup()) {
-                    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)) {
-                        listOf(ThemeChoice.DARK, ThemeChoice.LIGHT).forEach { choice ->
-                            PaletteTile(choice, choice == theme, { viewModel.setTheme(choice) }, Modifier.weight(1f))
-                        }
-                    }
-                    ChoiceRow("Follow system", theme == ThemeChoice.SYSTEM) { viewModel.setTheme(ThemeChoice.SYSTEM) }
-                }
-
-                Spacer(Modifier.height(20.dp))
-                Note("Simple ivory actions, clear type, and a little Apollo. Both palettes share the same controls and layout.")
-                com.fetchly.app.ui.components.TempleArtwork(Modifier.fillMaxWidth().height(180.dp))
-            }
-        }
-    }
-}
-
-@Composable
-private fun PaletteTile(choice: ThemeChoice, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val dark = choice == ThemeChoice.DARK
-    val background = if (dark) com.fetchly.app.ui.theme.DarkBackground else com.fetchly.app.ui.theme.LightBackground
-    val foreground = if (dark) com.fetchly.app.ui.theme.DarkOnBackground else com.fetchly.app.ui.theme.LightOnBackground
-    Surface(
-        modifier = modifier.selectable(selected = selected, role = Role.RadioButton, onClick = onClick),
-        shape = MaterialTheme.shapes.medium,
-        color = background,
-        border = androidx.compose.foundation.BorderStroke(1.dp,
-            if (selected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant),
-    ) {
-        Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            androidx.compose.foundation.Image(
-                painter = androidx.compose.ui.res.painterResource(com.fetchly.app.R.drawable.fetchly_logo),
-                contentDescription = null,
-                modifier = Modifier.fillMaxWidth().height(104.dp),
-                colorFilter = if (dark) null else androidx.compose.ui.graphics.ColorFilter.colorMatrix(
-                    androidx.compose.ui.graphics.ColorMatrix().apply { setToSaturation(0f) }),
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(themeLabel(choice), style = MaterialTheme.typography.labelLarge, color = foreground)
-            Text(if (selected) "Selected" else "Tap to apply", style = MaterialTheme.typography.labelSmall,
-                color = foreground.copy(alpha = 0.75f))
-        }
     }
 }
 
@@ -291,9 +256,9 @@ private fun Note(text: String) {
 }
 
 private fun themeLabel(choice: ThemeChoice): String = when (choice) {
-    ThemeChoice.SYSTEM -> "Follow system"
-    ThemeChoice.LIGHT -> "White (Light)"
-    ThemeChoice.DARK -> "Gold (Dark)"
+    ThemeChoice.SYSTEM -> "System Default"
+    ThemeChoice.LIGHT -> "Light"
+    ThemeChoice.DARK -> "Dark"
 }
 
 private fun qualityLabel(choice: DefaultQuality): String = when (choice) {

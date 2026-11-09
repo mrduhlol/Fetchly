@@ -35,7 +35,6 @@ object Routes {
     const val LIBRARY = "library"
     const val SETTINGS = "settings"
     const val ABOUT = "about"
-    const val APPEARANCE = "appearance"
 }
 
 @Composable
@@ -127,15 +126,7 @@ fun FetchlyNav(graph: AppGraph, navController: NavHostController = rememberNavCo
                 viewModel = viewModel,
                 onBack = { navController.popBackStack() },
                 onOpenAbout = { navController.navigate(Routes.ABOUT) },
-                onOpenAppearance = { navController.navigate(Routes.APPEARANCE) },
             )
-        }
-
-        composable(Routes.APPEARANCE) {
-            val viewModel: SettingsViewModel = viewModel {
-                SettingsViewModel(graph.settings, graph.history, graph.engine)
-            }
-            com.fetchly.app.ui.settings.AppearanceScreen(viewModel) { navController.popBackStack() }
         }
 
         composable(Routes.ABOUT) {
