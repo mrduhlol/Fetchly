@@ -133,7 +133,7 @@ class DownloadQueue(
     private suspend fun pumpLocked() = withContext(Dispatchers.IO) {
         val liveIds = workManager.getWorkInfosByTag(TAG).get().filterNot { it.state.isFinished }
             .mapNotNull { info -> info.tags.firstOrNull { it.startsWith(JOB_TAG_PREFIX) }?.removePrefix(JOB_TAG_PREFIX) }.toSet()
-        val next = DownloadQueuePolicy.next(history.observeAll().first(), liveIds)
+        val next = DownloadQueuePolicy.next(history.observeAll().first(), liveIds, if (com.fetchly.app.BuildConfig.IS_LITE) 1 else 2)
         for (entry in next) schedule(entry.id)
     }
 
