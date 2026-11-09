@@ -18,6 +18,6 @@ class FetchlyApp : Application() {
     override fun onCreate() {
         super.onCreate()
         graph.init()
-        LauncherAppearance(this).register()
+        if (!BuildConfig.IS_LITE) LauncherAppearance(this).register()
     }
 }
