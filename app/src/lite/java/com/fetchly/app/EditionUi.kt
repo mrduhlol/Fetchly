@@ -68,8 +68,9 @@ object EditionUi {
         LaunchedEffect(Unit) { textVisible = true; if (!reducedMotion) delay(2500); buttonVisible = true }
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val artHeight = maxWidth * (1601f / 720f)
+            val canvasHeight = maxOf(maxHeight, artHeight)
             Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                LiteBackdrop(R.drawable.lite_welcome, Modifier.fillMaxWidth().heightIn(min = maxOf(maxHeight, artHeight))) {
+                LiteBackdrop(R.drawable.lite_welcome, Modifier.fillMaxWidth().heightIn(min = canvasHeight)) {
                     Column(Modifier.fillMaxWidth().padding(top = artHeight * .43f, start = 28.dp, end = 28.dp, bottom = 150.dp),
                         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) {
                         AnimatedVisibility(textVisible, enter = fadeIn(tween(1100))) {
