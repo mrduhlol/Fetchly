@@ -8,7 +8,7 @@ Paste a public media link, pick a quality, save it to your device.
 
 <p><img src="app/src/main/res/drawable-nodpi/fetchly_logo.png" width="280" alt="Fetchly Apollo app icon" /></p>
 
-<p><a href="https://github.com/mrduhlol/Fetchly/releases/latest/download/fetchly.apk"><img src="docs/download-apk.svg" width="220" alt="Download APK for Android" /></a></p>
+<p><a href="https://github.com/mrduhlol/Fetchly/releases/latest/download/fetchly.apk"><img src="docs/download-main-v2.png" width="420" alt="Download Fetchly APK for Android 10 and later" /></a></p>
 
 <sub>v2.4.6 · 145.41 MB · Android 10 (API 29)+ · <a href="docs/release-notes/v2.4.6.md">Release notes</a></sub>
 
