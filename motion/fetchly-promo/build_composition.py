@@ -179,6 +179,7 @@ shots=[('pain',0,7),('reveal',7,5),('beauty',12,9),('platforms',21,6),('share',2
 hosts='\n'.join(f'<div id="{name}" class="clip" data-composition-id="{name}" data-composition-src="compositions/{name}.html" data-start="{start}" data-duration="{duration}" data-width="1920" data-height="1080" data-track-index="1" data-track-kind="graphics"></div>' for name,start,duration in shots)
 tracks=[]
 def audio(id,src,start,duration,volume,track,offset=0,fadein=0,fadeout=0):
+    volume = round(volume * .5, 5)  # mix headroom; delivery is loudness-normalised after capture
     tracks.append(f'<audio id="{id}" class="clip" src="{src}" data-start="{start:.4f}" data-duration="{duration:.4f}" data-media-start="{offset:.4f}" data-volume="{volume}" data-fade-in="{fadein}" data-fade-out="{fadeout}" data-track-index="{track}" data-audio-group="'+('voiceover' if track==2 else 'music' if track in (3,4) else 'sfx')+'"></audio>')
 voices=json.loads((P/'narration.json').read_text())
 starts={'frustration':.7,'reveal':8.0,'home':12.5,'platforms':21.65,'share':28.1,'features':41.05}
