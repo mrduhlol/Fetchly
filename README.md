@@ -10,7 +10,7 @@ Paste a public media link, pick a quality, save it to your device.
 
 <p><a href="https://github.com/mrduhlol/Fetchly/releases/latest/download/fetchly.apk"><img src="docs/download-apk.svg" width="220" alt="Download APK for Android" /></a></p>
 
-<sub>v2.4.6 · Android 10 (API 29)+</sub>
+<sub>v2.4.6 · 145.41 MB · Android 10 (API 29)+ · <a href="docs/release-notes/v2.4.6.md">Release notes</a></sub>
 
 **One-time reinstall from v2.3:** the published v2.3 APK used a different signing certificate. Uninstall it before installing the latest version. Uninstalling clears settings and in-app history; back up anything needed first. Version 2.4 pins and verifies the persistent signing key for future updates. [Release notes](docs/release-notes/v2.4.6.md) explain the correction.
 
@@ -28,13 +28,17 @@ No backend, no account, no API key, no configuration. Resolution, downloading an
 
 <h2>Fetchly Lite</h2>
 
-<p><a href="https://github.com/mrduhlol/Fetchly/actions/runs/42612551046/artifacts/13671581125"><img src="docs/lite/assets/lite-download.png" width="420" alt="Download Fetchly Lite test APK for Android 10 and later" /></a></p>
+<p><a href="https://github.com/mrduhlol/Fetchly/releases/latest/download/fetchly-lite.apk"><img src="docs/lite/assets/lite-download.png" width="420" alt="Download Fetchly Lite APK for Android 10 and later" /></a></p>
+
+<p><sub>v2.4.6-lite · 66.55 MB · Android 10 (API 29)+ · 64-bit ARM · <a href="docs/release-notes/v2.4.6-lite.md">Release notes</a></sub></p>
 
 </div>
 
 Lite installs alongside Fetchly with its own history and settings. It has Home, Downloads and Library; automatic link detection; a thumbnail format dialog; MP3-only audio choices; selectable attachments from multi-item posts exposed by the extractor; and a fixed Greek pottery interface. Downloads run one at a time. Appearance customization, supported-app lists and ZIP downloads are omitted.
 
-**Test download:** the Lite button above opens the verified **fetchly-lite-test** artifact download. Extract the ZIP and install its APK. These builds use a development signing key; tagged release builds use the pinned release key. The release workflow prepares a separate `fetchly-lite.apk` for the next published version; it does not replace existing release assets.
+**Stable download:** the Lite button downloads `fetchly-lite.apk` directly from GitHub Releases, signed with the persistent production certificate. [SHA-256 checksum](https://github.com/mrduhlol/Fetchly/releases/latest/download/fetchly-lite.sha256) · [Release metadata](https://github.com/mrduhlol/Fetchly/releases/latest/download/fetchly-lite-release.json).
+
+[Test builds](https://github.com/mrduhlol/Fetchly/actions/workflows/check.yml) are separate Actions artifacts with `.test` application IDs, a `-test` version suffix and development signing. They are not the stable download.
 
 Lite targets **Android 10+ on 64-bit ARM phones**. It retains on-device Python/yt-dlp and FFmpeg for site extraction, merging and MP3 conversion, so it is not a tiny engine-free downloader. See [Lite architecture and build instructions](docs/lite/README.md).
 
