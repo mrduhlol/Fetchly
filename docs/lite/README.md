@@ -1,6 +1,6 @@
 # Fetchly Lite
 
-Lite is a separate installable Android edition in this repository. Its application ID is `com.fetchly.app.lite` for release builds and `com.fetchly.app.lite.debug` for debug builds. Full Fetchly keeps its existing application IDs. Each edition has its own preferences, history database and queue.
+Lite is a separate installable Android edition in this repository. Its application ID is `com.fetchly.app.lite` for stable releases and `com.fetchly.app.lite.test` for debug/optimized test builds. Full Fetchly keeps its existing application IDs. Each edition has its own preferences, history database and queue.
 
 ## Source boundaries
 
@@ -38,26 +38,31 @@ Artwork was generated and approved in the design conversation, then converted fr
 Requirements: JDK 17, Android SDK 35 / Build Tools 35.0.0, and a Python interpreter compatible with Chaquopy's build tools (Python 3.12 is used in CI). The bundled Android runtime is Python 3.12. Lite currently supports Android 10+ and **arm64-v8a only**; it does not support 32-bit phones.
 
 ```bash
-./gradlew :app:assembleLiteDebug
-./gradlew :app:assembleLiteRelease
+./gradlew :app:assembleLiteDebug           # test package
+./gradlew :app:assembleLitePreview         # optimized test package
+./gradlew :app:assembleLiteRelease         # unsigned unless explicit production signing is enabled
 ./gradlew :app:assembleFullDebug
 scripts/check.sh
 ```
 
 When the local default Python is too new for Chaquopy 15's build dependencies, pass `-PfetchlyBuildPython=/absolute/path/to/python3.12` to Gradle or to `scripts/check.sh`.
 
-Debug output: `app/build/outputs/apk/lite/debug/app-lite-debug.apk`. An unsigned optimized release is produced without a signing configuration. Supplying `FETCHLY_SIGNING_STORE` signs the release with the existing configured identity. For local test builds only, the standard Android development keystore can be supplied explicitly. Never distribute that test signer as the pinned production identity.
+Debug output is `app/build/outputs/apk/lite/debug/app-lite-debug.apk`; optimized test output is `app/build/outputs/apk/lite/preview/app-lite-preview.apk`. Both use `.test` application IDs, `-test` version names and development signing. `FETCHLY_TEST_SIGNING_STORE` can configure these test builds; it cannot select release signing.
 
-The Check app workflow publishes a `fetchly-lite-test` artifact containing an optimized APK signed with a development key. The tagged release workflow builds both editions and verifies both APKs against the pinned production certificate before preparing `fetchly.apk` and `fetchly-lite.apk`. Already published assets are left unchanged. README links direct users to test artifacts until a new tagged release includes Lite.
+Production signing requires explicit `FETCHLY_PRODUCTION_BUILD=true` and all persistent-key credentials. GitHub release jobs restore the existing pinned key from repository Secrets, verify its certificate before building, and verify the final APK's signature, stable package/version and non-debuggable manifest before upload. There is no generated-key or debug-key fallback for production. See [production signing and Secrets](../RELEASE.md#persistent-production-signing).
+
+**Stable APK:** [fetchly-lite.apk](https://github.com/mrduhlol/Fetchly/releases/latest/download/fetchly-lite.apk), downloaded directly from GitHub Releases. [Release notes](../release-notes/v2.4.6-lite.md) · [Production build metadata](https://github.com/mrduhlol/Fetchly/releases/latest/download/fetchly-lite-release.json). The Check app workflow's `fetchly-lite-test` Actions artifact remains a separate test channel.
 
 ## Size and verification limits
 
-Verified test artifact from [successful CI run 42612551046](https://github.com/mrduhlol/Fetchly/actions/runs/42612551046), source commit `03d09cda012aea884d88339a9b862a69ef3dd86b`: **66,548,583 bytes (66.55 MB / 63.47 MiB)**. [Download the test artifact ZIP](https://github.com/mrduhlol/Fetchly/actions/runs/42612551046/artifacts/13671581125), then extract and install its APK. Artifact retention follows GitHub Actions settings; later successful runs publish fresh artifacts.
+Production release **2.4.6-lite** from [successful release run 42635967953](https://github.com/mrduhlol/Fetchly/actions/runs/42635967953): **66,547,323 bytes (66.55 MB / 63.46 MiB)**. The public APK download returned HTTP 200 without Actions authentication. Its SHA-256 is `a9c6d59b7ef9d2d712ea2d6cdca55f21aa34cfc853e32460dc04c0f1dad5b4d6`, and its certificate matches the production pin `79463eb1458238111e05504594cd26ed70dbc4dd246775251159907076a9ba2b`. The stable package is `com.fetchly.app.lite`, minimum API 29, ARM64 only, and non-debuggable. Original full Fetchly release assets were preserved.
 
-APK SHA-256: `fb1c5d11677cda45472f9ce80faeb9e0ae878a6a82790314dae1c7cd5316d268`. APK Signature Scheme v2 verifies with the development certificate, package `com.fetchly.app.lite`, version `2.4.6-lite`, minimum API 29, and only `arm64-v8a` libraries. All packaged XML/resources were checked for `STRING_TOO_LARGE` substitution; none remains. CI development keys are generated per run, so installing a later test build may require removing an earlier test build signed with a different key. Uninstalling clears in-app history and preferences.
+Historical development test artifact from [successful CI run 42612551046](https://github.com/mrduhlol/Fetchly/actions/runs/42612551046), source commit `03d09cda012aea884d88339a9b862a69ef3dd86b`: **66,548,583 bytes (66.55 MB / 63.47 MiB)**. This record predates stable signing and package separation; use the stable download above for production.
 
-Validation: **267 Lite Kotlin tests, 257 full-edition Kotlin tests, and 35 Python tests pass**. Both debug lint checks and the Lite release build pass; lint retains warnings. The CI run builds full and Lite debug APKs plus the optimized Lite APK. This verifies compilation and automated behavior, not visual/device behavior.
+APK SHA-256: `fb1c5d11677cda45472f9ce80faeb9e0ae878a6a82790314dae1c7cd5316d268`. That historical APK Signature Scheme v2 verifies with the development certificate and the former test package `com.fetchly.app.lite`, version `2.4.6-lite`, minimum API 29, and only `arm64-v8a` libraries. All packaged XML/resources were checked for `STRING_TOO_LARGE` substitution; none remains. CI development keys are generated per run, so installing a later test build may require removing an earlier test build signed with a different key. Uninstalling clears in-app history and preferences.
+
+Validation: **267 Lite Kotlin tests, 257 full-edition Kotlin tests, and 35 Python tests pass**. Both debug lint checks and the Lite release build pass; lint retains warnings. That historical CI run built full and Lite debug APKs plus an optimized development-signed Lite APK. Current check runs build optimized test APKs as Preview, while production workflows build Release. This verifies compilation and automated behavior, not visual/device behavior.
 
 Python/yt-dlp and FFmpeg remain bundled for on-device extraction, merging, audio conversion and no-backend operation. Simplifying the interface does not remove these engines. Lite reduces architecture packaging, unused UI/resources, artwork size and startup work; it loads extractors on demand and runs one download at a time. APK size is measured from the finished optimized build, not inferred from screen count.
 
-Native visual verification was attempted using the shared device tools, but device startup failed twice with “Agent tools did not start within 30000 ms.” No device UI or live multi-site download claim is made from unit tests or compilation alone. Device checks remain necessary for the first-run animation, system share sheet, notifications, long lists and real source behavior before a production release.
+Native visual verification was attempted using the shared device tools, but device startup failed twice with “Agent tools did not start within 30000 ms.” No device UI or live multi-site download claim is made from unit tests or compilation alone. Device checks for the first-run animation, system share sheet, notifications, long lists and real source behavior remain outstanding; production signing does not imply that this device coverage has been completed.
