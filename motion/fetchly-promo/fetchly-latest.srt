@@ -1,0 +1,75 @@
+1
+00:00:00,450 --> 00:00:02,071
+See something worth keeping?
+
+2
+00:00:02,211 --> 00:00:03,939
+Make it yours with Fetchly.
+
+3
+00:00:05,450 --> 00:00:06,815
+Paste a public link.
+
+4
+00:00:06,955 --> 00:00:10,305
+Preview the media, then choose your format and quality.
+
+5
+00:00:11,950 --> 00:00:13,486
+Want just the sound?
+
+6
+00:00:13,626 --> 00:00:16,719
+Switch to audio and choose your MP3 bitrate.
+
+7
+00:00:18,450 --> 00:00:20,626
+Or share a link straight to Fetchly.
+
+8
+00:00:20,766 --> 00:00:23,347
+Your download options open over the app.
+
+9
+00:00:24,950 --> 00:00:26,315
+More than one link?
+
+10
+00:00:26,455 --> 00:00:29,165
+Review them together, then choose what to queue.
+
+11
+00:00:30,950 --> 00:00:35,238
+Follow your downloads, and find your saved media in one library.
+
+12
+00:00:36,950 --> 00:00:41,857
+Make Fetchly your own, with gold and white themes and adjustable app size.
+
+13
+00:00:43,450 --> 00:00:44,517
+No account.
+
+14
+00:00:44,657 --> 00:00:45,830
+No backend.
+
+15
+00:00:45,970 --> 00:00:47,933
+Processing stays on your phone.
+
+16
+00:00:48,073 --> 00:00:51,273
+Download Fetchly from my GitHub repository.
+
+17
+00:00:51,413 --> 00:00:52,159
+Paste.
+
+18
+00:00:52,299 --> 00:00:53,131
+Choose.
+
+19
+00:00:53,271 --> 00:00:53,997
+Fetch.

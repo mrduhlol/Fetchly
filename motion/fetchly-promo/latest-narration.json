@@ -1,0 +1,177 @@
+[
+  {
+    "id": "hook",
+    "text": "See something worth keeping? Make it yours with Fetchly.",
+    "duration": 3.6293,
+    "path": "assets/voice/latest-hook.wav",
+    "provider": "kokoro-local",
+    "voice": "am_michael",
+    "cues": [
+      {
+        "text": "See something worth keeping?",
+        "start": 0,
+        "end": 1.6213
+      },
+      {
+        "text": "Make it yours with Fetchly.",
+        "start": 1.7613,
+        "end": 3.4893
+      }
+    ]
+  },
+  {
+    "id": "paste",
+    "text": "Paste a public link. Preview the media, then choose your format and quality.",
+    "duration": 4.9947,
+    "path": "assets/voice/latest-paste.wav",
+    "provider": "kokoro-local",
+    "voice": "am_michael",
+    "cues": [
+      {
+        "text": "Paste a public link.",
+        "start": 0,
+        "end": 1.3653
+      },
+      {
+        "text": "Preview the media, then choose your format and quality.",
+        "start": 1.5053,
+        "end": 4.8547
+      }
+    ]
+  },
+  {
+    "id": "audio",
+    "text": "Want just the sound? Switch to audio and choose your MP3 bitrate.",
+    "duration": 4.9093,
+    "path": "assets/voice/latest-audio.wav",
+    "provider": "kokoro-local",
+    "voice": "am_michael",
+    "cues": [
+      {
+        "text": "Want just the sound?",
+        "start": 0,
+        "end": 1.536
+      },
+      {
+        "text": "Switch to audio and choose your MP3 bitrate.",
+        "start": 1.676,
+        "end": 4.7693
+      }
+    ]
+  },
+  {
+    "id": "share",
+    "text": "Or share a link straight to Fetchly. Your download options open over the app.",
+    "duration": 5.0373,
+    "path": "assets/voice/latest-share.wav",
+    "provider": "kokoro-local",
+    "voice": "am_michael",
+    "cues": [
+      {
+        "text": "Or share a link straight to Fetchly.",
+        "start": 0,
+        "end": 2.176
+      },
+      {
+        "text": "Your download options open over the app.",
+        "start": 2.316,
+        "end": 4.8973
+      }
+    ]
+  },
+  {
+    "id": "batch",
+    "text": "More than one link? Review them together, then choose what to queue.",
+    "duration": 4.3547,
+    "path": "assets/voice/latest-batch.wav",
+    "provider": "kokoro-local",
+    "voice": "am_michael",
+    "cues": [
+      {
+        "text": "More than one link?",
+        "start": 0,
+        "end": 1.3653
+      },
+      {
+        "text": "Review them together, then choose what to queue.",
+        "start": 1.5053,
+        "end": 4.2147
+      }
+    ]
+  },
+  {
+    "id": "library",
+    "text": "Follow your downloads, and find your saved media in one library.",
+    "duration": 4.428,
+    "path": "assets/voice/latest-library.wav",
+    "provider": "kokoro-local",
+    "voice": "am_michael",
+    "cues": [
+      {
+        "text": "Follow your downloads, and find your saved media in one library.",
+        "start": 0,
+        "end": 4.288
+      }
+    ]
+  },
+  {
+    "id": "appearance",
+    "text": "Make Fetchly your own, with gold and white themes and adjustable app size.",
+    "duration": 5.0467,
+    "path": "assets/voice/latest-appearance.wav",
+    "provider": "kokoro-local",
+    "voice": "am_michael",
+    "cues": [
+      {
+        "text": "Make Fetchly your own, with gold and white themes and adjustable app size.",
+        "start": 0,
+        "end": 4.9067
+      }
+    ]
+  },
+  {
+    "id": "end",
+    "text": "No account. No backend. Processing stays on your phone. Download Fetchly from my GitHub repository. Paste. Choose. Fetch.",
+    "duration": 10.6867,
+    "path": "assets/voice/latest-end.wav",
+    "provider": "kokoro-local",
+    "voice": "am_michael",
+    "cues": [
+      {
+        "text": "No account.",
+        "start": 0,
+        "end": 1.0667
+      },
+      {
+        "text": "No backend.",
+        "start": 1.2067,
+        "end": 2.38
+      },
+      {
+        "text": "Processing stays on your phone.",
+        "start": 2.52,
+        "end": 4.4827
+      },
+      {
+        "text": "Download Fetchly from my GitHub repository.",
+        "start": 4.6227,
+        "end": 7.8227
+      },
+      {
+        "text": "Paste.",
+        "start": 7.9627,
+        "end": 8.7093
+      },
+      {
+        "text": "Choose.",
+        "start": 8.8493,
+        "end": 9.6813
+      },
+      {
+        "text": "Fetch.",
+        "start": 9.8213,
+        "end": 10.5467
+      }
+    ]
+  }
+]
