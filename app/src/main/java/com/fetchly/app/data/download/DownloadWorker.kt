@@ -732,7 +732,7 @@ class DownloadWorker(
             ?: return Refresh.ResolveFailed(
                 "The link couldn't be opened again.", null, network = false,
             )
-        val fresh = OptionMatcher.match(entry.signature, info.options.filter {
+        val fresh = OptionMatcher.match(entry.signature, (if (info.items.isEmpty()) info.options else info.items.flatMap { it.options }).filter {
             it.container.equals(entry.container, true) &&
                 (entry.kind != QualityKind.AUDIO || it.label == entry.optionLabel)
         })
