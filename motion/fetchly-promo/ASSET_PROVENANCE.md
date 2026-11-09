@@ -22,3 +22,9 @@ Storyboard, specification, working narration and first real screen captured. Com
 - Music/SFX provider has changed to Pixabay at the user’s instruction. The earlier HeyGen music source is excluded from the planned delivery.
 - Pixabay page fetch/download returned HTTP 403. Shared browser failed with a transport error, then a 15000 ms open timeout. Standard Chromium startup then failed waiting 30000 ms for its WS endpoint. No CAPTCHA or access restriction was bypassed. No Pixabay audio files have been downloaded.
 - assets/screens/quality-video.png: real Fetchly video-quality screen after resolving the official Big Buck Bunny public YouTube link. No invented quality values or UI. This is an application state, not downloaded video footage; any future use of the film itself must carry its source licence.
+
+## Supplied soundtrack received and film built
+
+The user attached all six Pixabay MP3 originals. They are copied into ignored assets/audio/pixabay/ using short names pop, whoosh, click, impact, rhythm and lyre. See CREDITS.md for original titles and page URLs. MP3 durations were verified with ffprobe. Measured peaks: pop .202s, click .074s, riser-impact 1.815s; picture contacts are aligned to these peaks plus one frame. Original standalone audio is not committed to the public repo.
+
+The 64-second composition is built by build_composition.py. Phone/hand geometry is original Three.js; smoke is a deterministic generated canvas effect. No stock video clips are used. ShareDownloadScreen.kt supplies exact shared-dialog labels and behaviour; because the emulator was blocked by system ANR and device tooling became unavailable, the share sequence is reconstructed and disclosed on screen. Runtime and layout checks plus rendered-frame review precede delivery.
