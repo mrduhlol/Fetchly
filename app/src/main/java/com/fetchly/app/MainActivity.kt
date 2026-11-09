@@ -49,6 +49,13 @@ class MainActivity : ComponentActivity() {
         if (redirectSharedIntent(intent, finishMain = true)) return
         enableEdgeToEdge()
         handleIncoming(intent)
+        if (BuildConfig.IS_LITE) {
+            setContent { EditionUi.Root(graph) { action ->
+                requestNotificationPermissionIfNeeded()
+                action()
+            } }
+            return
+        }
         setContent {
             val welcomeViewModel: WelcomeViewModel = viewModel { WelcomeViewModel(graph.settings) }
             val welcome by welcomeViewModel.state.collectAsStateWithLifecycle()
