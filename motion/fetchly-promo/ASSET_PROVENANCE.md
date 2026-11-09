@@ -8,3 +8,9 @@
 ## Production state
 
 Storyboard, specification, working narration and first real screen captured. Composition is still the scaffold, not a completed film. No delivery render exists. Audio provider choice is pending: HeyGen sign-in or explicit acceptance of free local model downloads. No paid media calls have been made.
+
+## Audio retrieval and account limitation
+
+- assets/audio/greek-lyre-bed.wav: retrieved through HeyGen audio catalog using the user's selected OAuth route. Track ID 12991e9002df42c193a0901659561227; description: dramatic ancient Greek ambient, lyre and soft percussion, tragic and poetic; source duration 55 s. No visual media or baked-in video watermark is involved. The final mix and licence metadata still need review before delivery.
+- Narration attempts returned exactly: "Choose a HyperFrames plan to keep building". No narration files were generated. The user must choose a suitable plan or explicitly choose local narration/model downloads before audio production resumes.
+- Watermark-free delivery is required. No finished composition or rendered film exists yet.

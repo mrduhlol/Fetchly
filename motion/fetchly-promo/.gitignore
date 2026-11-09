@@ -1,0 +1,5 @@
+# Local preview/history and media-provider caches; source assets live in assets/.
+.hyperframes/
+.media/
+node_modules/
+renders/
