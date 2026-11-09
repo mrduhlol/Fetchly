@@ -43,6 +43,21 @@ android {
         vectorDrawables { useSupportLibrary = true }
     }
 
+    flavorDimensions += "edition"
+    productFlavors {
+        create("full") {
+            dimension = "edition"
+            buildConfigField("boolean", "IS_LITE", "false")
+        }
+        create("lite") {
+            dimension = "edition"
+            applicationIdSuffix = ".lite"
+            versionNameSuffix = "-lite"
+            buildConfigField("boolean", "IS_LITE", "true")
+            ndk { abiFilters.clear(); abiFilters += "arm64-v8a" }
+        }
+    }
+
     buildFeatures {
         compose = true
         buildConfig = true
