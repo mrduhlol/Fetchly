@@ -23,10 +23,12 @@ fun FetchButton(
     enabled: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    containerAlpha: Float = 1f,
 ) {
     PlaqueButton(
         onClick = onClick,
         enabled = enabled && !loading,
+        containerAlpha = containerAlpha,
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = 48.dp),

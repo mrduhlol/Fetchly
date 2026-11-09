@@ -48,7 +48,7 @@ internal fun SupportedApps() {
                 ) {
                     Box(
                         modifier = Modifier.size(62.dp).scale(scale.value).rotate(tilt.value)
-                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.82f), RoundedCornerShape(22.dp)),
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.42f), RoundedCornerShape(22.dp)),
                         contentAlignment = Alignment.Center,
                     ) {
                         PlatformIcon(app.platform, large = true, music = app == SupportedApp.YOUTUBE_MUSIC,
@@ -59,10 +59,5 @@ internal fun SupportedApps() {
                 }
             }
         }
-        Text(
-            "YouTube works best. Other apps vary by link.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
     }
 }

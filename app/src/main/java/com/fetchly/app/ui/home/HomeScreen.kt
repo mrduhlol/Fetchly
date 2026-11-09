@@ -63,15 +63,14 @@ fun HomeScreen(
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val artwork = painterResource(if (dark) R.drawable.fetchly_home_dark else R.drawable.fetchly_home_light)
     val monument = painterResource(if (dark) R.drawable.fetchly_home_dark_monument else R.drawable.fetchly_home_light_monument)
-    // One scroll owns both controls and artwork. Extra content stretches only the
-    // empty sky; the complete monument always follows at its original aspect ratio.
+    // Let the controls determine sky height so the monument follows the icons
+    // immediately, while keeping both artwork sections in one scroll container.
     BoxWithConstraints(Modifier.fillMaxSize().imePadding(), contentAlignment = Alignment.TopCenter) {
         val pageWidth = maxWidth.coerceAtMost(640.dp)
-        val skyHeight = pageWidth / (artwork.intrinsicSize.width / artwork.intrinsicSize.height)
         Column(
             Modifier.width(pageWidth).fillMaxHeight().verticalScroll(rememberScrollState()),
         ) {
-            Box(Modifier.fillMaxWidth().heightIn(min = skyHeight)) {
+            Box(Modifier.fillMaxWidth()) {
                 Image(artwork, contentDescription = null, modifier = Modifier.matchParentSize(),
                     contentScale = ContentScale.FillBounds)
                 Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp)) {
@@ -95,7 +94,7 @@ fun HomeScreen(
                     Spacer(Modifier.height(16.dp))
                     Surface(
                         shape = MaterialTheme.shapes.medium,
-                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        color = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.72f),
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = if (dark) 0.65f else 0.75f)),
                     ) {
                         Column(Modifier.heightIn(min = 280.dp).padding(horizontal = 18.dp, vertical = 20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -117,7 +116,7 @@ fun HomeScreen(
                             state.suggestion?.let {
                                 ClipboardSuggestion(it, viewModel::acceptSuggestion, viewModel::dismissSuggestion)
                             }
-                            FetchButton(loading = state.analyzing, enabled = state.canFetch, onClick = fetch)
+                            FetchButton(loading = state.analyzing, enabled = state.canFetch, onClick = fetch, containerAlpha = 0.78f)
                             TextButton(onClick = viewModel::openBatch, enabled = !state.analyzing, modifier = Modifier.align(Alignment.CenterHorizontally)) { Text("Add multiple links") }
                             state.status?.let { StatusCard(it, isError = false) }
                             if (state.analyzing) TextButton(onClick = viewModel::cancelFetch) { Text("Cancel") }
@@ -134,7 +133,7 @@ fun HomeScreen(
                     }
                     Spacer(Modifier.height(16.dp))
                     SupportedApps()
-                    Spacer(Modifier.height(24.dp))
+                    Spacer(Modifier.height(12.dp))
                 }
             }
             Box(Modifier.fillMaxWidth()) {

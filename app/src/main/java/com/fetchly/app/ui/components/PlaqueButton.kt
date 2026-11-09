@@ -31,6 +31,7 @@ fun PlaqueButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    containerAlpha: Float = 1f,
     content: @Composable RowScope.() -> Unit,
 ) {
     Surface(
@@ -38,7 +39,7 @@ fun PlaqueButton(
         enabled = enabled,
         modifier = modifier.semantics { role = Role.Button },
         shape = PlaqueShape,
-        color = FetchlyButtonColors.container.copy(alpha = if (enabled) 1f else 0.60f),
+        color = FetchlyButtonColors.container.copy(alpha = containerAlpha.coerceIn(0f, 1f) * if (enabled) 1f else 0.60f),
         contentColor = FetchlyButtonColors.content.copy(alpha = if (enabled) 1f else 0.55f),
         border = BorderStroke(1.dp, ActionGoldEdge.copy(alpha = if (enabled) 1f else 0.45f)),
         tonalElevation = 0.dp,
