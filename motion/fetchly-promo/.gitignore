@@ -6,3 +6,5 @@ renders/
 # User-supplied licensed originals and generated audio mixes stay local.
 assets/audio/pixabay/
 assets/audio/final-mix.wav
+.thumbnails/
+.waveform-cache/
