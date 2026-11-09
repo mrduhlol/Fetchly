@@ -6,6 +6,8 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.widthIn
@@ -178,7 +180,22 @@ fun SettingsScreen(
 @Composable
 fun AppearanceScreen(viewModel: SettingsViewModel, onBack: () -> Unit) {
     val theme by viewModel.theme.collectAsStateWithLifecycle()
+    val dark = when (theme) {
+        ThemeChoice.SYSTEM -> isSystemInDarkTheme()
+        ThemeChoice.DARK -> true
+        ThemeChoice.LIGHT -> false
+    }
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+        androidx.compose.foundation.Image(
+            painter = androidx.compose.ui.res.painterResource(com.fetchly.app.R.drawable.fetchly_appearance_background),
+            contentDescription = null,
+            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+            alignment = Alignment.BottomCenter,
+            modifier = Modifier.matchParentSize(),
+        )
+        Box(Modifier.matchParentSize().background(
+            MaterialTheme.colorScheme.background.copy(alpha = if (dark) 0.12f else 0.84f),
+        ))
         Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
             ScreenTopBar("Appearance", onBack = onBack)
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
@@ -198,7 +215,6 @@ fun AppearanceScreen(viewModel: SettingsViewModel, onBack: () -> Unit) {
 
                 Spacer(Modifier.height(20.dp))
                 Note("Simple ivory actions, clear type, and a little Apollo. Both palettes share the same controls and layout.")
-                com.fetchly.app.ui.components.TempleArtwork(Modifier.fillMaxWidth().height(180.dp))
             }
         }
     }
