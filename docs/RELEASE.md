@@ -14,24 +14,33 @@ No environment variables, no backend, no configuration needed.
 ## Build
 
 ```bash
-gradle :app:assembleDebug        # debug APK
-gradle :app:testDebugUnitTest    # unit tests
+./gradlew :app:assembleFullDebug           # full debug APK
+./gradlew :app:assembleLiteRelease         # optimized Lite APK (unsigned without signing config)
+./gradlew :app:testFullDebugUnitTest :app:testLiteDebugUnitTest
+scripts/check.sh                          # both editions, lint, Python tests and test APKs
 ```
 
-The debug APK lands at `app/build/outputs/apk/debug/app-debug.apk`
-(applicationId `com.fetchly.app.debug`).
+The full debug APK lands at `app/build/outputs/apk/full/debug/app-full-debug.apk`
+(applicationId `com.fetchly.app.debug`). Lite release output is under
+`app/build/outputs/apk/lite/release/` (applicationId `com.fetchly.app.lite`).
+Lite debug uses `com.fetchly.app.lite.debug`. Both editions can coexist.
+See [Lite build details](lite/README.md) for compatible host Python selection,
+architecture limits and development signing.
 
 ## Releases (CI)
 
 Push a tag `v*` (for example `v2.0`). The workflow in
 `.github/workflows/release-apk.yml` builds on API 35, runs the unit tests,
-and uploads `fetchly_v<version>.apk` to a GitHub release. It can also be
+and prepares full `fetchly_v<version>.apk` / `fetchly.apk` and Lite
+`fetchly-lite_v<version>.apk` / `fetchly-lite.apk` assets for a new GitHub release.
+Both APK certificates are checked against the pinned signer. Existing published
+release assets remain unchanged. It can also be
 started manually with `workflow_dispatch`.
 
 ## Known limitations
 
-1. No pause/resume — WorkManager one-shot downloads don't support it, so no
-   fake pause UI is shown. Cancel + retry are fully supported.
+1. Pause retains partial downloads; actual byte-range continuation depends on the source.
+   Some extractor downloads may restart on resume. Cancel and retry are supported.
 2. YouTube is fully supported. Other platforms are best effort through the
    same engine, and every failure states its real cause.
 3. Stream URLs from extractors expire. A download that fails with 403/410 is
