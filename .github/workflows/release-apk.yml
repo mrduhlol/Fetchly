@@ -15,6 +15,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      FETCHLY_SIGNING_STORE_PASSWORD: ${{ secrets.FETCHLY_RELEASE_STORE_PASSWORD }}
+      FETCHLY_SIGNING_KEY_ALIAS: ${{ secrets.FETCHLY_RELEASE_KEY_ALIAS }}
+      FETCHLY_SIGNING_KEY_PASSWORD: ${{ secrets.FETCHLY_RELEASE_KEY_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
 
@@ -29,53 +33,46 @@ jobs:
 
       - name: Install Android platform
         run: |
-          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses < <(yes) > /dev/null
           "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0"
 
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.7
 
-      - name: Restore persistent APK signing key
+      - name: Restore verified persistent production signing key
         env:
-          FETCHLY_KEYSTORE: ${{ secrets.FETCHLY_DEBUG_KEYSTORE_BASE64 }}
-        run: |
-          test -n "$FETCHLY_KEYSTORE" || { echo "Missing persistent signing key" >&2; exit 1; }
-          printf '%s' "$FETCHLY_KEYSTORE" | base64 --decode > "$RUNNER_TEMP/fetchly-signing.jks"
-          chmod 600 "$RUNNER_TEMP/fetchly-signing.jks"
-          printf 'FETCHLY_SIGNING_STORE=%s\n' "$RUNNER_TEMP/fetchly-signing.jks" >> "$GITHUB_ENV"
+          FETCHLY_KEYSTORE_BASE64: ${{ secrets.FETCHLY_RELEASE_KEYSTORE_BASE64 || secrets.FETCHLY_DEBUG_KEYSTORE_BASE64 }}
+        run: bash scripts/prepare-production-signing.sh
 
       - name: Build full and optimized Lite APKs
-        run: gradle :app:assembleFullDebug :app:assembleLiteRelease --max-workers=2 -Pkotlin.compiler.execution.strategy=in-process '-Dorg.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8'
+        run: ./gradlew :app:assembleFullRelease :app:assembleLiteRelease --max-workers=2 -Pkotlin.compiler.execution.strategy=in-process '-Dorg.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8'
 
       - name: Run unit tests
-        run: gradle :app:testFullDebugUnitTest :app:testLiteDebugUnitTest --max-workers=2 -Pkotlin.compiler.execution.strategy=in-process '-Dorg.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8'
+        run: ./gradlew :app:testFullDebugUnitTest :app:testLiteDebugUnitTest :app:lintFullDebug :app:lintLiteDebug --max-workers=2 -Pkotlin.compiler.execution.strategy=in-process '-Dorg.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8'
 
-      - name: Verify pinned APK signing certificate
+      - name: Test Python bridge
         run: |
-          set -euo pipefail
-          fetchly_apksigner="$ANDROID_SDK_ROOT/build-tools/35.0.0/apksigner"
-          fetchly_actual_cert=$("$fetchly_apksigner" verify --print-certs app/build/outputs/apk/full/debug/app-full-debug.apk | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
-          fetchly_expected_cert=$(tr -d '[:space:]' < docs/SIGNING_CERT_SHA256)
-          test -n "$fetchly_actual_cert"
-          if [ "$fetchly_actual_cert" != "$fetchly_expected_cert" ]; then
-            echo "APK certificate does not match the pinned release identity." >&2
-            exit 1
-          fi
-          fetchly_lite_cert=$("$fetchly_apksigner" verify --print-certs app/build/outputs/apk/lite/release/app-lite-release.apk | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
-          test "$fetchly_lite_cert" = "$fetchly_expected_cert" || { echo "Lite signer does not match pinned identity" >&2; exit 1; }
-          printf 'FETCHLY_SIGNING_CERT_SHA256=%s\n' "$fetchly_actual_cert" >> "$GITHUB_ENV"
+          python3 -m pip install 'yt-dlp==2026.10.26' 'packaging==25.0'
+          python3 -m unittest discover -s app/src/test/python -v
+
+      - name: Verify production APK identities
+        run: |
+          VER=$(python3 -c 'import json; print(json.load(open("app/build/outputs/apk/full/release/output-metadata.json"))["elements"][0]["versionName"])')
+          python3 scripts/verify-production-apk.py --apk app/build/outputs/apk/full/release/app-full-release.apk --package com.fetchly.app.debug --version "$VER" --tools "$ANDROID_SDK_ROOT/build-tools/35.0.0" --output fetchly-release.json
+          python3 scripts/verify-production-apk.py --apk app/build/outputs/apk/lite/release/app-lite-release.apk --package com.fetchly.app.lite --version "$VER-lite" --tools "$ANDROID_SDK_ROOT/build-tools/35.0.0" --output fetchly-lite-release.json
+          printf 'FETCHLY_SIGNING_CERT_SHA256=%s\n' "$(tr -d '[:space:]' < docs/SIGNING_CERT_SHA256)" >> "$GITHUB_ENV"
 
       - name: Prepare verified release assets
         run: |
-          VER=$(python3 -c 'import json; print(json.load(open("app/build/outputs/apk/full/debug/output-metadata.json"))["elements"][0]["versionName"])')
+          VER=$(python3 -c 'import json; print(json.load(open("app/build/outputs/apk/full/release/output-metadata.json"))["elements"][0]["versionName"])')
           TAG="v${VER}"
           if [[ "$GITHUB_REF_TYPE" == "tag" && "$GITHUB_REF_NAME" != "$TAG" ]]; then
             echo "Tag $GITHUB_REF_NAME does not match APK version $TAG" >&2
             exit 1
           fi
           echo "RELEASE_TAG=$TAG" >> "$GITHUB_ENV"
-          cp app/build/outputs/apk/full/debug/app-full-debug.apk "fetchly_${TAG}.apk"
+          cp app/build/outputs/apk/full/release/app-full-release.apk "fetchly_${TAG}.apk"
           cp "fetchly_${TAG}.apk" fetchly.apk
           cp app/build/outputs/apk/lite/release/app-lite-release.apk "fetchly-lite_${TAG}.apk"
           cp "fetchly-lite_${TAG}.apk" fetchly-lite.apk
@@ -102,5 +99,9 @@ jobs:
           if [ -f "$NOTES_FILE" ]; then
             gh release edit "$RELEASE_TAG" --notes-file "$NOTES_FILE"
           fi
-          gh release upload "$RELEASE_TAG" "fetchly_${RELEASE_TAG}.apk" fetchly.apk "fetchly-lite_${RELEASE_TAG}.apk" fetchly-lite.apk SHA256SUMS BUILD.txt --clobber
+          gh release upload "$RELEASE_TAG" "fetchly_${RELEASE_TAG}.apk" fetchly.apk "fetchly-lite_${RELEASE_TAG}.apk" fetchly-lite.apk SHA256SUMS BUILD.txt fetchly-release.json fetchly-lite-release.json --clobber
           gh release edit "$RELEASE_TAG" --draft=false --latest
+
+      - name: Remove restored private keystore
+        if: always()
+        run: rm -f -- "$RUNNER_TEMP/fetchly-production-signing.jks"
