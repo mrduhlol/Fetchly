@@ -14,6 +14,11 @@
       "name": "browser-device-stage",
       "type": "hyperframes:component",
       "target": "compositions/components/browser-device-stage.html"
+    },
+    {
+      "name": "caption-editorial-emphasis",
+      "type": "hyperframes:component",
+      "target": "compositions/components/caption-editorial-emphasis.html"
     }
   ]
 }
