@@ -20,7 +20,10 @@ chaquopy {
     }
 }
 
-val fetchlySigningStore = providers.environmentVariable("FETCHLY_SIGNING_STORE").orNull
+val fetchlyProductionBuild = providers.environmentVariable("FETCHLY_PRODUCTION_BUILD").orNull == "true"
+fun requiredSigningSecret(name: String): String = providers.environmentVariable(name).orNull
+    ?.takeIf { it.isNotBlank() } ?: error("Missing production signing credential: $name")
+val fetchlyTestSigningStore = providers.environmentVariable("FETCHLY_TEST_SIGNING_STORE").orNull
 
 android {
     namespace = "com.fetchly.app"
@@ -45,13 +48,15 @@ android {
     productFlavors {
         create("full") {
             dimension = "edition"
+            // Preserve the package ID of existing published Fetchly APKs.
+            applicationId = "com.fetchly.app.debug"
             buildConfigField("boolean", "IS_LITE", "false")
             proguardFile("proguard-rules.pro")
             ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
         }
         create("lite") {
             dimension = "edition"
-            applicationIdSuffix = ".lite"
+            applicationId = "com.fetchly.app.lite"
             versionNameSuffix = "-lite"
             buildConfigField("boolean", "IS_LITE", "true")
             proguardFile("proguard-lite.pro")
@@ -64,9 +69,17 @@ android {
         buildConfig = true
     }
 
-    if (fetchlySigningStore != null) {
-        signingConfigs.create("persistent") {
-            storeFile = file(fetchlySigningStore)
+    if (fetchlyProductionBuild) {
+        signingConfigs.create("production") {
+            storeFile = file(requiredSigningSecret("FETCHLY_SIGNING_STORE"))
+            storePassword = requiredSigningSecret("FETCHLY_SIGNING_STORE_PASSWORD")
+            keyAlias = requiredSigningSecret("FETCHLY_SIGNING_KEY_ALIAS")
+            keyPassword = requiredSigningSecret("FETCHLY_SIGNING_KEY_PASSWORD")
+        }
+    }
+    if (fetchlyTestSigningStore != null) {
+        signingConfigs.create("test") {
+            storeFile = file(fetchlyTestSigningStore)
             storePassword = "android"
             keyAlias = "androiddebugkey"
             keyPassword = "android"
@@ -75,16 +88,24 @@ android {
 
     buildTypes {
         release {
-            if (fetchlySigningStore != null) signingConfig = signingConfigs.getByName("persistent")
+            if (fetchlyProductionBuild) signingConfig = signingConfigs.getByName("production")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt")
             )
         }
+        create("preview") {
+            initWith(getByName("release"))
+            applicationIdSuffix = ".test"
+            versionNameSuffix = "-test"
+            signingConfig = signingConfigs.getByName(if (fetchlyTestSigningStore != null) "test" else "debug")
+            matchingFallbacks += "release"
+        }
         debug {
-            applicationIdSuffix = ".debug"
-            if (fetchlySigningStore != null) signingConfig = signingConfigs.getByName("persistent")
+            applicationIdSuffix = ".test"
+            versionNameSuffix = "-test"
+            if (fetchlyTestSigningStore != null) signingConfig = signingConfigs.getByName("test")
         }
     }
 
