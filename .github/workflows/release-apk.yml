@@ -76,6 +76,9 @@ jobs:
           cp "fetchly_${TAG}.apk" fetchly.apk
           cp app/build/outputs/apk/lite/release/app-lite-release.apk "fetchly-lite_${TAG}.apk"
           cp "fetchly-lite_${TAG}.apk" fetchly-lite.apk
+          sha256sum fetchly.apk > fetchly.sha256
+          sha256sum fetchly-lite.apk > fetchly-lite.sha256
+          cp "docs/release-notes/v${VER}-lite.md" fetchly-lite-release-notes.md
           sha256sum "fetchly_${TAG}.apk" fetchly.apk "fetchly-lite_${TAG}.apk" fetchly-lite.apk > SHA256SUMS
           printf 'Commit: %s\nVersion: %s\nSigning certificate SHA-256: %s\n' "$GITHUB_SHA" "$VER" "$FETCHLY_SIGNING_CERT_SHA256" > BUILD.txt
 
@@ -99,7 +102,7 @@ jobs:
           if [ -f "$NOTES_FILE" ]; then
             gh release edit "$RELEASE_TAG" --notes-file "$NOTES_FILE"
           fi
-          gh release upload "$RELEASE_TAG" "fetchly_${RELEASE_TAG}.apk" fetchly.apk "fetchly-lite_${RELEASE_TAG}.apk" fetchly-lite.apk SHA256SUMS BUILD.txt fetchly-release.json fetchly-lite-release.json --clobber
+          gh release upload "$RELEASE_TAG" "fetchly_${RELEASE_TAG}.apk" fetchly.apk "fetchly-lite_${RELEASE_TAG}.apk" fetchly-lite.apk SHA256SUMS BUILD.txt fetchly-release.json fetchly-lite-release.json fetchly.sha256 fetchly-lite.sha256 fetchly-lite-release-notes.md --clobber
           gh release edit "$RELEASE_TAG" --draft=false --latest
 
       - name: Remove restored private keystore
