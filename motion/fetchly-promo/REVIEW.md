@@ -23,3 +23,7 @@ Retained warnings: duplicate static preview image use is intentional; the two pr
 Narration is original local Kokoro audio. Music and SFX are the six original Pixabay MP3s supplied by the user; no earlier HeyGen music is used. Contact SFX peaks are placed one frame after visual actions, based on measured file peaks. Final mix loudness and true peak are measured during output validation. Original audio is retained locally and excluded from the public source repo; credits and publication details are in CREDITS.md.
 
 No stock footage, watermarked clips, provider logos or renderer overlays are included. The intentional Fetchly, platform and GitHub branding is part of the requested story. The preview contains real Big Buck Bunny title art as source media, credited to Blender Foundation in CREDITS.md.
+
+## Final delivery measurements
+
+Verified the finished MP4: 64.000 s, 1920×1080, 30 fps, 1920 H.264 frames, stereo AAC at 48 kHz, approximately 16.1 MB. Measured −16.0 LUFS and −2.8 dBFS true peak after two-pass normalisation, a transient limiter and AAC encoding. Decoded 11 output frames across the story, hand contact and cursor ending; no renderer overlay or stock watermark was present. Full source check passes. SHA-256 and exact byte size: DELIVERY.json.

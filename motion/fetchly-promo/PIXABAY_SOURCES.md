@@ -1,4 +1,6 @@
-# Requested Pixabay soundtrack — downloads pending
+# Requested Pixabay soundtrack — supplied and used
+
+The user supplied all six original MP3s. They are imported locally in ignored assets/audio/pixabay/. The completed film uses this soundtrack; the access-blocker notes below are historical. See CREDITS.md and DELIVERY.json.
 
 The user explicitly requested local narration and Pixabay music/SFX. Do not use the earlier HeyGen track for delivery.
 
@@ -16,4 +18,4 @@ Access evidence: direct request to the riser page/download returned HTTP 403. Sh
 
 ## Current independent work completed
 
-Six narration takes generated locally and measured; exact text, sample rate and durations in narration.json. Actual Fetchly home (empty and filled) and resolved video quality screen captured from the Android app. Original README download button retained. The editable composition remains a scaffold; no completed promo or delivery MP4 exists.
+Six narration takes generated locally and measured; exact text, sample rate and durations in narration.json. Actual Fetchly home (empty and filled) and resolved video quality screen captured from the Android app. Original README download button retained. The editable composition and final 64-second MP4 are complete.

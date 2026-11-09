@@ -1,0 +1,33 @@
+{
+  "video": "renders/fetchly-promo-1080p.mp4",
+  "size_bytes": 16134603,
+  "duration": 64.0,
+  "width": 1920,
+  "height": 1080,
+  "fps": "30/1",
+  "frames": 1920,
+  "video_codec": "h264",
+  "audio_codec": "aac",
+  "sample_rate": 48000,
+  "channels": 2,
+  "decoded_frames": [
+    0,
+    5,
+    9.5,
+    16.5,
+    26,
+    34,
+    42,
+    46,
+    54.55,
+    59.6,
+    63.3
+  ],
+  "integrated_loudness_lufs": -16.0,
+  "true_peak_dbfs": -2.8,
+  "sha256": "c6a735821eaae53c6bfdaeab75ebcc44033567eda3948633be4f4998682cad85",
+  "full_check_passed": true,
+  "stock_video_clips": 0,
+  "share_sequence": "Disclosed code-derived UI reconstruction",
+  "audio_review": "Measured, not listened"
+}

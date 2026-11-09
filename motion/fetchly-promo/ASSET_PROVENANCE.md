@@ -7,7 +7,7 @@
 
 ## Production state
 
-Storyboard, specification, working narration and first real screen captured. Composition is still the scaffold, not a completed film. No delivery render exists. Audio provider choice is pending: HeyGen sign-in or explicit acceptance of free local model downloads. No paid media calls have been made.
+Completed: the 64-second film has been rendered and verified. Local narration and user-supplied Pixabay audio are used. See DELIVERY.json for the output hash, codec, timing and measured levels. Earlier provider/access notes below are production history; no HeyGen audio is used in the final film.
 
 ## Audio retrieval and account limitation
 
@@ -28,3 +28,7 @@ Storyboard, specification, working narration and first real screen captured. Com
 The user attached all six Pixabay MP3 originals. They are copied into ignored assets/audio/pixabay/ using short names pop, whoosh, click, impact, rhythm and lyre. See CREDITS.md for original titles and page URLs. MP3 durations were verified with ffprobe. Measured peaks: pop .202s, click .074s, riser-impact 1.815s; picture contacts are aligned to these peaks plus one frame. Original standalone audio is not committed to the public repo.
 
 The 64-second composition is built by build_composition.py. Phone/hand geometry is original Three.js; smoke is a deterministic generated canvas effect. No stock video clips are used. ShareDownloadScreen.kt supplies exact shared-dialog labels and behaviour; because the emulator was blocked by system ANR and device tooling became unavailable, the share sequence is reconstructed and disclosed on screen. Runtime and layout checks plus rendered-frame review precede delivery.
+
+## Delivered output
+
+Final: renders/fetchly-promo-1080p.mp4, 64.000 seconds, 1920×1080, 30 fps, 1920 H.264 frames, stereo AAC 48 kHz. Final audio measures −16.0 LUFS and −2.8 dBFS true peak. Eleven frames were decoded from the MP4 and visually checked. The unused earlier HeyGen WAV was removed from the current project. The original standalone Pixabay MP3s and rendered MP4 are kept locally in ignored paths. Source and validation notes are committed and pushed.
