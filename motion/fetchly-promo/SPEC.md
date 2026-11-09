@@ -6,7 +6,7 @@ SOURCE OF TRUTH: README.md; running full Fetchly Android app; original app artwo
 LOOK: Greek bronze and stone drawn from Fetchly; charcoal #171510, gold #d9b873, limestone #e8ddc6. Cinzel display 84–130 px; Inter body 32–44 px. UI captures remain authentic. Beauty shots may rotate in 3D as explicitly requested; proof shots settle front-on. Primary text inside 80% title-safe; one focal action per shot.
 OBJECTS: Actual Android phone screens, public-media sample, real platform marks, bronze phone frame, articulated marble hand, readable GitHub end card, exact README APK button.
 MOTION: Camera moves 0.5–1.1 s, power3.inOut; icon pops 0.28 s back.out(1.3), stagger 0.45 s; hero hand approaches 1.5 s, contact 0.12 s, blackout 0.10 s after contact; final cursor approach 0.8 s.
-AUDIO: English narration with room between phrases; Greek-inspired plucked instrument and restrained percussion; timed pops, taps, whooshes, final riser, impact and deliberate silence. HeyGen selected by the user; sign-in verified. Do not substitute providers silently.
+AUDIO: English narration with room between phrases; Greek-inspired plucked instrument and restrained percussion; timed pops, taps, whooshes, final riser, impact and deliberate silence. User selected free local Kokoro narration and Pixabay-only music/SFX after the HeyGen plan refusal. Six narration takes generated. Pixabay downloads remain blocked; do not substitute the earlier HeyGen track into delivery.
 
 ## Shot plan, at 30 fps
 

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "frustration",
+    "text": "An ad before the download. And after all that... this is the quality you get?",
+    "provider": "kokoro-local",
+    "voice": "am_michael",
+    "speed": 1.0,
+    "path": "assets/voice/frustration.wav",
+    "duration": 4.971,
+    "sample_rate": 24000
+  },
+  {
+    "id": "reveal",
+    "text": "There is a better way. Fetchly.",
+    "provider": "kokoro-local",
+    "voice": "am_michael",
+    "speed": 0.95,
+    "path": "assets/voice/reveal.wav",
+    "duration": 2.091,
+    "sample_rate": 24000
+  },
+  {
+    "id": "home",
+    "text": "Start with a public link. Choose your format and quality. Save it right on your phone.",
+    "provider": "kokoro-local",
+    "voice": "am_michael",
+    "speed": 1.0,
+    "path": "assets/voice/home.wav",
+    "duration": 5.291,
+    "sample_rate": 24000
+  },
+  {
+    "id": "platforms",
+    "text": "Bring links from the platforms you use. Public media, ready to fetch.",
+    "provider": "kokoro-local",
+    "voice": "am_michael",
+    "speed": 1.0,
+    "path": "assets/voice/platforms.wav",
+    "duration": 4.352,
+    "sample_rate": 24000
+  },
+  {
+    "id": "share",
+    "text": "Found something worth keeping? Tap Share. Choose Fetchly. Your download options open right over the app. Pick your quality, and download. Stay in the moment.",
+    "provider": "kokoro-local",
+    "voice": "am_michael",
+    "speed": 1.02,
+    "path": "assets/voice/share.wav",
+    "duration": 10.176,
+    "sample_rate": 24000
+  },
+  {
+    "id": "features",
+    "text": "Save audio as MP3. Review multiple links. Pause and resume supported downloads.",
+    "provider": "kokoro-local",
+    "voice": "am_michael",
+    "speed": 1.0,
+    "path": "assets/voice/features.wav",
+    "duration": 6.592,
+    "sample_rate": 24000
+  }
+]
