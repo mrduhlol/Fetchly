@@ -11,7 +11,7 @@ JDK 17, Android SDK 35 / Build Tools 35.0.0, Python 3.12 and the Gradle wrapper 
 | Fetchly | `com.fetchly.app.debug` | `com.fetchly.app.debug.test` |
 | Fetchly Lite | `com.fetchly.app.lite` | `com.fetchly.app.lite.test` |
 
-The full app's stable ID retains its historical `.debug` spelling so existing installations can update. Stable APKs are now built with the **release** build type and are not debuggable. The package spelling does not select a development signer. Test builds have a `-test` version suffix and separate application IDs, so they can coexist with stable apps.
+The full app's stable ID retains its historical `.debug` spelling so existing installations can update. New production APKs use the **release** build type and are not debuggable. Existing published full-app assets remain unchanged; this rule applies to newly built production APKs. The package spelling does not select a development signer. Test builds have a `-test` version suffix and separate application IDs, so they can coexist with stable apps.
 
 ```bash
 scripts/check.sh                          # tests, lint, debug APKs and optimized Lite test APK
