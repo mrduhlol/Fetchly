@@ -21,6 +21,7 @@ import kotlinx.coroutines.launch
 object LiteFormats {
     fun options(media: MediaInfo): List<QualityOption> {
         val options = media.options.filter { it.container != "zip" &&
+            !(it.kind == QualityKind.VIDEO && it.container == "mkv") &&
             (it.kind != QualityKind.AUDIO || it.container == "mp3") &&
             !(media.mediaType == MediaType.AUDIO && it.kind == QualityKind.FILE) }
         if (options.any { it.kind == QualityKind.AUDIO }) return options

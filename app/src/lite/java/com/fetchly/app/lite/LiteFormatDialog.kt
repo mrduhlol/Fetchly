@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
@@ -34,9 +35,27 @@ fun LiteFormatDialog(state: LiteResolveState, vm: LiteResolveViewModel, download
 
 @Composable
 private fun LiteFormatContent(state: LiteResolveState, vm: LiteResolveViewModel, download: () -> Unit, close: () -> Unit) {
-    Surface(color = Parchment, shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp)) {
-        Column(Modifier.widthIn(max = 440.dp).heightIn(max = 720.dp).verticalScroll(rememberScrollState())
-            .padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    val parentColors = MaterialTheme.colorScheme
+    MaterialTheme(
+        colorScheme = parentColors.copy(
+            primary = Parchment,
+            onPrimary = Ink,
+            secondary = Parchment,
+            onSecondary = Ink,
+            background = Ink,
+            onBackground = Parchment,
+            surface = Ink,
+            onSurface = Parchment,
+            surfaceVariant = Color(0xFF38302A),
+            onSurfaceVariant = Parchment,
+            outline = Color(0xFF9B8061),
+        ),
+        typography = MaterialTheme.typography,
+        shapes = MaterialTheme.shapes,
+    ) {
+        Surface(color = Ink, contentColor = Parchment, shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp)) {
+            Column(Modifier.widthIn(max = 440.dp).heightIn(max = 720.dp).verticalScroll(rememberScrollState())
+                .padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("Choose your download", style = MaterialTheme.typography.headlineSmall)
             if (state.loading) {
                 LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -105,6 +124,7 @@ private fun LiteFormatContent(state: LiteResolveState, vm: LiteResolveViewModel,
                 Text(if (state.adding) "Adding…" else if (state.items.size > 1) "Download selected (${state.selected.size})" else "Download")
             }
             TextButton(onClick = close, enabled = !state.adding, modifier = Modifier.align(Alignment.CenterHorizontally)) { Text("Cancel") }
+            }
         }
     }
 }
