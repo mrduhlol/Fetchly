@@ -49,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.Image
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
@@ -71,13 +72,8 @@ fun DownloadsScreen(viewModel: DownloadsViewModel, onBack: () -> Unit, initialNo
     onOpenSettings: () -> Unit = {}, onChooseFormat: (String) -> Unit = {},
     libraryOnly: Boolean = false,
 ) {
-    // The gold wallpaper needs its matching dark foreground roles even in light mode.
-    // Override colors only: retain the user's UI scale, typography and touch targets.
-    MaterialTheme(colorScheme = if (!libraryOnly && !com.fetchly.app.BuildConfig.IS_LITE)
-        com.fetchly.app.ui.theme.DarkColors else MaterialTheme.colorScheme) {
-        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-            DownloadsContent(viewModel, onBack, initialNotice, onOpenSettings, onChooseFormat, libraryOnly)
-        }
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        DownloadsContent(viewModel, onBack, initialNotice, onOpenSettings, onChooseFormat, libraryOnly)
     }
 }
 
@@ -87,6 +83,7 @@ private fun DownloadsContent(
     onOpenSettings: () -> Unit, onChooseFormat: (String) -> Unit, libraryOnly: Boolean,
 ) {
     val premiumBackground = !libraryOnly && !com.fetchly.app.BuildConfig.IS_LITE
+    val darkArtwork = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val state by viewModel.state.collectAsStateWithLifecycle()
     var query by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("") }
     var filterName by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("ALL") }
@@ -118,7 +115,7 @@ private fun DownloadsContent(
     Box(Modifier.fillMaxSize()) {
     if (premiumBackground) {
         Image(
-            painter = painterResource(R.drawable.fetchly_downloads),
+            painter = painterResource(if (darkArtwork) R.drawable.fetchly_downloads else R.drawable.fetchly_downloads_light),
             contentDescription = null,
             modifier = Modifier.matchParentSize(),
             // Crop uniformly rather than stretching. Keep Hermes at the bottom right.
