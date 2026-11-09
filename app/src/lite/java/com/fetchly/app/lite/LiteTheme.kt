@@ -26,6 +26,12 @@ fun LiteTheme(content: @Composable () -> Unit) {
         onSurfaceVariant = Color(0xFF493523), outline = Color(0xFF805C37),
         surfaceContainer = Parchment, surfaceContainerLow = Parchment,
         error = Color(0xFF8A2018), onError = Color.White,
+    ), shapes = Shapes(
+        extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(3.dp),
+        small = androidx.compose.foundation.shape.RoundedCornerShape(3.dp),
+        medium = androidx.compose.foundation.shape.RoundedCornerShape(4.dp),
+        large = androidx.compose.foundation.shape.RoundedCornerShape(6.dp),
+        extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
     ), typography = Typography(
         headlineLarge = MaterialTheme.typography.headlineLarge.copy(fontFamily = FontFamily.Serif),
         headlineMedium = MaterialTheme.typography.headlineMedium.copy(fontFamily = FontFamily.Serif),
