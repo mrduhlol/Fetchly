@@ -1,5 +1,13 @@
 package com.fetchly.app.ui.share
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
+import coil.compose.SubcomposeAsyncImage
 import com.fetchly.app.ui.components.PlaqueOutlinedButton
 import com.fetchly.app.ui.components.PlaqueButton
 
@@ -46,6 +54,27 @@ fun ShareDownloadScreen(state: ShareDownloadState, onKind: (QualityKind) -> Unit
                     }
                 }
                 state.media?.let { media ->
+                    Box(
+                        Modifier.fillMaxWidth().aspectRatio(16f / 9f)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (media.thumbnailUrl != null) {
+                            SubcomposeAsyncImage(
+                                model = media.thumbnailUrl,
+                                contentDescription = "Preview of ${media.title}",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop,
+                                loading = {
+                                    CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
+                                },
+                                error = { ThumbnailFallback() },
+                            )
+                        } else {
+                            ThumbnailFallback()
+                        }
+                    }
                     Text(media.title, style = MaterialTheme.typography.titleMedium, maxLines = 3, overflow = TextOverflow.Ellipsis)
                     Text(PlatformDetector.label(media.platform), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -101,5 +130,13 @@ fun ShareDownloadScreen(state: ShareDownloadState, onKind: (QualityKind) -> Unit
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ThumbnailFallback() {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("Preview unavailable", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
