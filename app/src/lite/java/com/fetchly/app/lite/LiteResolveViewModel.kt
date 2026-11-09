@@ -90,7 +90,7 @@ class LiteResolveViewModel(
                         mutable.update { it.copy(loading = false, items = items,
                             selected = items.indices.toSet(), choices = items.mapIndexed { index, info ->
                                 index to (info.options.firstOrNull { option -> !option.silentVideo } ?: info.options.first()).id
-                            }.toMap().takeIf { best }.orEmpty(), error = if (items.isEmpty()) "No downloadable media was returned by this source." else null,
+                            }.toMap().filter { (index, _) -> best || (items[index].options.size == 1 && items[index].options.single().kind == QualityKind.FILE) }, error = if (items.isEmpty()) "No downloadable media was returned by this source." else null,
                             notice = if (items.size < source.size) "${items.size} of ${source.size} returned items are downloadable." else null) }
                     }
                 }
