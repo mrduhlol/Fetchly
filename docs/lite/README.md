@@ -52,6 +52,12 @@ The Check app workflow publishes a `fetchly-lite-test` artifact containing an op
 
 ## Size and verification limits
 
+Verified test artifact from [successful CI run 42612551046](https://github.com/mrduhlol/Fetchly/actions/runs/42612551046), source commit `03d09cda012aea884d88339a9b862a69ef3dd86b`: **66,548,583 bytes (66.55 MB / 63.47 MiB)**. [Download the test artifact ZIP](https://github.com/mrduhlol/Fetchly/actions/runs/42612551046/artifacts/13671581125), then extract and install its APK. Artifact retention follows GitHub Actions settings; later successful runs publish fresh artifacts.
+
+APK SHA-256: `fb1c5d11677cda45472f9ce80faeb9e0ae878a6a82790314dae1c7cd5316d268`. APK Signature Scheme v2 verifies with the development certificate, package `com.fetchly.app.lite`, version `2.4.6-lite`, minimum API 29, and only `arm64-v8a` libraries. All packaged XML/resources were checked for `STRING_TOO_LARGE` substitution; none remains. CI development keys are generated per run, so installing a later test build may require removing an earlier test build signed with a different key. Uninstalling clears in-app history and preferences.
+
+Validation: **267 Lite Kotlin tests, 257 full-edition Kotlin tests, and 35 Python tests pass**. Both debug lint checks and the Lite release build pass; lint retains warnings. The CI run builds full and Lite debug APKs plus the optimized Lite APK. This verifies compilation and automated behavior, not visual/device behavior.
+
 Python/yt-dlp and FFmpeg remain bundled for on-device extraction, merging, audio conversion and no-backend operation. Simplifying the interface does not remove these engines. Lite reduces architecture packaging, unused UI/resources, artwork size and startup work; it loads extractors on demand and runs one download at a time. APK size is measured from the finished optimized build, not inferred from screen count.
 
 Native visual verification was attempted using the shared device tools, but device startup failed twice with “Agent tools did not start within 30000 ms.” No device UI or live multi-site download claim is made from unit tests or compilation alone. Device checks remain necessary for the first-run animation, system share sheet, notifications, long lists and real source behavior before a production release.
