@@ -2,7 +2,6 @@ package com.fetchly.app.ui.navigation
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.selectable
@@ -194,7 +193,6 @@ private fun FetchlyNavigationDock(route: String?, onNavigate: (String) -> Unit) 
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
             shape = RoundedCornerShape(16.dp),
             color = colors.surfaceContainerLow,
-            border = BorderStroke(0.5.dp, colors.outlineVariant),
         ) {
             Box(Modifier.padding(horizontal = 6.dp)) {
                 Row(

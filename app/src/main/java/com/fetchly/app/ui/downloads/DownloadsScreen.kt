@@ -35,6 +35,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
@@ -144,16 +149,29 @@ fun DownloadsScreen(viewModel: DownloadsViewModel, onBack: () -> Unit, initialNo
                         LibraryCategories(history, LibraryFilter.valueOf(filterName)) { filterName = it.name }
                     } else SectionHeader("Finished (${history.size})", horizontalPadding = 0.dp)
                     Spacer(Modifier.height(12.dp))
-                    androidx.compose.material3.OutlinedTextField(query, { query = it }, label = { Text("Search downloads") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                    androidx.compose.material3.OutlinedTextField(query, { query = it }, label = { Text("Search downloads") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = downloadNeutralOutline(),
+                            unfocusedBorderColor = downloadNeutralOutline().copy(alpha = 0.65f),
+                            focusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            cursorColor = MaterialTheme.colorScheme.onSurface,
+                        ))
                     androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
                         items(LibraryFilter.entries.filter { !libraryOnly || it != LibraryFilter.FAILED }) { filter ->
                             androidx.compose.material3.FilterChip(selected = filterName == filter.name,
-                                onClick = { filterName = filter.name }, label = { Text(filter.label) })
+                                onClick = { filterName = filter.name }, label = { Text(filter.label) },
+                                border = null,
+                                colors = FilterChipDefaults.filterChipColors(
+                                    containerColor = downloadSurface(),
+                                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    selectedContainerColor = downloadSelectedSurface(),
+                                    selectedLabelColor = MaterialTheme.colorScheme.onSurface,
+                                ))
                         }
                     }
                     if (library.isEmpty()) {
                         Text("No downloads match your search or filters.", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 12.dp))
-                        TextButton(onClick = { query = ""; filterName = "ALL" }) { Text("Clear filters") }
+                        TextButton(colors = downloadActionColors(), onClick = { query = ""; filterName = "ALL" }) { Text("Clear filters") }
                     }
                 }
                 items(library, key = { it.id }) { entry ->
@@ -257,8 +275,7 @@ private fun ActiveCard(active: ActiveDownload, enabled: Boolean, onCancel: () ->
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
-        border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        color = downloadSurface(),
     ) {
         Column(Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -296,7 +313,7 @@ private fun ActiveCard(active: ActiveDownload, enabled: Boolean, onCancel: () ->
                 LinearProgressIndicator(
                     progress = { percent / 100f },
                     modifier = Modifier.fillMaxWidth().alpha(if (paused) 0.4f else 1f),
-                    color = if (paused) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
+                    color = if (paused) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.secondary,
                     trackColor = if (paused) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant,
                 )
             } else if (paused) {
@@ -306,7 +323,7 @@ private fun ActiveCard(active: ActiveDownload, enabled: Boolean, onCancel: () ->
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     trackColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.18f))
             } else {
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.secondary)
             }
         }
     }
@@ -324,8 +341,7 @@ private fun HistoryRow(
         onClick = onOpenDetails,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
-        border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        color = downloadSurface(),
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
@@ -355,9 +371,9 @@ private fun HistoryRow(
                 )
             }
             if (entry.status == DownloadStatus.FAILED || entry.status == DownloadStatus.CANCELLED || entry.status == DownloadStatus.PAUSED) {
-                TextButton(onClick = onRetry, enabled = enabled) { Text(if (entry.status == DownloadStatus.PAUSED) "Resume" else "Retry") }
+                TextButton(onClick = onRetry, enabled = enabled, colors = downloadActionColors()) { Text(if (entry.status == DownloadStatus.PAUSED) "Resume" else "Retry") }
             } else if (entry.status == DownloadStatus.COMPLETED) {
-                TextButton(onClick = onOpen) { Text("Open file") }
+                TextButton(onClick = onOpen, colors = downloadActionColors()) { Text("Open file") }
             }
         }
     }
@@ -372,7 +388,7 @@ private fun statusIcon(status: DownloadStatus): ImageVector = when (status) {
 
 @Composable
 private fun statusTint(status: DownloadStatus) = when (status) {
-    DownloadStatus.COMPLETED -> MaterialTheme.colorScheme.primary
+    DownloadStatus.COMPLETED -> MaterialTheme.colorScheme.onSurfaceVariant
     DownloadStatus.FAILED -> MaterialTheme.colorScheme.error
     else -> MaterialTheme.colorScheme.onSurfaceVariant
 }
@@ -401,3 +417,19 @@ private fun speedSuffix(active: ActiveDownload): String {
     val speed = if (DownloadStages.isTransfer(active.stageText)) active.work?.speedBytesPerSecond ?: 0L else 0L
     return if (speed > 0L) " · ${FormatSize.formatApprox(speed).orEmpty()}/s" else ""
 }
+
+// Local neutral roles keep Downloads quiet without changing Home plaques or Lite.
+@Composable
+private fun downloadSurface(): Color =
+    if (MaterialTheme.colorScheme.background.luminance() < 0.5f) Color(0xFF1C1C1C) else Color(0xFFF0EBE5)
+
+@Composable
+private fun downloadSelectedSurface(): Color =
+    if (MaterialTheme.colorScheme.background.luminance() < 0.5f) Color(0xFF414141) else Color(0xFFD8D2CB)
+
+@Composable
+private fun downloadNeutralOutline(): Color =
+    if (MaterialTheme.colorScheme.background.luminance() < 0.5f) Color(0xFF777777) else Color(0xFF77736F)
+
+@Composable
+private fun downloadActionColors() = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)
