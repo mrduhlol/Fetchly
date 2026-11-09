@@ -46,10 +46,10 @@ jobs:
           printf 'FETCHLY_SIGNING_STORE=%s\n' "$RUNNER_TEMP/fetchly-signing.jks" >> "$GITHUB_ENV"
 
       - name: Build full and optimized Lite APKs
-        run: gradle :app:assembleFullDebug :app:assembleLiteRelease
+        run: gradle :app:assembleFullDebug :app:assembleLiteRelease --max-workers=2 -Pkotlin.compiler.execution.strategy=in-process '-Dorg.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8'
 
       - name: Run unit tests
-        run: gradle :app:testFullDebugUnitTest :app:testLiteDebugUnitTest
+        run: gradle :app:testFullDebugUnitTest :app:testLiteDebugUnitTest --max-workers=2 -Pkotlin.compiler.execution.strategy=in-process '-Dorg.gradle.jvmargs=-Xmx2g -Dfile.encoding=UTF-8'
 
       - name: Verify pinned APK signing certificate
         run: |
