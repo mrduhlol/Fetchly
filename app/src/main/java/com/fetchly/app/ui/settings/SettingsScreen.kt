@@ -30,6 +30,9 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.core.app.NotificationManagerCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -65,6 +68,12 @@ fun SettingsScreen(
     val quality by viewModel.defaultQuality.collectAsStateWithLifecycle()
     val uiScale by viewModel.uiScale.collectAsStateWithLifecycle()
     var confirmClear by remember { mutableStateOf(false) }
+    var notificationsEnabled by remember {
+        mutableStateOf(NotificationManagerCompat.from(context).areNotificationsEnabled())
+    }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        notificationsEnabled = NotificationManagerCompat.from(context).areNotificationsEnabled()
+    }
 
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.widthIn(max = 640.dp).fillMaxSize()) {
@@ -72,6 +81,20 @@ fun SettingsScreen(
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
 
                 ActionRow("Appearance", themeLabel(theme), onOpenAppearance)
+
+                ActionRow(
+                    title = "Notifications",
+                    subtitle = "${if (notificationsEnabled) "On" else "Off"} · Turn download notifications on or off in Android settings.",
+                    onClick = {
+                        val notificationSettings = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                            .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                        runCatching { context.startActivity(notificationSettings) }
+                            .recoverCatching {
+                                context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                    Uri.parse("package:${context.packageName}")))
+                            }
+                    },
+                )
 
                 SectionHeader("App size")
                 Column(Modifier.selectableGroup()) {
@@ -277,6 +300,7 @@ private fun ActionRow(title: String, subtitle: String, onClick: () -> Unit) {
         Row(Modifier.padding(horizontal = 14.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
         androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(when (title) {
             "Appearance" -> com.fetchly.app.R.drawable.ic_appearance
+            "Notifications" -> com.fetchly.app.R.drawable.ic_stat_apollo
             "Android download settings" -> com.fetchly.app.R.drawable.ic_stat_download
             "Fetchly releases" -> com.fetchly.app.R.drawable.ic_external
             "Clear finished history" -> com.fetchly.app.R.drawable.ic_clock
