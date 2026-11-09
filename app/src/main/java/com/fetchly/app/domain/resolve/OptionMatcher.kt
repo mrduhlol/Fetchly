@@ -32,7 +32,9 @@ object OptionMatcher {
                 val sameLanguage = expected.language == null || expected.language.equals(fresh.language, ignoreCase = true)
                 val sameAudioQuality = option.kind != com.fetchly.app.domain.model.QualityKind.AUDIO || expected.abr == null ||
                     (fresh.abr != null && kotlin.math.abs(expected.abr - fresh.abr) <= maxOf(1.0, expected.abr * 0.05))
-                sameShape && sameLanguage && sameAudioQuality
+                val expectedItem = expected.formatId.takeIf { it.startsWith("x-entry-") }?.substringBefore("::")
+                val freshItem = fresh.formatId.takeIf { it.startsWith("x-entry-") }?.substringBefore("::")
+                sameShape && sameLanguage && sameAudioQuality && expectedItem == freshItem
             }
             if (index < 0) return false
             remaining.removeAt(index)
