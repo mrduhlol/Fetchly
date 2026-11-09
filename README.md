@@ -10,9 +10,9 @@ Paste a public media link, pick a quality, save it to your device.
 
 <p><a href="https://github.com/mrduhlol/Fetchly/releases/latest/download/fetchly.apk"><img src="docs/download-main-v2.png" width="420" alt="Download Fetchly APK for Android 10 and later" /></a></p>
 
-<sub>v2.4.6 · 145.41 MB · Android 10 (API 29)+ · <a href="docs/release-notes/v2.4.6.md">Release notes</a></sub>
+<sub>v2.4.7 · 120.71 MB · Android 10 (API 29)+ · <a href="docs/release-notes/v2.4.7.md">Release notes</a></sub>
 
-**One-time reinstall from v2.3:** the published v2.3 APK used a different signing certificate. Uninstall it before installing the latest version. Uninstalling clears settings and in-app history; back up anything needed first. Version 2.4 pins and verifies the persistent signing key for future updates. [Release notes](docs/release-notes/v2.4.6.md) explain the correction.
+**One-time reinstall from v2.3:** the published v2.3 APK used a different signing certificate. Uninstall it before installing the latest version. Uninstalling clears settings and in-app history; back up anything needed first. Version 2.4 pins and verifies the persistent signing key for future updates. [Release notes](docs/release-notes/v2.4.7.md) explain the correction.
 
 </div>
 
@@ -30,7 +30,7 @@ No backend, no account, no API key, no configuration. Resolution, downloading an
 
 <p><a href="https://github.com/mrduhlol/Fetchly/releases/latest/download/fetchly-lite.apk"><img src="docs/lite/assets/lite-download.png" width="420" alt="Download Fetchly Lite APK for Android 10 and later" /></a></p>
 
-<p><sub>v2.4.6-lite · 66.55 MB · Android 10 (API 29)+ · 64-bit ARM · <a href="docs/release-notes/v2.4.6-lite.md">Release notes</a></sub></p>
+<p><sub>v2.4.7-lite · 66.55 MB · Android 10 (API 29)+ · 64-bit ARM · <a href="docs/release-notes/v2.4.7-lite.md">Release notes</a></sub></p>
 
 </div>
 
