@@ -7,7 +7,7 @@
 <div class="stone stage"></div>
 <div class="safe-left"><p class="eyebrow gold">THE SHARE SHORTCUT</p><h2>Share it.<br><span class="gold">Fetch it.</span></h2><div class="rule"></div><p id="share-caption" class="body-copy">Your download options.<br>Right over the app.</p></div>
 <div id="share-phone" class="phone-flat"><div class="screen">
-<div class="source-surface"><div class="source-brand"><img src="assets/platforms/youtube.svg" alt="YouTube"/>Public YouTube link</div><div class="source-thumb"><img src="assets/screens/quality-video.png" alt="Big Buck Bunny source thumbnail"/></div><h3>Big Buck Bunny</h3><p>Blender Foundation</p><div id="share-action">↗ &nbsp; Share</div></div>
+<div class="source-surface"><div class="source-brand"><img src="assets/platforms/youtube.svg" alt="YouTube"/>Public YouTube link</div><div class="source-thumb"><img src="assets/screens/quality-video.png" alt="Big Buck Bunny source thumbnail"/></div><h3 data-layout-allow-occlusion data-layout-allow-overlap>Big Buck Bunny</h3><p data-layout-allow-occlusion data-layout-allow-overlap>Blender Foundation</p><div id="share-action" data-layout-allow-occlusion data-layout-allow-overlap>↗ &nbsp; Share</div></div>
 <div id="share-picker"><p>Share with</p><div id="share-target"><img src="assets/brand/fetchly-logo.png" alt="Fetchly"/><strong>Fetchly</strong></div></div>
 <div id="share-shade"></div><div id="share-dialog">
 <h3>Download with Fetchly</h3><div class="dialog-thumb"><img src="assets/screens/quality-video.png" alt="Preview of Big Buck Bunny"/></div>
@@ -27,7 +27,7 @@ tl.fromTo('#share-target',{scale:1},{scale:.93,duration:.1,yoyo:true,repeat:1},4
 tl.fromTo('#share-picker',{opacity:1},{opacity:0,duration:.15},4.5);
 tl.fromTo('#share-shade',{opacity:0},{opacity:1,duration:.2},4.5);
 tl.fromTo('#share-dialog',{opacity:0,y:40},{opacity:1,y:0,duration:.3,ease:'power3.out'},4.6);
-tl.fromTo('#share-phone',{scale:1,x:0,y:0},{scale:1.18,x:-50,y:30,duration:.7,ease:'power3.inOut'},7);
+tl.to('#share-phone',{scale:1.18,x:-50,y:30,duration:.7,ease:'power3.inOut'},7);
 tl.fromTo('#share-quality',{backgroundColor:'#28241e'},{backgroundColor:'#5a492b',duration:.15,yoyo:true,repeat:1},9.3);
 tl.fromTo('#share-download',{scale:1},{scale:.94,duration:.11,yoyo:true,repeat:1},11.5);
 tl.fromTo('#share-stage',{opacity:1},{opacity:0,duration:.2},13.8);

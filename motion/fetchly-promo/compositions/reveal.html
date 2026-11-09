@@ -10,7 +10,7 @@
 <script>const tl=gsap.timeline({paused:true});
 tl.fromTo('#reveal-lockup',{opacity:0,scale:.9},{opacity:1,scale:1,duration:.85,ease:'power2.out'},.1);
 tl.fromTo('#reveal-line',{opacity:0},{opacity:1,duration:.45},2.3);
-tl.fromTo('#reveal-lockup',{opacity:1},{opacity:0,duration:.25},4.7);
+tl.to('#reveal-lockup',{opacity:0,duration:.25},4.7);
 
 tl.to({},{duration:.01},4.98);window.__timelines["reveal"]=tl;</script>
 </template>

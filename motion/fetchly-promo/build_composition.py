@@ -37,7 +37,7 @@ tl.fromTo('#pain-gate',{opacity:1},{opacity:0,duration:.15},3.25);
 tl.fromTo('#pain-title',{opacity:1},{opacity:0,duration:.12},3.25);
 tl.fromTo('#pain-quality',{opacity:0},{opacity:1,duration:.15},3.4);
 tl.fromTo('#pain-result',{opacity:0,scale:1.15},{opacity:1,scale:1,duration:.3,ease:'power3.out'},3.4);
-tl.fromTo('#pain-phone',{x:0},{x:12,duration:.05,yoyo:true,repeat:5},4.2);
+tl.to('#pain-phone',{x:12,duration:.05,yoyo:true,repeat:5},4.2);
 tl.fromTo('#pain-stage',{opacity:1},{opacity:0,duration:.2},6.8);
 ''','6.98'),'''
 .pain-ground{position:absolute;inset:0;background:linear-gradient(110deg,#d8d3c8,#bcb9b0)}#pain-stage{color:#38342e}.safe-left{top:245px}.safe-left h1{margin-top:36px;font-family:Manrope;font-size:130px;line-height:1.06;letter-spacing:-6px}#pain-quality{position:absolute;left:0;top:62px;opacity:0}#pain-phone{left:1170px;top:78px;box-shadow:30px 35px 50px #49443b44}.fake-source{position:absolute;inset:0;background:#efede7;padding:32px 20px}.fake-thumb{height:210px;overflow:hidden;background:#ccc}.fake-thumb img{width:100%;top:-80px!important}.fake-line{width:85%;height:15px;background:#c1beb5;margin-top:20px}.fake-line.short{width:55%}#pain-gate{position:absolute;inset:0;background:#171819ed;color:#eee;padding:240px 28px 0;text-align:center}#pain-gate p{font-size:22px;letter-spacing:3px;color:#bdbdb7}.ad-clock{font-size:88px;margin:35px 0}.ad-track{height:6px;background:#56534e;overflow:hidden}.ad-track div{height:100%;background:#d4ccbc;transform-origin:left}.ad-disabled{font-size:23px;border:1px solid #777;padding:18px 4px;margin-top:42px;color:#a3a19a}#pain-result{position:absolute;inset:0;background:#eee9df;text-align:center;padding-top:155px;color:#292722}.lowres{height:320px;overflow:hidden}.lowres img{position:static!important;width:100%;height:100%;object-fit:cover;image-rendering:pixelated}#pain-result strong{display:block;font-size:100px;margin:40px 0 12px}#pain-result p{font-size:27px}.pain-note{position:absolute;left:192px;bottom:110px;font-size:27px;color:#615a4e}
@@ -49,7 +49,7 @@ scene('reveal',5,'''
 ''',reg('reveal', '''
 tl.fromTo('#reveal-lockup',{opacity:0,scale:.9},{opacity:1,scale:1,duration:.85,ease:'power2.out'},.1);
 tl.fromTo('#reveal-line',{opacity:0},{opacity:1,duration:.45},2.3);
-tl.fromTo('#reveal-lockup',{opacity:1},{opacity:0,duration:.25},4.7);
+tl.to('#reveal-lockup',{opacity:0,duration:.25},4.7);
 ''','4.98'),'''.reveal-temple{position:absolute;width:1400px;left:260px;top:150px;opacity:.16}#reveal-lockup{position:absolute;inset:115px 0 0;text-align:center}#reveal-lockup>img{width:330px;height:330px;object-fit:contain}#reveal-lockup h1{font-size:135px;letter-spacing:14px;margin:18px 0}#reveal-line{font-size:34px;letter-spacing:6px;color:#ddc595}
 ''')
 
@@ -85,7 +85,7 @@ scene('share',14,'''
 <div class="stone stage"></div>
 <div class="safe-left"><p class="eyebrow gold">THE SHARE SHORTCUT</p><h2>Share it.<br><span class="gold">Fetch it.</span></h2><div class="rule"></div><p id="share-caption" class="body-copy">Your download options.<br>Right over the app.</p></div>
 <div id="share-phone" class="phone-flat"><div class="screen">
-<div class="source-surface"><div class="source-brand"><img src="assets/platforms/youtube.svg" alt="YouTube"/>Public YouTube link</div><div class="source-thumb"><img src="assets/screens/quality-video.png" alt="Big Buck Bunny source thumbnail"/></div><h3>Big Buck Bunny</h3><p>Blender Foundation</p><div id="share-action">↗ &nbsp; Share</div></div>
+<div class="source-surface"><div class="source-brand"><img src="assets/platforms/youtube.svg" alt="YouTube"/>Public YouTube link</div><div class="source-thumb"><img src="assets/screens/quality-video.png" alt="Big Buck Bunny source thumbnail"/></div><h3 data-layout-allow-occlusion data-layout-allow-overlap>Big Buck Bunny</h3><p data-layout-allow-occlusion data-layout-allow-overlap>Blender Foundation</p><div id="share-action" data-layout-allow-occlusion data-layout-allow-overlap>↗ &nbsp; Share</div></div>
 <div id="share-picker"><p>Share with</p><div id="share-target"><img src="assets/brand/fetchly-logo.png" alt="Fetchly"/><strong>Fetchly</strong></div></div>
 <div id="share-shade"></div><div id="share-dialog">
 <h3>Download with Fetchly</h3><div class="dialog-thumb"><img src="assets/screens/quality-video.png" alt="Preview of Big Buck Bunny"/></div>
@@ -103,7 +103,7 @@ tl.fromTo('#share-target',{scale:1},{scale:.93,duration:.1,yoyo:true,repeat:1},4
 tl.fromTo('#share-picker',{opacity:1},{opacity:0,duration:.15},4.5);
 tl.fromTo('#share-shade',{opacity:0},{opacity:1,duration:.2},4.5);
 tl.fromTo('#share-dialog',{opacity:0,y:40},{opacity:1,y:0,duration:.3,ease:'power3.out'},4.6);
-tl.fromTo('#share-phone',{scale:1,x:0,y:0},{scale:1.18,x:-50,y:30,duration:.7,ease:'power3.inOut'},7);
+tl.to('#share-phone',{scale:1.18,x:-50,y:30,duration:.7,ease:'power3.inOut'},7);
 tl.fromTo('#share-quality',{backgroundColor:'#28241e'},{backgroundColor:'#5a492b',duration:.15,yoyo:true,repeat:1},9.3);
 tl.fromTo('#share-download',{scale:1},{scale:.94,duration:.11,yoyo:true,repeat:1},11.5);
 tl.fromTo('#share-stage',{opacity:1},{opacity:0,duration:.2},13.8);
@@ -119,9 +119,9 @@ scene('features',7,'''
 ''',reg('features','''
 tl.fromTo('#feature-a',{opacity:0},{opacity:1,duration:.2},0);
 tl.fromTo('.feature-quality',{scale:1.05},{scale:1,duration:.5,ease:'power2.out'},0);
-tl.fromTo('#feature-a',{opacity:1},{opacity:0,duration:.15},2.1);
+tl.to('#feature-a',{opacity:0,duration:.15},2.1);
 tl.fromTo('#feature-b',{opacity:0,x:60},{opacity:1,x:0,duration:.3,ease:'power3.out'},2.25);
-tl.fromTo('#feature-b',{opacity:1},{opacity:0,duration:.15},4.1);
+tl.to('#feature-b',{opacity:0,duration:.15},4.1);
 tl.fromTo('#feature-c',{opacity:0},{opacity:1,duration:.25},4.3);
 tl.fromTo('#feature-progress',{scaleX:.25},{scaleX:.56,duration:.5,ease:'none'},4.5);
 tl.to('#feature-progress',{scaleX:.56,duration:.5},5);
@@ -145,7 +145,7 @@ s.hand.position.set(5.5*(1-reach),-.5*(1-reach),3.2*(1-reach));s.hand.visible=t>
 // A 0.1s press is visible before the blackout; the fingertip lands on the screen.
 const press=Math.max(0,1-Math.abs((t-6.66)/.1));s.phone.position.z=-.035*press;s.hand.position.z-=.16*press;s.draw();}
 const tl=gsap.timeline({paused:true});tl.fromTo(clock,{t:0},{t:7.2,duration:7.2,ease:'none',onUpdate:()=>render(clock.t)},0);
-tl.fromTo('#touch-copy',{opacity:0},{opacity:1,duration:.3},.2);tl.fromTo('#touch-copy',{opacity:1},{opacity:0,duration:.3},2);
+tl.fromTo('#touch-copy',{opacity:0},{opacity:1,duration:.3},.2);tl.to('#touch-copy',{opacity:0,duration:.3},2);
 tl.fromTo('#touch-black',{opacity:0},{opacity:1,duration:.1},6.83);
 window.__timelines.touch=tl;render(0);
 })();

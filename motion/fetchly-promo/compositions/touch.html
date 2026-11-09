@@ -18,7 +18,7 @@ s.hand.position.set(5.5*(1-reach),-.5*(1-reach),3.2*(1-reach));s.hand.visible=t>
 // A 0.1s press is visible before the blackout; the fingertip lands on the screen.
 const press=Math.max(0,1-Math.abs((t-6.66)/.1));s.phone.position.z=-.035*press;s.hand.position.z-=.16*press;s.draw();}
 const tl=gsap.timeline({paused:true});tl.fromTo(clock,{t:0},{t:7.2,duration:7.2,ease:'none',onUpdate:()=>render(clock.t)},0);
-tl.fromTo('#touch-copy',{opacity:0},{opacity:1,duration:.3},.2);tl.fromTo('#touch-copy',{opacity:1},{opacity:0,duration:.3},2);
+tl.fromTo('#touch-copy',{opacity:0},{opacity:1,duration:.3},.2);tl.to('#touch-copy',{opacity:0,duration:.3},2);
 tl.fromTo('#touch-black',{opacity:0},{opacity:1,duration:.1},6.83);
 window.__timelines.touch=tl;render(0);
 })();
