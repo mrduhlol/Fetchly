@@ -8,7 +8,7 @@ Paste a public media link, pick a quality, save it to your device.
 
 <p><img src="app/src/main/res/drawable-nodpi/fetchly_logo.png" width="280" alt="Fetchly Apollo app icon" /></p>
 
-<p><a href="https://github.com/mrduhlol/Fetchly/releases/latest/download/fetchly.apk"><img src="docs/download-apk.svg" width="220" alt="Download APK for Android" /></a></p>
+<p><a href="https://github.com/mrduhlol/Fetchly/releases/latest/download/fetchly.apk"><img src="docs/download-apk.svg" width="220" alt="Download APK for Android" /></a> <a href="https://github.com/mrduhlol/Fetchly/actions/workflows/check.yml"><img src="docs/download-lite-apk.svg" width="220" alt="Get Fetchly Lite test APK" /></a></p>
 
 <sub>v2.4.6 · Android 10 (API 29)+</sub>
 
@@ -21,6 +21,14 @@ Paste a public media link, pick a quality, save it to your device.
 Paste a link — YouTube, another public site, or a direct media file. Fetchly resolves it **on your phone** with a bundled yt-dlp engine, shows the real formats, then downloads and merges the quality you pick into `Movies/Fetchly/`, `Music/Fetchly/` or `Pictures/Fetchly/`.
 
 No backend, no account, no API key, no configuration. Resolution, downloading and muxing all run on-device.
+
+## Fetchly Lite
+
+Lite installs alongside Fetchly with its own history and settings. It has Home, Downloads and Library; automatic link detection; a thumbnail format dialog; MP3-only audio choices; selectable attachments from multi-item posts exposed by the extractor; and a fixed Greek pottery interface. Downloads run one at a time. Appearance customization, supported-app lists and ZIP downloads are omitted.
+
+**Test download:** use the Lite button above, open a successful **Check app** run, and download the **fetchly-lite-test** artifact. Extract the ZIP and install its APK. These builds use a development signing key; tagged release builds use the pinned release key. The release workflow prepares a separate `fetchly-lite.apk` for the next published version; it does not replace existing release assets.
+
+Lite targets **Android 10+ on 64-bit ARM phones**. It retains on-device Python/yt-dlp and FFmpeg for site extraction, merging and MP3 conversion, so it is not a tiny engine-free downloader. See [Lite architecture and build instructions](docs/lite/README.md).
 
 ## Features
 
