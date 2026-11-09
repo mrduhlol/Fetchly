@@ -147,6 +147,24 @@ object YtDlpMapper {
                 options = options,
                 width = root.intOrNull("width"),
                 height = root.intOrNull("height"),
+                items = root.optJSONArray("entries")?.let { entries ->
+                    (0 until minOf(entries.length(), 50)).mapNotNull { index ->
+                        val entry = entries.optJSONObject(index) ?: return@mapNotNull null
+                        entry.put("ok", true)
+                        val child = (map(entry.toString(), sourceUrl, platform) as? MapResult.Ok)?.info
+                            ?: return@mapNotNull null
+                        if (child.mediaType == MediaType.IMAGE) {
+                            val stream = child.options.firstOrNull()?.streams?.firstOrNull()
+                                ?: return@mapNotNull null
+                            child.copy(sourceUrl = stream.url, platform = Platform.DIRECT,
+                                title = "${root.str("title") ?: "Post"} · ${index + 1}",
+                                thumbnailUrl = child.thumbnailUrl ?: stream.url)
+                        } else child.copy(title = "${child.title} · ${index + 1}",
+                            options = child.options.map { option -> option.copy(
+                                streams = option.streams.map { stream -> stream.copy(
+                                    formatId = "x-entry-${index + 1}::${stream.formatId}") }) })
+                    }
+                }.orEmpty(),
             )
         )
     }
