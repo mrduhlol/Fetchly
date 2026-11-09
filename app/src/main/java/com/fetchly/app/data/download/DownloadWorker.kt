@@ -736,7 +736,7 @@ class DownloadWorker(
             val streams = info.options.firstOrNull()?.streams ?: return Refresh.NoMatch
             return Refresh.Fresh(optionFrom(entry).copy(streams = streams))
         }
-        val fresh = OptionMatcher.match(entry.signature, (if (info.items.isEmpty()) info.options else info.items.flatMap { it.options }).filter {
+        val fresh = OptionMatcher.match(entry.signature, (info.options + info.items.flatMap { it.options }).filter {
             it.container.equals(entry.container, true) &&
                 (entry.kind != QualityKind.AUDIO || it.label == entry.optionLabel)
         })
