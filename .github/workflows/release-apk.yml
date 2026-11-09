@@ -45,37 +45,41 @@ jobs:
           chmod 600 "$RUNNER_TEMP/fetchly-signing.jks"
           printf 'FETCHLY_SIGNING_STORE=%s\n' "$RUNNER_TEMP/fetchly-signing.jks" >> "$GITHUB_ENV"
 
-      - name: Build debug APK
-        run: gradle :app:assembleDebug
+      - name: Build full and optimized Lite APKs
+        run: gradle :app:assembleFullDebug :app:assembleLiteRelease
 
       - name: Run unit tests
-        run: gradle :app:testDebugUnitTest
+        run: gradle :app:testFullDebugUnitTest :app:testLiteDebugUnitTest
 
       - name: Verify pinned APK signing certificate
         run: |
           set -euo pipefail
           fetchly_apksigner="$ANDROID_SDK_ROOT/build-tools/35.0.0/apksigner"
-          fetchly_actual_cert=$("$fetchly_apksigner" verify --print-certs app/build/outputs/apk/debug/app-debug.apk | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+          fetchly_actual_cert=$("$fetchly_apksigner" verify --print-certs app/build/outputs/apk/full/debug/app-full-debug.apk | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
           fetchly_expected_cert=$(tr -d '[:space:]' < docs/SIGNING_CERT_SHA256)
           test -n "$fetchly_actual_cert"
           if [ "$fetchly_actual_cert" != "$fetchly_expected_cert" ]; then
             echo "APK certificate does not match the pinned release identity." >&2
             exit 1
           fi
+          fetchly_lite_cert=$("$fetchly_apksigner" verify --print-certs app/build/outputs/apk/lite/release/app-lite-release.apk | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+          test "$fetchly_lite_cert" = "$fetchly_expected_cert" || { echo "Lite signer does not match pinned identity" >&2; exit 1; }
           printf 'FETCHLY_SIGNING_CERT_SHA256=%s\n' "$fetchly_actual_cert" >> "$GITHUB_ENV"
 
       - name: Prepare verified release assets
         run: |
-          VER=$(python3 -c 'import json; print(json.load(open("app/build/outputs/apk/debug/output-metadata.json"))["elements"][0]["versionName"])')
+          VER=$(python3 -c 'import json; print(json.load(open("app/build/outputs/apk/full/debug/output-metadata.json"))["elements"][0]["versionName"])')
           TAG="v${VER}"
           if [[ "$GITHUB_REF_TYPE" == "tag" && "$GITHUB_REF_NAME" != "$TAG" ]]; then
             echo "Tag $GITHUB_REF_NAME does not match APK version $TAG" >&2
             exit 1
           fi
           echo "RELEASE_TAG=$TAG" >> "$GITHUB_ENV"
-          cp app/build/outputs/apk/debug/app-debug.apk "fetchly_${TAG}.apk"
+          cp app/build/outputs/apk/full/debug/app-full-debug.apk "fetchly_${TAG}.apk"
           cp "fetchly_${TAG}.apk" fetchly.apk
-          sha256sum "fetchly_${TAG}.apk" fetchly.apk > SHA256SUMS
+          cp app/build/outputs/apk/lite/release/app-lite-release.apk "fetchly-lite_${TAG}.apk"
+          cp "fetchly-lite_${TAG}.apk" fetchly-lite.apk
+          sha256sum "fetchly_${TAG}.apk" fetchly.apk "fetchly-lite_${TAG}.apk" fetchly-lite.apk > SHA256SUMS
           printf 'Commit: %s\nVersion: %s\nSigning certificate SHA-256: %s\n' "$GITHUB_SHA" "$VER" "$FETCHLY_SIGNING_CERT_SHA256" > BUILD.txt
 
       - name: Publish to release
@@ -98,5 +102,5 @@ jobs:
           if [ -f "$NOTES_FILE" ]; then
             gh release edit "$RELEASE_TAG" --notes-file "$NOTES_FILE"
           fi
-          gh release upload "$RELEASE_TAG" "fetchly_${RELEASE_TAG}.apk" fetchly.apk SHA256SUMS BUILD.txt --clobber
+          gh release upload "$RELEASE_TAG" "fetchly_${RELEASE_TAG}.apk" fetchly.apk "fetchly-lite_${RELEASE_TAG}.apk" fetchly-lite.apk SHA256SUMS BUILD.txt --clobber
           gh release edit "$RELEASE_TAG" --draft=false --latest
