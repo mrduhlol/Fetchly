@@ -435,7 +435,7 @@ class DownloadWorker(
         args += DownloadPlan.streamMaps(option)
         if (option.kind == QualityKind.AUDIO && option.container == "mp3") {
             val bitrate = option.label.substringBefore(" ").toIntOrNull()
-                ?.takeIf { it in listOf(96, 128, 256, 320) } ?: 128
+                ?.takeIf { it in listOf(96, 128, 192, 256, 320) } ?: 128
             args += listOf("-c:a", "libmp3lame", "-b:a", "${bitrate}k")
         } else {
             args += listOf("-c", "copy")
