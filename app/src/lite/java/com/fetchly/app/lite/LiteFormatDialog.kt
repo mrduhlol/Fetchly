@@ -90,7 +90,7 @@ private fun LiteFormatContent(state: LiteResolveState, vm: LiteResolveViewModel,
                                 Text(option.label)
                                 Text("${option.container.uppercase()} · ${option.audioDescription}", style = MaterialTheme.typography.bodySmall)
                             }
-                            Text(FormatSize.format(option.sizeBytes) ?: "Size unknown", style = MaterialTheme.typography.bodySmall)
+                            Text((if (option.kind == QualityKind.AUDIO && option.sizeBytes != null) "~" else "") + (FormatSize.format(option.sizeBytes) ?: "Size unknown"), style = MaterialTheme.typography.bodySmall)
                         }
                     }
                 }
