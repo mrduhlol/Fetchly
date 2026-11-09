@@ -155,8 +155,9 @@ object EditionUi {
         val keyboard = LocalSoftwareKeyboardController.current
         LaunchedEffect(state.input) {
             delay(650)
-            if (state.input.isNotBlank() && !state.loading && state.items.isEmpty() && state.error == null &&
-                BatchLinks.parse(state.input).urls.size == 1) { keyboard?.hide(); vm.resolve() }
+            val current = vm.state.value
+            if (current.input.isNotBlank() && !current.loading && current.items.isEmpty() && current.error == null &&
+                BatchLinks.parse(current.input).urls.size == 1) { keyboard?.hide(); vm.resolve() }
         }
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val height = maxOf(maxHeight, maxWidth * (1601f / 720f))
