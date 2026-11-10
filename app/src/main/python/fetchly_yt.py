@@ -62,11 +62,12 @@ def _remember_media(url, raw_info, preview):
 
 
 def warmup():
-    """Load common extractor code off the UI thread, without making a request."""
+    """Prepare the engine without guessing which site's code a share needs."""
     if yt_dlp is not None:
         with yt_dlp.YoutubeDL(_base_params(skip_download=True)) as ydl:
-            _register_extractors(ydl)
-            ydl.get_info_extractor("Youtube")
+            # YoutubeDL registers lazy extractors. Importing YouTube, Twitter
+            # and TikTok here competes with an incoming Instagram/other share.
+            pass
 
 
 class FetchlyCancelled(Exception):
@@ -99,6 +100,42 @@ def version():
         return "missing"
 
 
+def _preview_params(url, fast=True):
+    # Fetching is interactive, unlike a background file transfer. Don't spend
+    # several 20-second socket waits retrying a stalled metadata endpoint.
+    params = _base_params(skip_download=True, socket_timeout=8, retries=1,
+                          extractor_retries=1)
+    if fast and _is_youtube_url(url):
+        # The phone has no JS runtime. Avoid downloading player JS we cannot
+        # execute and the extra "next" request for comments/chapters. Keep all
+        # clients and HLS/DASH manifests so quality choices remain available.
+        params["extractor_args"] = {"youtube": {"player_skip": ["js", "initial_data"]}}
+    return params
+
+
+def _is_youtube_url(url):
+    host = (urlsplit(url).hostname or "").lower()
+    return host == "youtu.be" or host == "youtube.com" or host.endswith(".youtube.com")
+
+
+def _extract_preview(ydl, url, params):
+    try:
+        return ydl.extract_info(url, download=False)
+    except Exception as exc:
+        # Some videos need player metadata even without a JS runtime. Retry
+        # those with the complete extractor, not an incomplete format list.
+        error = _error_text(exc).lower()
+        if not (_is_youtube_url(url) and params.get("extractor_args") and
+                any(message in error for message in (
+                    "no video formats", "no playable formats", "requested format is not available"))):
+            raise
+        full_params = dict(params)
+        full_params.pop("extractor_args", None)
+        with yt_dlp.YoutubeDL(full_params) as full:
+            _register_extractors(full, url)
+            return full.extract_info(url, download=False)
+
+
 def extract(url):
     """Resolve a link into media metadata + every raw format yt-dlp offers."""
     if yt_dlp is None:
@@ -107,17 +144,17 @@ def extract(url):
     if cached is not None:
         return cached["preview"]
     try:
-        params = _base_params(skip_download=True)
+        params = _preview_params(url)
         if _is_x_url(url) or _is_multi_post(url):
             params["noplaylist"] = False
             params["playlistend"] = 50
         else:
             params["playlist_items"] = "1"
         with yt_dlp.YoutubeDL(params) as ydl:
-            _register_extractors(ydl)
+            _register_extractors(ydl, url)
             photo_only = False
             try:
-                info = ydl.extract_info(url, download=False)
+                info = _extract_preview(ydl, url, params)
             except Exception as exc:
                 photos = _x_photos(getattr(ydl, "_fetchly_x_status", None)) if _is_x_url(url) else []
                 if not photos or "No video could be found" not in _error_text(exc):
@@ -215,7 +252,7 @@ def download(url, format_id, dest_dir, prefix, hook):
         params["playlist_items"] = "1"
     try:
         with yt_dlp.YoutubeDL(params) as ydl:
-            _register_extractors(ydl)
+            _register_extractors(ydl, url)
             cached = _cached_media(url, _DOWNLOAD_TTL)
             if cached is not None:
                 raw = cached["info"]
@@ -258,7 +295,15 @@ def download(url, format_id, dest_dir, prefix, hook):
 # ---------------------------------------------------------------- helpers
 
 
-def _register_extractors(ydl):
+def _register_extractors(ydl, url=None):
+    host = (urlsplit(url).hostname or "").lower() if url else None
+    if host is None or _is_x_url(url) or host == "t.co":
+        _register_twitter(ydl)
+    if host is None or host == "tiktok.com" or host.endswith(".tiktok.com"):
+        _register_tiktok(ydl)
+
+
+def _register_tiktok(ydl):
     # TikTok redirects Indian users to /in/about with HTTP 200. Upstream
     # mistakes this for a malformed challenge, hiding the actual region block.
     from yt_dlp.extractor.tiktok import TikTokIE as BaseTikTokIE
@@ -271,6 +316,10 @@ def _register_extractors(ydl):
                 raise GeoRestrictedError("TikTok is not available in your country.")
             return response
 
+    ydl.add_info_extractor(TikTokIE())
+
+
+def _register_twitter(ydl):
     from yt_dlp.extractor.twitter import TwitterIE as BaseTwitterIE
 
     class TwitterIE(BaseTwitterIE):
@@ -281,7 +330,6 @@ def _register_extractors(ydl):
             return status
 
     ydl.add_info_extractor(TwitterIE())
-    ydl.add_info_extractor(TikTokIE())
 
 
 def _tiktok_region_redirect(url):

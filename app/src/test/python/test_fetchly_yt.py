@@ -61,9 +61,65 @@ class BridgeTests(unittest.TestCase):
         with patch.object(bridge, 'yt_dlp') as engine:
             downloader = engine.YoutubeDL.return_value.__enter__.return_value
             bridge.warmup()
-            downloader.get_info_extractor.assert_called_once_with('Youtube')
+            downloader.get_info_extractor.assert_not_called()
+            downloader.add_info_extractor.assert_not_called()
             downloader.extract_info.assert_not_called()
             downloader.download.assert_not_called()
+
+    def test_sharing_does_not_import_unrelated_site_overrides(self):
+        with patch.object(bridge, '_register_tiktok') as tiktok, \
+                patch.object(bridge, '_register_twitter') as twitter:
+            bridge._register_extractors(Mock(), 'https://www.instagram.com/reel/clip/')
+            tiktok.assert_not_called()
+            twitter.assert_not_called()
+            bridge._register_extractors(Mock(), 'https://x.com/user/status/123')
+            twitter.assert_called_once()
+            tiktok.assert_not_called()
+            bridge._register_extractors(Mock(), 'https://vm.tiktok.com/clip/')
+            tiktok.assert_called_once()
+
+    def test_preview_has_short_retries_without_changing_download_policy(self):
+        preview = bridge._preview_params('https://www.instagram.com/reel/clip/')
+        self.assertEqual(8, preview['socket_timeout'])
+        self.assertEqual(1, preview['extractor_retries'])
+        self.assertEqual(1, preview['retries'])
+        self.assertEqual(20, bridge._base_params()['socket_timeout'])
+        self.assertEqual(3, bridge._base_params()['retries'])
+        self.assertNotIn('extractor_args', preview)
+
+    def test_youtube_preview_skips_optional_requests_but_keeps_manifests(self):
+        for url in ('https://youtu.be/clip', 'https://m.youtube.com/shorts/clip'):
+            params = bridge._preview_params(url)
+            youtube = params['extractor_args']['youtube']
+            self.assertEqual(['js', 'initial_data'], youtube['player_skip'])
+            self.assertNotIn('skip', youtube)
+            self.assertNotIn('player_client', youtube)
+        self.assertNotIn('extractor_args', bridge._preview_params('https://youtube.com.example/clip'))
+
+    def test_youtube_missing_fast_formats_uses_full_extraction(self):
+        url = 'https://youtu.be/clip'
+        with patch.object(bridge, 'yt_dlp') as engine:
+            downloader = engine.YoutubeDL.return_value.__enter__.return_value
+            downloader.extract_info.side_effect = [
+                Exception('Requested format is not available'),
+                {'title': 'Clip', 'url': 'https://cdn.example/v.mp4', 'ext': 'mp4'},
+            ]
+            result = json.loads(bridge.extract(url))
+            self.assertTrue(result['ok'], result)
+            self.assertEqual(2, downloader.extract_info.call_count)
+            first, fallback = engine.YoutubeDL.call_args_list
+            self.assertIn('extractor_args', first.args[0])
+            self.assertNotIn('extractor_args', fallback.args[0])
+            self.assertEqual('1', fallback.args[0]['playlist_items'])
+
+    def test_youtube_source_restriction_is_not_retried_as_missing_formats(self):
+        with patch.object(bridge, 'yt_dlp') as engine:
+            downloader = engine.YoutubeDL.return_value.__enter__.return_value
+            downloader.extract_info.side_effect = Exception('Video unavailable')
+            result = json.loads(bridge.extract('https://youtu.be/private'))
+            self.assertFalse(result['ok'])
+            downloader.extract_info.assert_called_once()
+            engine.YoutubeDL.assert_called_once()
 
     def test_content_length_is_read_from_encoded_youtube_playlist_path(self):
         result = bridge._clean_format({'ext': 'mp4', 'url': 'https://manifest.googlevideo.com/api/sgoap/clen%3D3449447%3Bdur%3D213.089/playlist/index.m3u8'})

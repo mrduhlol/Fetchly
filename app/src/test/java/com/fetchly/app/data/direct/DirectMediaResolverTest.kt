@@ -4,6 +4,7 @@ import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.SocketPolicy
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -119,5 +120,14 @@ class DirectMediaResolverTest {
         val result = resolver.resolve("http://127.0.0.1:1/none.mp4")
 
         assertEquals(DirectResult.NotDirect, result)
+    }
+
+    @Test
+    fun `stalled head does not start a second probe after its budget expires`() = runBlocking {
+        server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE))
+        val quickProbe = DirectMediaResolver(OkHttpClient(), timeoutMillis = 250)
+
+        assertEquals(DirectResult.NotDirect, quickProbe.resolve(server.url("/shared-link").toString()))
+        assertEquals(1, server.requestCount)
     }
 }

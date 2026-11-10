@@ -38,25 +38,33 @@ interface DirectProbe {
 class DirectMediaResolver(
     http: OkHttpClient,
     private val io: CoroutineDispatcher = Dispatchers.IO,
+    private val timeoutMillis: Long = TimeUnit.SECONDS.toMillis(TIMEOUT_SECONDS),
 ) : DirectProbe {
 
     private val client = http.newBuilder()
         .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
         .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-        .callTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .callTimeout(timeoutMillis, TimeUnit.MILLISECONDS)
         .build()
 
     override suspend fun resolve(url: String): DirectResult = withContext(io) {
+        // HEAD and its fallback share one budget. An unknown shared link must
+        // not wait twice for a dead probe before the real extractor starts.
+        val deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeoutMillis)
+        fun execute(request: Request): Response {
+            val call = client.newCall(request)
+            call.timeout().deadlineNanoTime(deadline)
+            return call.execute()
+        }
         val head = runCatching {
-            client.newCall(Request.Builder().url(url).head().build()).execute()
+            execute(Request.Builder().url(url).head().build())
         }.getOrNull()
         val headVerdict = head?.use { classify(url, it) }
         if (headVerdict != null) return@withContext headVerdict
+        if (System.nanoTime() >= deadline) return@withContext DirectResult.NotDirect
 
         val ranged = runCatching {
-            client.newCall(
-                Request.Builder().url(url).header("Range", "bytes=0-0").get().build()
-            ).execute()
+            execute(Request.Builder().url(url).header("Range", "bytes=0-0").get().build())
         }.getOrNull()
         ranged?.use { classify(url, it) } ?: DirectResult.NotDirect
     }
@@ -103,7 +111,7 @@ class DirectMediaResolver(
             ?.takeIf { it.isNotBlank() }
 
     companion object {
-        const val TIMEOUT_SECONDS = 15L
+        const val TIMEOUT_SECONDS = 5L
         private val FILENAME_STAR = Regex("""filename\*\s*=\s*([^;]+)""", RegexOption.IGNORE_CASE)
         private val FILENAME = Regex("""filename(?!\*)\s*=\s*([^;]+)""", RegexOption.IGNORE_CASE)
     }
