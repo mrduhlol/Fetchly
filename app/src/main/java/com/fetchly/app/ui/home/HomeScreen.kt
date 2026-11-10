@@ -4,6 +4,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.unit.Constraints
+import kotlin.math.roundToInt
 import com.fetchly.app.R
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
@@ -133,13 +137,23 @@ fun HomeScreen(
                     }
                     Spacer(Modifier.height(16.dp))
                     SupportedApps()
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(4.dp))
                 }
             }
             Box(Modifier.fillMaxWidth()) {
                 Image(monument, contentDescription = null,
-                    modifier = Modifier.fillMaxWidth().aspectRatio(
-                        monument.intrinsicSize.width / monument.intrinsicSize.height),
+                    modifier = Modifier.fillMaxWidth().clipToBounds().layout { measurable, constraints ->
+                        val width = constraints.maxWidth
+                        val scale = width / monument.intrinsicSize.width
+                        val fullHeight = (monument.intrinsicSize.height * scale).roundToInt()
+                        // Both 724px-wide artworks have 60px of empty sky above the foliage.
+                        // Remove it from layout as well as drawing; preserve the monument's scale.
+                        val skyHeight = (60f * scale).roundToInt()
+                        val image = measurable.measure(Constraints.fixed(width, fullHeight))
+                        layout(width, fullHeight - skyHeight) {
+                            image.placeRelative(0, -skyHeight)
+                        }
+                    },
                     contentScale = ContentScale.Fit)
                 Text("© mrduhlol", style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onBackground,
