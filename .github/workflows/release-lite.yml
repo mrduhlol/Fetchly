@@ -54,7 +54,7 @@ jobs:
         run: |
           "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses < <(yes) > /dev/null
           "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-35' 'build-tools;35.0.0'
-          python3 -m pip install 'yt-dlp==2026.10.26' 'packaging==25.0'
+          python3 -m pip install 'yt-dlp==2026.10.26' 'packaging==25.0' 'requests==2.32.5'
       - name: Restore and verify persistent production signer
         env:
           # The legacy secret contains the existing pinned persistent key, not an ephemeral test key.
