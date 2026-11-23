@@ -104,7 +104,13 @@ def _preview_params(url, fast=True):
     # Fetching is interactive, unlike a background file transfer. Don't spend
     # several 20-second socket waits retrying a stalled metadata endpoint.
     params = _base_params(skip_download=True, socket_timeout=8, retries=1,
-                          extractor_retries=1)
+                          extractor_retries=1, check_formats=False,
+                          format="bestvideo*+bestaudio/best")
+    # This call lists choices; Kotlin selects the actual download later.
+    # skip_download alone still lets yt-dlp test-download streams marked
+    # __needs_testing (YouTube/TikTok), and auto-selection probes for ffmpeg.
+    # Avoid both in the interactive preview, retaining every source format.
+    # Downloads keep yt-dlp's normal validation and expired-URL fallback.
     if fast and _is_youtube_url(url):
         # The phone has no JS runtime. Avoid downloading player JS we cannot
         # execute and the extra "next" request for comments/chapters. Keep all

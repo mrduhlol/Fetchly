@@ -32,6 +32,24 @@ class BridgeTests(unittest.TestCase):
             self.assertEqual(first, second)
             downloader.extract_info.assert_called_once()
 
+    def test_preview_does_not_test_download_streams_or_probe_merge_tools(self):
+        # Exercise real yt-dlp processing: skip_download alone does not stop
+        # __needs_testing formats from downloading test bytes before returning.
+        from yt_dlp import YoutubeDL
+        info = {'id': 'clip', 'title': 'Clip', 'extractor': 'test', 'formats': [
+            {'format_id': 'hd', 'url': 'https://cdn.example/video.mp4',
+             'ext': 'mp4', 'vcodec': 'h264', 'acodec': 'aac', 'height': 720,
+             '__needs_testing': True},
+            {'format_id': 'sd', 'url': 'https://cdn.example/sd.mp4',
+             'ext': 'mp4', 'vcodec': 'h264', 'acodec': 'aac', 'height': 360},
+        ]}
+        with YoutubeDL(bridge._preview_params('https://example.com/post')) as ydl, \
+                patch.object(ydl, 'dl', side_effect=AssertionError('Preview downloaded media')), \
+                patch.object(ydl, '_default_format_spec', side_effect=AssertionError('Preview probed merge tools')):
+            result = ydl.process_ie_result(info, download=False)
+        self.assertEqual({'hd', 'sd'}, {f['format_id'] for f in result['formats']})
+        self.assertNotIn('check_formats', bridge._base_params())
+
     def test_download_uses_the_fetched_stream_metadata_without_resolving_page_again(self):
         with tempfile.TemporaryDirectory() as directory, patch.object(bridge, 'yt_dlp') as engine:
             downloader = engine.YoutubeDL.return_value.__enter__.return_value
