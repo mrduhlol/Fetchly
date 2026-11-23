@@ -16,6 +16,9 @@ chaquopy {
         pip {
             install("yt-dlp==2026.10.26")
             install("packaging==25.0")
+            // Enables yt-dlp's pooled HTTP transport. Without it, each
+            // metadata request opens another connection and TLS handshake.
+            install("requests==2.32.5")
         }
     }
 }

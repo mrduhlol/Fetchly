@@ -3,7 +3,9 @@ import importlib.util
 import json
 import pathlib
 import tempfile
+import threading
 import unittest
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from unittest.mock import patch, Mock
 
 MODULE = pathlib.Path(__file__).parents[2] / 'main/python/fetchly_yt.py'
@@ -22,6 +24,45 @@ class BridgeTests(unittest.TestCase):
             result = json.loads(bridge.extract('https://example.com/post'))
             params = engine.YoutubeDL.call_args.args[0]
         return result, params
+
+    def test_metadata_requests_reuse_a_connection(self):
+        from yt_dlp import YoutubeDL
+
+        class Server(ThreadingHTTPServer):
+            connections = 0
+
+            def get_request(self):
+                connection = super().get_request()
+                self.connections += 1
+                return connection
+
+        class Handler(BaseHTTPRequestHandler):
+            protocol_version = 'HTTP/1.1'
+
+            def do_GET(self):
+                self.send_response(200)
+                self.send_header('Content-Length', '2')
+                self.end_headers()
+                self.wfile.write(b'{}')
+
+            def log_message(self, *args):
+                pass
+
+        server = Server(('127.0.0.1', 0), Handler)
+        worker = threading.Thread(target=server.serve_forever, daemon=True)
+        worker.start()
+        try:
+            params = bridge._preview_params('https://example.com/post')
+            params['proxy'] = ''  # Keep the local test independent of host proxies.
+            with YoutubeDL(params) as ydl:
+                for index in range(3):
+                    with ydl.urlopen(f'http://127.0.0.1:{server.server_port}/metadata/{index}') as response:
+                        self.assertEqual(b'{}', response.read())
+                self.assertEqual(1, server.connections)
+        finally:
+            server.shutdown()
+            server.server_close()
+            worker.join(timeout=5)
 
     def test_repeated_preview_reuses_recent_success_instead_of_extracting_again(self):
         with patch.object(bridge, 'yt_dlp') as engine:
