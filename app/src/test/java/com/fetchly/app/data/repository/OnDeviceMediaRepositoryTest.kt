@@ -56,6 +56,18 @@ class OnDeviceMediaRepositoryTest {
     }
 
     @Test
+    fun `shared X short links bypass the file probe`() = runBlocking {
+        val probe = object : DirectProbe {
+            override suspend fun resolve(url: String): DirectResult =
+                error("A social redirect must go straight to extraction")
+        }
+        val engine = FakeEngine(engineOk)
+        val outcome = OnDeviceMediaRepository(probe, engine).analyze("https://t.co/shared123")
+        assertTrue(outcome is ResolveOutcome.Success)
+        assertEquals(1, engine.calls)
+    }
+
+    @Test
     fun `direct probe hit becomes a single file option and never calls the engine`() = runBlocking {
         val probe = FakeProbe(
             DirectResult.File(

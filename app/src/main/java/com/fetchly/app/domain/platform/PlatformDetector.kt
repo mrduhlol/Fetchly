@@ -25,7 +25,7 @@ object PlatformDetector {
             matches(host, "linkedin.com") || host == "lnkd.in" -> Platform.LINKEDIN
             matches(host, "instagram.com") -> Platform.INSTAGRAM
             matches(host, "tiktok.com") -> Platform.TIKTOK
-            matches(host, "x.com") || matches(host, "twitter.com") -> Platform.TWITTER
+            matches(host, "x.com") || matches(host, "twitter.com") || host == "t.co" -> Platform.TWITTER
             matches(host, "reddit.com") || host == "redd.it" -> Platform.REDDIT
             matches(host, "facebook.com") || matches(host, "fb.com") || host == "fb.watch" -> Platform.FACEBOOK
             matches(host, "pinterest.com") || host == "pin.it" -> Platform.PINTEREST

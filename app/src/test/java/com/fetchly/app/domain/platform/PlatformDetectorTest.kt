@@ -23,6 +23,8 @@ class PlatformDetectorTest {
         assertEquals(Platform.TIKTOK, PlatformDetector.detect("https://www.tiktok.com/@user/video/123"))
         assertEquals(Platform.TWITTER, PlatformDetector.detect("https://x.com/user/status/123"))
         assertEquals(Platform.TWITTER, PlatformDetector.detect("https://twitter.com/user/status/123"))
+        assertEquals(Platform.TWITTER, PlatformDetector.detect("https://t.co/abc123"))
+        assertEquals(Platform.OTHER, PlatformDetector.detect("https://t.co.example/abc123"))
         assertEquals(Platform.REDDIT, PlatformDetector.detect("https://www.reddit.com/r/aww/comments/xyz"))
         assertEquals(Platform.REDDIT, PlatformDetector.detect("https://redd.it/abc"))
         assertEquals(Platform.FACEBOOK, PlatformDetector.detect("https://www.facebook.com/watch/?v=1"))
